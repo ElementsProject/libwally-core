@@ -700,19 +700,32 @@ static bool node_must_be_xonly(const ms_node *node, uint32_t flags)
     return (flags & WALLY_MINISCRIPT_TAPSCRIPT) != 0;
 }
 
-static void node_free(ms_node *node)
+/* Free node and all of its descendants (but not ->next siblings) */
+static void node_free(ms_node *node, bool always_free)
 {
     if (node) {
-        ms_node *child = node->child;
-        while (child) {
-            ms_node *next = child->next;
-            node_free(child);
-            child = next;
+        ms_node *stack = node->child;
+        while (true) {
+            /* Free current node */
+            if (always_free || node->kind & (KIND_RAW | KIND_ADDRESS) ||
+                node->kind == KIND_PUBLIC_KEY || node->kind == KIND_PRIVATE_KEY)
+                clear_and_free((void*)node->data, node->data_len);
+            clear_and_free(node, sizeof(*node));
+
+            if (!(node = stack))
+                return; /* Done */
+
+            /* continue processing the stack */
+            stack = stack->next;
+            ms_node *child = node->child;
+            while (child) {
+                /* push child siblings onto the stack of items to process */
+                ms_node *next = child->next;
+                child->next = stack;
+                stack = child;
+                child = next;
+            }
         }
-        if (node->kind & (KIND_RAW | KIND_ADDRESS) ||
-            node->kind == KIND_PUBLIC_KEY || node->kind == KIND_PRIVATE_KEY)
-            clear_and_free((void*)node->data, node->data_len);
-        clear_and_free(node, sizeof(*node));
     }
 }
 
@@ -799,7 +812,7 @@ int wally_descriptor_free(ms_ctx *ctx)
         clear_and_free(ctx->keys.items,
                        ctx->keys.num_items * sizeof(*ctx->keys.items));
         wally_free_string(ctx->src);
-        node_free(ctx->top_node);
+        node_free(ctx->top_node, false);
         clear_and_free(ctx, sizeof(*ctx));
     }
     return WALLY_OK;
@@ -3157,7 +3170,7 @@ static int parse_taptree(ms_ctx *ctx, const char *str, size_t str_len,
         ret = parse_taptree(ctx, str + 1, comma_pos - 1,
                             flags, depth + 1, node, NULL, &left);
         if (ret != WALLY_OK) {
-            node_free(node); /* node_free() will also free left */
+            node_free(node, false); /* node_free() will also free left */
             return ret;
         }
 
@@ -3165,7 +3178,7 @@ static int parse_taptree(ms_ctx *ctx, const char *str, size_t str_len,
         ret = parse_taptree(ctx, str + comma_pos + 1, str_len - comma_pos - 2,
                             flags, depth + 1, node, left, &right);
         if (ret != WALLY_OK) {
-            node_free(node); /* node_free() will free all children*/
+            node_free(node, false); /* node_free() will free all children */
             return ret;
         }
         (void)right; /* linked via left->next by the recursive call */
@@ -3192,7 +3205,7 @@ static int parse_taptree(ms_ctx *ctx, const char *str, size_t str_len,
                     prev_sibling->next = NULL; /* unlink from sibling chain */
                 else if (parent)
                     parent->child = NULL; /* reset dangling pointer */
-                node_free(*output);
+                node_free(*output, false);
                 *output = NULL;
                 ret = WALLY_EINVAL;
             }
@@ -3357,7 +3370,7 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
         ret = node_verify_wrappers(ctx, node);
 
     if (ret != WALLY_OK)
-        node_free(node);
+        node_free(node, false);
     else {
         *output = node;
         if (parent && !parent->child)
@@ -3638,7 +3651,7 @@ static int is_valid_policy_map(const struct wally_map *map_in, bool *is_elements
                 ret = wally_map_add(&keys, item->value, item->value_len, NULL, 0);
             }
         }
-        node_free(node);
+        node_free(node, false);
     }
     if (ret == WALLY_OK && keys.num_items != map_in->num_items) {
         /* One of more keys is not unique */
