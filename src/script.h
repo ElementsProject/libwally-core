@@ -2,6 +2,8 @@
 #define LIBWALLY_CORE_SCRIPT_INTERNAL_H 1
 
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 /* Get the size of a push from the script push opcode(s) */
 int script_get_push_size_from_bytes(
