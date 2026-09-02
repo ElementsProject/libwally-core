@@ -208,7 +208,7 @@ int wally_addr_segwit_from_bytes(const unsigned char *bytes, size_t bytes_len,
                                  const char *addr_family, uint32_t flags,
                                  char **output)
 {
-    char result[90];
+    char result[90 + 1]; /* Max encoded length plus NUL */
     size_t push_size;
     int ret;
     size_t witver;

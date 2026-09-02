@@ -4,6 +4,7 @@
 
 ### Fixed
 - internal: De-optimize some memcpy calls on x86 to prevent leaks via extended registers.
+- bech32: Fix size when encoding a maximum length (90 character) segwit address.
 - descriptor: Require base miniscript expressions for sh()/wsh().
 - descriptor: Reject nested expressions with unconsumed trailing input.
 

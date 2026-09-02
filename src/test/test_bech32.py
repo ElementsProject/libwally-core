@@ -20,7 +20,10 @@ valid_cases = {
     'tb1pqqqqp399et2xygdj5xreqhjjvcmzhxw4aywxecjdzew6hylgvsesf3hn0c':
         ['tb', 1, '5120000000c4a5cad46221b2a187905e5266362b99d5e91c6ce24d165dab93e86433'],
     'bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0':
-        ['bc', 1, '512079be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798']
+        ['bc', 1, '512079be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'],
+    # Maximum length (90 character) address: 30 character hrp, 32 byte v0 program
+    'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq6nf3d':
+        ['a' * 30, 0, '0020' + '00' * 32],
 }
 
 invalid_cases = [
