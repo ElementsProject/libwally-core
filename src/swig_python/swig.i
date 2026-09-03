@@ -184,7 +184,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 }
 %typemap(argout) size_t* written {
    Py_DecRef($result);
-   $result = PyInt_FromSize_t(*$1);
+   $result = PyLong_FromSize_t(*$1);
 }
 
 %typemap(in, numinputs=0) uint32_t *value_out (uint32_t val) {
@@ -211,7 +211,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %typemap(argout) char** {
    if (*$1 != NULL) {
        Py_DecRef($result);
-       $result = PyString_FromString(*$1);
+       $result = PyUnicode_FromString(*$1);
        wally_free_string(*$1);
    }
 }
@@ -230,7 +230,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
        Py_DecRef($result);
        $result = PyList_New($2);
        for (i = 0; i < $2; i++) {
-           PyObject *s = PyString_FromString($1[i]);
+           PyObject *s = PyUnicode_FromString($1[i]);
            PyList_SetItem($result, i, s);
            wally_free_string($1[i]);
        }
