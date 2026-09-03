@@ -43,8 +43,10 @@ del swig_import_helper
 #include "../internal.h"
 
 #undef malloc
+#undef calloc
 #undef free
 #define malloc(size) wally_malloc(size)
+#define calloc(n, size) wally_calloc((n) * (size))
 #define free(ptr) wally_free(ptr)
 
 static int check_result(int result)
