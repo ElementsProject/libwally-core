@@ -19,6 +19,7 @@ include_HEADERS += $(top_srcdir)/include/wally_crypto.h
 include_HEADERS += $(top_srcdir)/include/wally_descriptor.h
 include_HEADERS += $(top_srcdir)/include/wally_elements.h
 include_HEADERS += $(top_srcdir)/include/wally_map.h
+include_HEADERS += $(top_srcdir)/include/wally_musig.h
 include_HEADERS += $(top_srcdir)/include/wally_psbt.h
 include_HEADERS += $(top_srcdir)/include/wally_psbt_members.h
 include_HEADERS += $(top_srcdir)/include/wally_script.h
@@ -152,6 +153,8 @@ libwallycore_la_SOURCES = \
     bech32.c \
     coins.c \
     descriptor.c \
+    miniscript_decode.c \
+    miniscript_satisfy.c \
     ecdh.c \
     elements.c \
     blech32.c \
@@ -160,6 +163,7 @@ libwallycore_la_SOURCES = \
     internal.c \
     map.c \
     mnemonic.c \
+    musig.c \
     pbkdf2.c \
     psbt.c \
     pullpush.c \
@@ -191,6 +195,7 @@ libwallycore_la_INCLUDES = \
     include/wally_descriptor.h \
     include/wally_elements.h \
     include/wally_map.h \
+    include/wally_musig.h \
     include/wally_psbt.h \
     include/wally_psbt_members.h \
     include/wally_script.h \
@@ -285,6 +290,11 @@ test_descriptor_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if PYTHON_MANYLINUX
 test_descriptor_LDADD += $(PYTHON_LIBS)
 endif
+TESTS += test_miniscript_decode
+noinst_PROGRAMS += test_miniscript_decode
+test_miniscript_decode_SOURCES = ctest/test_miniscript_decode.c miniscript_decode.c miniscript_satisfy.c
+test_miniscript_decode_CFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_srcdir)/src $(libsecp256k1_CFLAGS) $(AM_CFLAGS)
+test_miniscript_decode_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if BUILD_ELEMENTS
 TESTS += test_elements_tx
 noinst_PROGRAMS += test_elements_tx
@@ -339,6 +349,11 @@ check-libwallycore: $(PYTHON_TEST_DEPS)
 	$(AM_V_at)$(PYTHON_TEST) test/test_internal.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_map.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_mnemonic.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_bip379_vectors.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_satisfier_diff.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_musig.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_musig_vectors.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_musig_interop.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_psbt.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pbkdf2.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_script.py
@@ -366,6 +381,7 @@ check-swig-python: check-libwallycore check-swig-java
 	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/coinselection.py
 	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/descriptor.py
 	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/mnemonic.py
+	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/musig.py
 	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/psbt.py
 	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/sha.py
 	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/signmessage.py
