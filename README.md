@@ -94,7 +94,12 @@ $ brew install swig
    results in faster hashing via hardware on embedded platforms such as ESP32.
    Note that the caller must ensure that ``sdkconfig.h`` and ``soc/soc_caps.h``
    are available when compiling, e.g. by setting the `CFLAGS` environment variable
-   before calling configure. (default: no)
+   before calling configure. This option targets the legacy Mbed TLS 2.x/3.x
+   API as shipped with ESP-IDF 5.x; for ESP-IDF 6.x and Mbed TLS 4.x use
+   `--enable-psa-crypto` instead. (default: no)
+- `--enable-psa-crypto`. Use the [PSA Crypto API](https://arm-software.github.io/psa-api/crypto/)
+   for SHA-256/SHA-512 hashing if available. Note that wally does not
+   define `MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS`.
 - `--enable-coverage`. Enables code coverage (default: no) Note that you will
    need [lcov](http://ltp.sourceforge.net/coverage/lcov.php) installed to
    build with this option enabled and generate coverage reports.

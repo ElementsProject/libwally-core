@@ -37,7 +37,7 @@ extern "C" {
 /**
  * Initialize wally.
  *
- * This function must be called once before threads are created by the application.
+ * This function must be called once before the application uses wally.
  *
  * :param flags: Flags controlling what to initialize. Currently must be zero.
  */

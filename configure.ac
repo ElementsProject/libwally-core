@@ -91,6 +91,9 @@ AC_ARG_ENABLE(minimal,
 AC_ARG_ENABLE(mbed-tls,
     AS_HELP_STRING([--enable-mbed-tls],[use mbed-tls hashing functions where available (default: no)]),
     [mbedtls=$enableval], [mbedtls=no])
+AC_ARG_ENABLE(psa-crypto,
+    AS_HELP_STRING([--enable-psa-crypto],[use PSA Crypto (TF-PSA-Crypto/Mbed TLS) hashing functions (default: no)]),
+    [psa_crypto=$enableval], [psa_crypto=no])
 AC_ARG_ENABLE(secp256k1-tests,
     AS_HELP_STRING([--enable-secp256k1-tests],[enable secp256k1 tests (default: no)]),
     [secp256k1_tests=$enableval], [secp256k1_tests=no])
@@ -282,8 +285,16 @@ if test "x$asm" = "xyes"; then
 fi
 
 AC_CHECK_HEADERS([byteswap.h sys/mman.h])
+if test "x$mbedtls" = "xyes" -a "x$psa_crypto" = "xyes"; then
+    AC_MSG_ERROR([--enable-mbed-tls and --enable-psa-crypto are mutually exclusive])
+fi
 if test "x$mbedtls" = "xyes"; then
     AC_CHECK_HEADERS([mbedtls/sha256.h mbedtls/sha512.h])
+fi
+if test "x$psa_crypto" = "xyes"; then
+    AC_CHECK_HEADERS([psa/crypto.h], [], [AC_MSG_ERROR([psa/crypto.h not found])])
+    AC_SEARCH_LIBS([psa_crypto_init], [tfpsacrypto mbedcrypto], [],
+                   [AC_MSG_ERROR([no library providing psa_crypto_init() found])])
 fi
 
 AC_ARG_ENABLE(clear-tests,

@@ -59,6 +59,15 @@
 #define CCAN_CRYPTO_SHA512_USE_MBEDTLS 1
 #endif
 
+#ifdef HAVE_PSA_CRYPTO_H
+#define CCAN_CRYPTO_SHA256_USE_PSA 1
+#define CCAN_CRYPTO_SHA512_USE_PSA 1
+#endif
+
+#if defined(HAVE_PSA_CRYPTO_H) && (defined(HAVE_MBEDTLS_SHA256_H) || defined(HAVE_MBEDTLS_SHA512_H))
+#error "HAVE_PSA_CRYPTO_H and HAVE_MBEDTLS_SHA256_H/HAVE_MBEDTLS_SHA512_H are mutually exclusive"
+#endif
+
 #if !defined(WALLY_EXPORT_ALL) && !defined(_WIN32)
 void __attribute__ ((visibility ("hidden"))) wally_clear(void *p, size_t len);
 #else
