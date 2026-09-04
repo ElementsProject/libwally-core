@@ -83,7 +83,7 @@ AC_ARG_ENABLE(minimal,
     AS_HELP_STRING([--enable-minimal],[enable minimal size/memory footprint build (default: no)]),
     [minimal=$enableval], [minimal=no])
 AC_ARG_ENABLE(mbed-tls,
-    AS_HELP_STRING([--enable-mbed-tls],[enable minimal size/memory footprint build (default: no)]),
+    AS_HELP_STRING([--enable-mbed-tls],[use mbed-tls hashing functions where available (default: no)]),
     [mbedtls=$enableval], [mbedtls=no])
 AC_ARG_ENABLE(secp256k1-tests,
     AS_HELP_STRING([--enable-secp256k1-tests],[enable secp256k1 tests (default: no)]),
