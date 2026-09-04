@@ -13,7 +13,7 @@ static void SHA_PRE(_mix)(struct SHA_T *sha, const unsigned char *pad,
 {
     struct SHA_PRE(_ctx) ctx;
     SHA_PRE(_init)(&ctx);
-    SHA_PRE(_update)(&ctx, pad, sizeof(ctx.SHA_CTX_BUFF));
+    SHA_PRE(_update)(&ctx, pad, SHA_BLOCK_LEN);
     SHA_PRE(_update)(&ctx, data, data_len);
     SHA_PRE(_done)(&ctx, sha);
     wally_clear(&ctx, sizeof(ctx));
@@ -23,26 +23,31 @@ void HMAC_FUNCTION(struct SHA_T *sha,
                    const unsigned char *key, size_t key_len,
                    const unsigned char *msg, size_t msg_len)
 {
-    struct SHA_PRE(_ctx) ctx;
-    unsigned char ipad[sizeof(ctx.SHA_CTX_BUFF)];
-    unsigned char opad[sizeof(ctx.SHA_CTX_BUFF)];
+    /* The key block doubles as the buffer for the inner hash result */
+    union {
+        unsigned char u8[SHA_BLOCK_LEN];
+        struct SHA_T sha;
+    } key_block;
+    unsigned char ipad[SHA_BLOCK_LEN];
+    unsigned char opad[SHA_BLOCK_LEN];
     size_t i;
 
-    wally_clear(ctx.SHA_CTX_BUFF, sizeof(ctx.SHA_CTX_BUFF));
+    BUILD_ASSERT(sizeof(struct SHA_T) <= SHA_BLOCK_LEN);
+    wally_clear(&key_block, sizeof(key_block));
 
-    if (key_len <= sizeof(ctx.SHA_CTX_BUFF))
-        memcpy(ctx.SHA_CTX_BUFF, key, key_len);
+    if (key_len <= SHA_BLOCK_LEN)
+        memcpy(key_block.u8, key, key_len);
     else
-        SHA_T((struct SHA_T *)ctx.SHA_CTX_BUFF, key, key_len);
+        SHA_T(&key_block.sha, key, key_len);
 
-    for (i = 0; i < sizeof(ctx.SHA_CTX_BUFF); ++i) {
-        opad[i] = ctx.SHA_CTX_BUFF[i] ^ 0x5c;
-        ipad[i] = ctx.SHA_CTX_BUFF[i] ^ 0x36;
+    for (i = 0; i < SHA_BLOCK_LEN; ++i) {
+        opad[i] = key_block.u8[i] ^ 0x5c;
+        ipad[i] = key_block.u8[i] ^ 0x36;
     }
 
-    SHA_PRE(_mix)((struct SHA_T *)ctx.SHA_CTX_BUFF, ipad, msg, msg_len);
-    SHA_PRE(_mix)(sha, opad, ctx.SHA_CTX_BUFF, sizeof(*sha));
-    wally_clear_3(&ctx, sizeof(ctx), ipad, sizeof(ipad), opad, sizeof(opad));
+    SHA_PRE(_mix)(&key_block.sha, ipad, msg, msg_len);
+    SHA_PRE(_mix)(sha, opad, key_block.u8, sizeof(*sha));
+    wally_clear_3(&key_block, sizeof(key_block), ipad, sizeof(ipad), opad, sizeof(opad));
 }
 
 int WALLY_HMAC_FUNCTION(const unsigned char *key, size_t key_len,
