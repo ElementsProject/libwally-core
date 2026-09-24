@@ -21,6 +21,10 @@
 #endif
 #endif
 
+#ifdef CCAN_CRYPTO_SHA512_USE_PSA
+#include <psa/crypto.h>
+#endif
+
 /**
  * struct sha512 - structure representing a completed SHA512.
  * @u.u8: an unsigned char array.
@@ -54,6 +58,8 @@ struct sha512_ctx {
 	SHA512_CTX c;
 #elif defined(CCAN_CRYPTO_SHA512_USE_MBEDTLS)
 	mbedtls_sha512_context c;
+#elif defined(CCAN_CRYPTO_SHA512_USE_PSA)
+	psa_hash_operation_t op;
 #else
 	uint64_t s[8];
 	union {
@@ -113,6 +119,8 @@ void sha512_init(struct sha512_ctx *ctx);
 	    0, 0,						\
 	    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },	\
 	    0, 0x40 } }
+#elif defined(CCAN_CRYPTO_SHA512_USE_PSA)
+/* No static initializer: PSA contexts must be set up with sha512_init() */
 #else
 #define SHA512_INIT						\
 	{ { 0x6a09e667f3bcc908ull, 0xbb67ae8584caa73bull,	\

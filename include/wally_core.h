@@ -38,6 +38,9 @@ extern "C" {
  * Initialize wally.
  *
  * This function must be called once before threads are created by the application.
+ * When wally is built with the PSA Crypto hashing backend (``--enable-psa-crypto``),
+ * this function calls ``psa_crypto_init()``. Callers that hash before calling
+ * it must call ``psa_crypto_init()`` themselves.
  *
  * :param flags: Flags controlling what to initialize. Currently must be zero.
  */

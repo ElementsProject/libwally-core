@@ -174,5 +174,25 @@ class HashTests(unittest.TestCase):
                 self.assertEqual(result, utf8(expected.lower()))
 
 
+    def test_sha256_midstate(self):
+        # Only whole 64 byte blocks contribute to the midstate: a trailing
+        # partial block is ignored, and no complete block gives the IV.
+        iv = '6a09e667bb67ae853c6ef372a54ff53a510e527f9b05688c1f83d9ab5be0cd19'
+        block = ''.join('%02x' % i for i in range(64))
+        block_midstate = 'fc99a2df88f42a7a7bb9d18033cdc6a20256755f9d5b9a5044a9cc315abe84a7'
+        two_blocks_midstate = '89d03c12e077467125c82a22aa7bf90353dcd4f6e9520159bd830150d0d16272'
+        cases = [
+            ('', iv),
+            (block[:63 * 2], iv),
+            (block, block_midstate),
+            (block + '010203', block_midstate),
+            (block + block, two_blocks_midstate),
+        ]
+        for msg, expected in cases:
+            for aligned in [True, False]:
+                result = self.do_hash(wally_sha256_midstate, msg, aligned)
+                self.assertEqual(result, utf8(expected))
+
+
 if __name__ == '__main__':
     unittest.main()

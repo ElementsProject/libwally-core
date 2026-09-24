@@ -14,6 +14,9 @@
 #include <assert.h>
 #endif
 #include <string.h>
+#ifdef CCAN_CRYPTO_SHA256_USE_PSA
+#include <stdlib.h>
+#endif
 
 #ifdef CCAN_CRYPTO_SHA256_USE_OPENSSL
 static void invalidate_sha256(struct sha256_ctx *ctx)
@@ -65,18 +68,8 @@ void sha256_optimize(void)
 {
 }
 #else
-static void invalidate_sha256(struct sha256_ctx *ctx)
-{
-	ctx->bytes = (size_t)-1;
-}
-
-static void check_sha256(struct sha256_ctx *ctx UNUSED)
-{
-#if 0
-	assert(ctx->bytes != (size_t)-1);
-#endif
-}
-
+/* The portable SHA-256 compression function. Used by the builtin backend,
+ * and by opaque backends (PSA) to compute midstates. */
 static uint32_t Ch(uint32_t x, uint32_t y, uint32_t z)
 {
 	return z ^ (x & (y ^ z));
@@ -198,6 +191,59 @@ static void TransformDefault(uint32_t *s, const uint32_t *chunk, size_t blocks)
 	}
 }
 
+#ifdef CCAN_CRYPTO_SHA256_USE_PSA
+void sha256_sw_transform(uint32_t *s, const uint32_t *chunk, size_t blocks)
+{
+	TransformDefault(s, chunk, blocks);
+}
+
+/* The ccan hash API cannot report errors, and continuing with a wrong
+ * hash could silently produce incorrect seeds, keys or signature hashes.
+ * Any PSA failure (e.g. a driver failing to allocate its context) is
+ * therefore fatal.
+ */
+void sha256_init(struct sha256_ctx *ctx)
+{
+	/* ctx must not be an active operation: PSA drivers may hold
+	 * state that only sha256_done() releases. Zero-filling is one of
+	 * the initializations the PSA API permits, and unlike
+	 * psa_hash_operation_init() it needs no on-stack temporary. */
+	memset(&ctx->op, 0, sizeof(ctx->op));
+	if (psa_hash_setup(&ctx->op, PSA_ALG_SHA_256) != PSA_SUCCESS)
+		abort();
+}
+
+void sha256_update(struct sha256_ctx *ctx, const void *p, size_t size)
+{
+	if (psa_hash_update(&ctx->op, p, size) != PSA_SUCCESS)
+		abort();
+}
+
+void sha256_done(struct sha256_ctx *ctx, struct sha256 *res)
+{
+	size_t len = 0;
+
+	if (psa_hash_finish(&ctx->op, res->u.u8, sizeof(res->u.u8), &len) != PSA_SUCCESS ||
+	    len != sizeof(res->u.u8))
+		abort();
+}
+
+void sha256_optimize(void)
+{
+}
+#else /* Builtin implementation */
+static void invalidate_sha256(struct sha256_ctx *ctx)
+{
+	ctx->bytes = (size_t)-1;
+}
+
+static void check_sha256(struct sha256_ctx *ctx UNUSED)
+{
+#if 0
+	assert(ctx->bytes != (size_t)-1);
+#endif
+}
+
 #if defined(HAVE_INLINE_ASM) && (defined(__x86_64__) || defined(__amd64__))
 #include <cpuid.h>
 
@@ -301,8 +347,22 @@ void sha256_done(struct sha256_ctx *ctx, struct sha256 *res)
 		res->u.u32[i] = cpu_to_be32(ctx->s[i]);
 	invalidate_sha256(ctx);
 }
+#endif /* CCAN_CRYPTO_SHA256_USE_PSA */
 #endif
 
+#ifdef CCAN_CRYPTO_SHA256_USE_PSA
+void sha256(struct sha256 *sha, const void *p, size_t size)
+{
+	/* psa_hash_compute() may reject a NULL input, even for zero bytes */
+	static const unsigned char dummy = 0;
+	size_t len = 0;
+
+	if (psa_hash_compute(PSA_ALG_SHA_256, size ? p : (const void *)&dummy, size,
+			     sha->u.u8, sizeof(sha->u.u8), &len) != PSA_SUCCESS ||
+	    len != sizeof(sha->u.u8))
+		abort(); /* Fatal: see sha256_init() */
+}
+#else
 void sha256(struct sha256 *sha, const void *p, size_t size)
 {
 	struct sha256_ctx ctx;
@@ -312,6 +372,7 @@ void sha256(struct sha256 *sha, const void *p, size_t size)
 	sha256_done(&ctx, sha);
 	CCAN_CLEAR_MEMORY(&ctx, sizeof(ctx));
 }
+#endif /* CCAN_CRYPTO_SHA256_USE_PSA */
 	
 void sha256_u8(struct sha256_ctx *ctx, uint8_t v)
 {

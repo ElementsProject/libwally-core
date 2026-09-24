@@ -21,6 +21,10 @@
 #endif
 #endif
 
+#ifdef CCAN_CRYPTO_SHA256_USE_PSA
+#include <psa/crypto.h>
+#endif
+
 /**
  * struct sha256 - structure representing a completed SHA256.
  * @u.u8: an unsigned char array.
@@ -39,6 +43,19 @@ struct sha256 {
  * sha256_optimize - check for and enable optimised functionality if possible.
  */
 void sha256_optimize(void);
+
+#ifdef CCAN_CRYPTO_SHA256_USE_PSA
+/**
+ * sha256_sw_transform - run the portable SHA-256 compression function.
+ * @s: the 8 word running state to update.
+ * @chunk: @blocks 64-byte chunks of big-endian words, 4-byte aligned.
+ * @blocks: the number of chunks to process.
+ *
+ * Only available for backends whose context is opaque; used to
+ * compute midstates.
+ */
+void sha256_sw_transform(uint32_t *s, const uint32_t *chunk, size_t blocks);
+#endif
 
 /**
  * sha256 - return sha256 of an object.
@@ -59,6 +76,8 @@ struct sha256_ctx {
 	SHA256_CTX c;
 #elif defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS)
 	mbedtls_sha256_context c;
+#elif defined(CCAN_CRYPTO_SHA256_USE_PSA)
+	psa_hash_operation_t op;
 #else
 	uint32_t s[8];
 	union {
@@ -117,6 +136,8 @@ void sha256_init(struct sha256_ctx *ctx);
 		0x0, 0x0,						\
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },	\
 			0x0, 0x20 } }
+#elif defined(CCAN_CRYPTO_SHA256_USE_PSA)
+/* No static initializer: PSA contexts must be set up with sha256_init() */
 #else
 #define SHA256_INIT							\
 	{ { 0x6a09e667ul, 0xbb67ae85ul, 0x3c6ef372ul, 0xa54ff53aul,	\

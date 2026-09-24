@@ -94,7 +94,22 @@ $ brew install swig
    results in faster hashing via hardware on embedded platforms such as ESP32.
    Note that the caller must ensure that ``sdkconfig.h`` and ``soc/soc_caps.h``
    are available when compiling, e.g. by setting the `CFLAGS` environment variable
-   before calling configure. (default: no)
+   before calling configure. This option targets the legacy Mbed TLS 2.x/3.x
+   API as shipped with ESP-IDF 5.x; for ESP-IDF 6.x and Mbed TLS 4.x use
+   `--enable-psa-crypto` instead. (default: no)
+- `--enable-psa-crypto`. Use the [PSA Crypto API](https://arm-software.github.io/psa-api/crypto/)
+   for SHA-256/SHA-512 hashing, as provided by TF-PSA-Crypto 1.0 / Mbed TLS 4.x,
+   Mbed TLS 2.28+/3.x, and ESP-IDF 6.x. This enables hardware accelerated hashing
+   via the platform's PSA drivers. Mutually exclusive with `--enable-mbed-tls`.
+   `wally_init()` calls `psa_crypto_init()`; callers that hash before calling
+   `wally_init()` must call `psa_crypto_init()` themselves (ESP-IDF does so at
+   boot). As the internal hashing API cannot report errors, a failed PSA hash
+   operation (e.g. a PSA driver failing to allocate memory) calls `abort()`.
+   Mbed TLS 3.6+ and TF-PSA-Crypto copy every hash input to the heap unless
+   `MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS` is defined (ESP-IDF defines it);
+   consider defining it if wally is not called across a trust boundary.
+   Amalgamation builds should define `HAVE_PSA_CRYPTO_H` instead of
+   `HAVE_MBEDTLS_SHA256_H`/`HAVE_MBEDTLS_SHA512_H`. (default: no)
 - `--enable-coverage`. Enables code coverage (default: no) Note that you will
    need [lcov](http://ltp.sourceforge.net/coverage/lcov.php) installed to
    build with this option enabled and generate coverage reports.

@@ -9,3 +9,4 @@ URL: https://github.com/ElementsProject/libwally-core
 Version: @PACKAGE_VERSION@
 Cflags: -I${includedir}
 Libs: -L${libdir} -lwallycore
+Libs.private: @LIBS@

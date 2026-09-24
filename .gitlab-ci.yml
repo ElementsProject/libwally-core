@@ -1,5 +1,8 @@
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
+  # PSA Crypto jobs need libmbedtls-dev. contrib/*_deps.sh install it, but
+  # images built before it was added lack it: install it if missing.
+  INSTALL_MBEDTLS: dpkg -s libmbedtls-dev >/dev/null 2>&1 || (apt-get update -qq && apt-get install -yqq --no-install-recommends libmbedtls-dev)
 
 stages:
   - test
@@ -91,9 +94,34 @@ test_amalgamation:
     matrix:
       - CC: [gcc, clang ]
         BUILD_ARGS: [ "", -DBUILD_MINIMAL, -DBUILD_ELEMENTS, -DBUILD_ELEMENTS -DBUILD_MINIMAL ]
+      - CC: [gcc, clang ]
+        BUILD_ARGS: [ -DHAVE_PSA_CRYPTO_H, -DHAVE_PSA_CRYPTO_H -DBUILD_ELEMENTS -DBUILD_MINIMAL ]
+        LINK_ARGS: [ -lmbedcrypto ]
   script:
+    - if [ -n "$LINK_ARGS" ]; then eval "$INSTALL_MBEDTLS"; fi
     - touch config.h
-    - $CC $BUILD_ARGS -Wall -W -Wextra -Werror -Wno-unknown-attributes -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c
+    - $CC $BUILD_ARGS -Wall -W -Wextra -Werror -Wno-unknown-attributes -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c $LINK_ARGS
+
+test_psa_crypto:
+  extends: .test_template
+  script:
+    - eval "$INSTALL_MBEDTLS"
+    - ./tools/cleanup.sh && ./tools/autogen.sh
+    - CFLAGS='-Wall -W -Wextra -Werror' ./configure --enable-psa-crypto --enable-export-all --enable-swig-python --disable-swig-java --enable-shared --disable-static
+    - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
+    - make check V=1
+    # PSA keeps global state that is reachable at exit by design; fail only on definite leaks
+    - for t in $(ls src/.libs/test_* | egrep -v '_clear|xml|json' | tr '\n' ' '); do LD_LIBRARY_PATH=./src/.libs/ valgrind --tool=memcheck --leak-check=full --errors-for-leak-kinds=definite --error-exitcode=1 --track-origins=true $t; done
+
+test_esp_idf_psa_crypto:
+  stage: test
+  image: espressif/idf:v6.1
+  tags:
+    - ga
+  script:
+    - cd contrib/esp-idf-psa-check
+    - idf.py set-target esp32s3
+    - idf.py build
 
 test_mingw_static_build:
   extends: .test_template
@@ -113,7 +141,7 @@ test_no_elements_abi:
 build_wally_release_files:
   extends: .test_template
   stage: release
-  needs: [test_mingw_static_build,test_with_valgrind,test_asan_ubsan_gcc,test_scan_build_clang,test_cmake,test_amalgamation]
+  needs: [test_mingw_static_build,test_with_valgrind,test_asan_ubsan_gcc,test_scan_build_clang,test_cmake,test_amalgamation,test_psa_crypto]
   artifacts:
     expire_in: 7 days
     name: wallycore-bindings

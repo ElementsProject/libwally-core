@@ -34,7 +34,7 @@ windows_packages=
 if [ -z "$skip_windows" ]; then
     windows_packages="g++-mingw-w64-x86-64"
 fi
-apt install --no-install-recommends unzip autoconf automake autotools-dev pkg-config build-essential libtool python3{,-dev,-pip,-virtualenv} python{,-dev}-is-python3 clang{,-format,-tidy} git swig curl cmake libssl-dev libtool-bin $java_packages curl $windows_packages valgrind jq -yqq
+apt install --no-install-recommends unzip autoconf automake autotools-dev pkg-config build-essential libtool python3{,-dev,-pip,-virtualenv} python{,-dev}-is-python3 clang{,-format,-tidy} git swig curl cmake libssl-dev libmbedtls-dev libtool-bin $java_packages curl $windows_packages valgrind jq -yqq
 
 if [ -z "$skip_java" ]; then
     update-java-alternatives -s $(basename ${JAVA_HOME})

@@ -14,6 +14,9 @@
 #include <assert.h>
 #endif
 #include <string.h>
+#ifdef CCAN_CRYPTO_SHA512_USE_PSA
+#include <stdlib.h>
+#endif
 
 #ifdef CCAN_CRYPTO_SHA512_USE_OPENSSL
 static void invalidate_sha512(struct sha512_ctx *ctx)
@@ -60,6 +63,37 @@ inline void sha512_done(struct sha512_ctx *ctx, struct sha512* res)
 {
 	mbedtls_sha512_finish(&ctx->c, res->u.u8);
 	mbedtls_sha512_free(&ctx->c);
+}
+#elif defined(CCAN_CRYPTO_SHA512_USE_PSA)
+/* The ccan hash API cannot report errors, and continuing with a wrong
+ * hash could silently produce incorrect seeds, keys or signature hashes.
+ * Any PSA failure (e.g. a driver failing to allocate its context) is
+ * therefore fatal.
+ */
+void sha512_init(struct sha512_ctx *ctx)
+{
+	/* ctx must not be an active operation: PSA drivers may hold
+	 * state that only sha512_done() releases. Zero-filling is one of
+	 * the initializations the PSA API permits, and unlike
+	 * psa_hash_operation_init() it needs no on-stack temporary. */
+	memset(&ctx->op, 0, sizeof(ctx->op));
+	if (psa_hash_setup(&ctx->op, PSA_ALG_SHA_512) != PSA_SUCCESS)
+		abort();
+}
+
+void sha512_update(struct sha512_ctx *ctx, const void *p, size_t size)
+{
+	if (psa_hash_update(&ctx->op, p, size) != PSA_SUCCESS)
+		abort();
+}
+
+void sha512_done(struct sha512_ctx *ctx, struct sha512 *res)
+{
+	size_t len = 0;
+
+	if (psa_hash_finish(&ctx->op, res->u.u8, sizeof(res->u.u8), &len) != PSA_SUCCESS ||
+	    len != sizeof(res->u.u8))
+		abort();
 }
 #else
 static void invalidate_sha512(struct sha512_ctx *ctx)
@@ -274,6 +308,19 @@ void sha512_done(struct sha512_ctx *ctx, struct sha512 *res)
 }
 #endif /* CCAN_CRYPTO_SHA512_USE_OPENSSL */
 
+#ifdef CCAN_CRYPTO_SHA512_USE_PSA
+void sha512(struct sha512 *sha, const void *p, size_t size)
+{
+	/* psa_hash_compute() may reject a NULL input, even for zero bytes */
+	static const unsigned char dummy = 0;
+	size_t len = 0;
+
+	if (psa_hash_compute(PSA_ALG_SHA_512, size ? p : (const void *)&dummy, size,
+			     sha->u.u8, sizeof(sha->u.u8), &len) != PSA_SUCCESS ||
+	    len != sizeof(sha->u.u8))
+		abort(); /* Fatal: see sha512_init() */
+}
+#else
 void sha512(struct sha512 *sha, const void *p, size_t size)
 {
 	struct sha512_ctx ctx;
@@ -283,3 +330,4 @@ void sha512(struct sha512 *sha, const void *p, size_t size)
 	sha512_done(&ctx, sha);
 	CCAN_CLEAR_MEMORY(&ctx, sizeof(ctx));
 }
+#endif /* CCAN_CRYPTO_SHA512_USE_PSA */

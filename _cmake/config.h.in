@@ -20,10 +20,13 @@
 #cmakedefine HAVE_INLINE_ASM @HAVE_INLINE_ASM@
 
 /* Define to 1 if you have the <mbedtls/sha256.h,> header file. */
-#cmakedefine HAVE_MBEDTLS_SHA256_H_ @HAVE_MBEDTLS_SHA256_H@
+#cmakedefine HAVE_MBEDTLS_SHA256_H @HAVE_MBEDTLS_SHA256_H@
 
 /* Define to 1 if you have the <mbedtls/sha512.h> header file. */
 #cmakedefine HAVE_MBEDTLS_SHA512_H @HAVE_MBEDTLS_SHA512_H@
+
+/* Define to 1 if you have the <psa/crypto.h> header file. */
+#cmakedefine HAVE_PSA_CRYPTO_H @HAVE_PSA_CRYPTO_H@
 
 /* Define to 1 if you have the `memset_s' function. */
 #cmakedefine HAVE_MEMSET_S @HAVE_MEMSET_S@

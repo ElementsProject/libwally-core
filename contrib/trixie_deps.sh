@@ -36,7 +36,7 @@ windows_packages=
 if [ -z "$skip_windows" ]; then
     windows_packages="g++-mingw-w64-x86-64"
 fi
-apt install --no-install-recommends unzip autoconf automake autotools-dev pkg-config build-essential libtool python3{,-dev,-pip,-virtualenv} python{,-dev}-is-python3 clang{,-format,-tidy} git swig curl cmake libssl-dev libtool-bin $jdk_package $jre_package $windows_packages valgrind jq -yqq
+apt install --no-install-recommends unzip autoconf automake autotools-dev pkg-config build-essential libtool python3{,-dev,-pip,-virtualenv} python{,-dev}-is-python3 clang{,-format,-tidy} git swig curl cmake libssl-dev libmbedtls-dev libtool-bin $jdk_package $jre_package $windows_packages valgrind jq -yqq
 
 # Note --break-system-packages to allow installing our requirements system-wide
 pip install valgrind-codequality gcovr -r contrib/requirements.txt --break-system-packages
