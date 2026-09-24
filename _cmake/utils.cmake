@@ -13,8 +13,10 @@ function(generate_config_file)
         "int main(void) {int a = 42; int *pnt = &a; __asm__ __volatile__ (\"\" : : \"r\"(pnt) : \"memory\");}"
         HAVE_INLINE_ASM
     )
-    check_include_file("mbedtls/sha256.h" HAVE_MBEDTLS_SHA256_H)
-    check_include_file("mbedtls/sha512.h" HAVE_MBEDTLS_SHA512_H)
+    if(WALLYCORE_ENABLE_MBED_TLS)
+        check_include_file("mbedtls/sha256.h" HAVE_MBEDTLS_SHA256_H)
+        check_include_file("mbedtls/sha512.h" HAVE_MBEDTLS_SHA512_H)
+    endif()
     check_function_exists("memset_s" HAVE_MEMSET_S)
     check_function_exists("mmap" HAVE_MMAP)
     check_function_exists("posix_memalign" HAVE_POSIX_MEMALIGN)

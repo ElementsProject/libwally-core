@@ -14,6 +14,7 @@ option(WALLYCORE_INSTALL "Enable install" OFF)
 option(WALLYCORE_COVERAGE "Enable coverage" OFF)
 option(WALLYCORE_BUILD_ELEMENTS "Build elements" ON)
 option(WALLYCORE_ENABLE_FUZZING "Enable fuzzing support" OFF)
+option(WALLYCORE_ENABLE_MBED_TLS "Use mbed-tls hashing functions where available" OFF)
 option(WALLYCORE_ENABLE_ADDRESS_SANITIZER "Enable address sanitizer" OFF)
 option(WALLYCORE_ENABLE_UB_SANITIZER "Enable undefined behavior sanitizer" OFF)
 
