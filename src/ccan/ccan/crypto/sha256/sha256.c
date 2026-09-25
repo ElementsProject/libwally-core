@@ -39,10 +39,11 @@ void sha256_update(struct sha256_ctx *ctx, const void *p, size_t size)
 	SHA256_Update(&ctx->c, p, size);
 }
 
-void sha256_done(struct sha256_ctx *ctx, struct sha256 *res)
+bool sha256_done(struct sha256_ctx *ctx, struct sha256 *res)
 {
-	SHA256_Final(res->u.u8, &ctx->c);
+	bool ret = SHA256_Final(res->u.u8, &ctx->c) == 1;
 	invalidate_sha256(ctx);
+	return ret;
 }
 #else
 /* The portable SHA-256 compression function. Used by the builtin backend,
@@ -185,10 +186,11 @@ inline void sha256_update(struct sha256_ctx *ctx, const void *p, size_t size)
 	mbedtls_sha256_update(&ctx->c, p, size);
 }
 
-inline void sha256_done(struct sha256_ctx *ctx, struct sha256* res)
+inline bool sha256_done(struct sha256_ctx *ctx, struct sha256* res)
 {
 	mbedtls_sha256_finish(&ctx->c, res->u.u8);
 	mbedtls_sha256_free(&ctx->c);
+	return true;
 }
 void sha256_optimize(void)
 {
@@ -294,7 +296,7 @@ void sha256_update(struct sha256_ctx *ctx, const void *p, size_t size)
 	add(ctx, p, size);
 }
 
-void sha256_done(struct sha256_ctx *ctx, struct sha256 *res)
+bool sha256_done(struct sha256_ctx *ctx, struct sha256 *res)
 {
 	static const unsigned char pad[64] = {0x80};
 	uint64_t sizedesc;
@@ -308,18 +310,21 @@ void sha256_done(struct sha256_ctx *ctx, struct sha256 *res)
 	for (i = 0; i < sizeof(ctx->s) / sizeof(ctx->s[0]); i++)
 		res->u.u32[i] = cpu_to_be32(ctx->s[i]);
 	invalidate_sha256(ctx);
+	return true;
 }
 #endif /* CCAN_CRYPTO_SHA256_USE_MBEDTLS */
 #endif
 
-void sha256(struct sha256 *sha, const void *p, size_t size)
+bool sha256(struct sha256 *sha, const void *p, size_t size)
 {
 	struct sha256_ctx ctx;
+	bool ret;
 
 	sha256_init(&ctx);
 	sha256_update(&ctx, p, size);
-	sha256_done(&ctx, sha);
+	ret = sha256_done(&ctx, sha);
 	CCAN_CLEAR_MEMORY(&ctx, sizeof(ctx));
+	return ret;
 }
 	
 void sha256_u8(struct sha256_ctx *ctx, uint8_t v)

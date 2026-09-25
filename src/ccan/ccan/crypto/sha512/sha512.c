@@ -39,10 +39,11 @@ void sha512_update(struct sha512_ctx *ctx, const void *p, size_t size)
 	SHA512_Update(&ctx->c, p, size);
 }
 
-void sha512_done(struct sha512_ctx *ctx, struct sha512 *res)
+bool sha512_done(struct sha512_ctx *ctx, struct sha512 *res)
 {
-	SHA512_Final(res->u.u8, &ctx->c);
+	bool ret = SHA512_Final(res->u.u8, &ctx->c) == 1;
 	invalidate_sha512(ctx);
+	return ret;
 }
 #elif defined(CCAN_CRYPTO_SHA512_USE_MBEDTLS)
 inline void sha512_init(struct sha512_ctx *ctx)
@@ -56,10 +57,11 @@ inline void sha512_update(struct sha512_ctx *ctx, const void *p, size_t size)
 	mbedtls_sha512_update(&ctx->c, p, size);
 }
 
-inline void sha512_done(struct sha512_ctx *ctx, struct sha512* res)
+inline bool sha512_done(struct sha512_ctx *ctx, struct sha512* res)
 {
 	mbedtls_sha512_finish(&ctx->c, res->u.u8);
 	mbedtls_sha512_free(&ctx->c);
+	return true;
 }
 #else
 static void invalidate_sha512(struct sha512_ctx *ctx)
@@ -256,7 +258,7 @@ void sha512_update(struct sha512_ctx *ctx, const void *p, size_t size)
 	add(ctx, p, size);
 }
 
-void sha512_done(struct sha512_ctx *ctx, struct sha512 *res)
+bool sha512_done(struct sha512_ctx *ctx, struct sha512 *res)
 {
 	static const unsigned char pad[128] = { 0x80 };
 	uint64_t sizedesc[2] = { 0, 0 };
@@ -271,15 +273,18 @@ void sha512_done(struct sha512_ctx *ctx, struct sha512 *res)
 	for (i = 0; i < sizeof(ctx->s) / sizeof(ctx->s[0]); i++)
 		res->u.u64[i] = cpu_to_be64(ctx->s[i]);
 	invalidate_sha512(ctx);
+	return true;
 }
 #endif /* CCAN_CRYPTO_SHA512_USE_OPENSSL */
 
-void sha512(struct sha512 *sha, const void *p, size_t size)
+bool sha512(struct sha512 *sha, const void *p, size_t size)
 {
 	struct sha512_ctx ctx;
+	bool ret;
 
 	sha512_init(&ctx);
 	sha512_update(&ctx, p, size);
-	sha512_done(&ctx, sha);
+	ret = sha512_done(&ctx, sha);
 	CCAN_CLEAR_MEMORY(&ctx, sizeof(ctx));
+	return ret;
 }

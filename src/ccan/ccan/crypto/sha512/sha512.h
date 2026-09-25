@@ -2,6 +2,7 @@
 #define CCAN_CRYPTO_SHA512_H
 /* BSD-MIT - see LICENSE file for details */
 #include "config.h"
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -43,8 +44,12 @@ struct sha512 {
  *
  * The bytes pointed to by @p is SHA512 hashed into @sha512.  This is
  * equivalent to sha512_init(), sha512_update() then sha512_done().
+ *
+ * Returns false if hashing failed, in which case the contents of @sha512
+ * are unspecified. Only backends that can fail at runtime (such as
+ * hardware accelerated ones) return false.
  */
-void sha512(struct sha512 *sha, const void *p, size_t size);
+bool sha512(struct sha512 *sha, const void *p, size_t size);
 
 /**
  * struct sha512_ctx - structure to store running context for sha512
@@ -75,7 +80,7 @@ struct sha512_ctx {
  * hashed before.
  *
  * Example:
- * static void hash_all(const char **arr, struct sha512 *hash)
+ * static bool hash_all(const char **arr, struct sha512 *hash)
  * {
  *	size_t i;
  *	struct sha512_ctx ctx;
@@ -83,7 +88,7 @@ struct sha512_ctx {
  *	sha512_init(&ctx);
  *	for (i = 0; arr[i]; i++)
  *		sha512_update(&ctx, arr[i], strlen(arr[i]));
- *	sha512_done(&ctx, hash);
+ *	return sha512_done(&ctx, hash);
  * }
  */
 void sha512_init(struct sha512_ctx *ctx);
@@ -95,14 +100,14 @@ void sha512_init(struct sha512_ctx *ctx);
  * of sha512_init()).
  *
  * Example:
- * static void hash_all(const char **arr, struct sha512 *hash)
+ * static bool hash_all(const char **arr, struct sha512 *hash)
  * {
  *	size_t i;
  *	struct sha512_ctx ctx = SHA512_INIT;
  *
  *	for (i = 0; arr[i]; i++)
  *		sha512_update(&ctx, arr[i], strlen(arr[i]));
- *	sha512_done(&ctx, hash);
+ *	return sha512_done(&ctx, hash);
  * }
  */
 #ifdef CCAN_CRYPTO_SHA512_USE_OPENSSL
@@ -140,7 +145,12 @@ void sha512_update(struct sha512_ctx *ctx, const void *p, size_t size);
  *
  * Note that @ctx is *destroyed* by this, and must be reinitialized.
  * To avoid that, pass a copy instead.
+ *
+ * Returns false if hashing failed, in which case the contents of @res
+ * are unspecified. This includes failures in sha512_init() and
+ * sha512_update(), which cannot report errors themselves: backends that
+ * can fail must remember the failure until sha512_done() is called.
  */
-void sha512_done(struct sha512_ctx *sha512, struct sha512 *res);
+bool sha512_done(struct sha512_ctx *sha512, struct sha512 *res);
 
 #endif /* CCAN_CRYPTO_SHA512_H */

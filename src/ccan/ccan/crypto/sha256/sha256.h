@@ -2,6 +2,7 @@
 #define CCAN_CRYPTO_SHA256_H
 /* BSD-MIT - see LICENSE file for details */
 #include "config.h"
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -61,8 +62,12 @@ void sha256_sw_transform(uint32_t *s, const uint32_t *chunk, size_t blocks);
  *
  * The bytes pointed to by @p is SHA256 hashed into @sha256.  This is
  * equivalent to sha256_init(), sha256_update() then sha256_done().
+ *
+ * Returns false if hashing failed, in which case the contents of @sha256
+ * are unspecified. Only backends that can fail at runtime (such as
+ * hardware accelerated ones) return false.
  */
-void sha256(struct sha256 *sha, const void *p, size_t size);
+bool sha256(struct sha256 *sha, const void *p, size_t size);
 
 /**
  * struct sha256_ctx - structure to store running context for sha256
@@ -93,7 +98,7 @@ struct sha256_ctx {
  * hashed before.
  *
  * Example:
- * static void hash_all(const char **arr, struct sha256 *hash)
+ * static bool hash_all(const char **arr, struct sha256 *hash)
  * {
  *	size_t i;
  *	struct sha256_ctx ctx;
@@ -101,7 +106,7 @@ struct sha256_ctx {
  *	sha256_init(&ctx);
  *	for (i = 0; arr[i]; i++)
  *		sha256_update(&ctx, arr[i], strlen(arr[i]));
- *	sha256_done(&ctx, hash);
+ *	return sha256_done(&ctx, hash);
  * }
  */
 void sha256_init(struct sha256_ctx *ctx);
@@ -113,14 +118,14 @@ void sha256_init(struct sha256_ctx *ctx);
  * of sha256_init()).
  *
  * Example:
- * static void hash_all(const char **arr, struct sha256 *hash)
+ * static bool hash_all(const char **arr, struct sha256 *hash)
  * {
  *	size_t i;
  *	struct sha256_ctx ctx = SHA256_INIT;
  *
  *	for (i = 0; arr[i]; i++)
  *		sha256_update(&ctx, arr[i], strlen(arr[i]));
- *	sha256_done(&ctx, hash);
+ *	return sha256_done(&ctx, hash);
  * }
  */
 #ifdef CCAN_CRYPTO_SHA256_USE_OPENSSL
@@ -155,8 +160,13 @@ void sha256_update(struct sha256_ctx *ctx, const void *p, size_t size);
  *
  * Note that @ctx is *destroyed* by this, and must be reinitialized.
  * To avoid that, pass a copy instead.
+ *
+ * Returns false if hashing failed, in which case the contents of @res
+ * are unspecified. This includes failures in sha256_init() and
+ * sha256_update(), which cannot report errors themselves: backends that
+ * can fail must remember the failure until sha256_done() is called.
  */
-void sha256_done(struct sha256_ctx *sha256, struct sha256 *res);
+bool sha256_done(struct sha256_ctx *sha256, struct sha256 *res);
 
 /* Add various types to an SHA256 hash */
 void sha256_u8(struct sha256_ctx *ctx, uint8_t v);
