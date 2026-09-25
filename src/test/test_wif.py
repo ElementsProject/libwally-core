@@ -69,6 +69,7 @@ class WIFTests(unittest.TestCase):
             (None, PREFIX, pub, pub_len),  # Empty wif
             (PRV_WIF_COMPRESS, 0x100, pub, pub_len),  # Empty wif
             (PRV_WIF_COMPRESS, PREFIX, None, pub_len),  # Empty pubkey
+            (utf8('0'), PREFIX, pub, pub_len),  # Invalid base58
         ]
 
         for args in invalid_args:

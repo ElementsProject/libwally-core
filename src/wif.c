@@ -121,7 +121,7 @@ int wally_wif_to_public_key(const char *wif,
 
     ret = is_uncompressed(wif, buf, sizeof(buf), &uncompressed);
 
-    if (buf[0] != prefix || ret) {
+    if (ret != WALLY_OK || buf[0] != prefix) {
         wally_clear(buf, sizeof(buf));
         return WALLY_EINVAL; /** Prefix does not match or invalid format*/
     }
