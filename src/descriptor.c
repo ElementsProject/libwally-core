@@ -337,6 +337,20 @@ static const struct addr_ver_t *addr_ver_from_family(
     return addr_ver; /* Found */
 }
 
+/* Elements expressions cannot be used on a Bitcoin network. Elements also
+ * tweaks taproot keys with different tagged hashes, so a Bitcoin tr()
+ * expression cannot be used on an Elements network */
+static bool is_wrong_network(const ms_ctx *ctx,
+                             const struct addr_ver_t *addr_ver)
+{
+    const bool is_elements = ctx->features & WALLY_MS_IS_ELEMENTS;
+    if (!addr_ver)
+        return false;
+    if (!addr_ver->blech32[0])
+        return is_elements;
+    return (ctx->features & WALLY_MS_IS_TAPROOT) && !is_elements;
+}
+
 /* Function prototype */
 static const struct ms_builtin_t *builtin_get(const ms_node *node);
 static int generate_script(ms_ctx *ctx, ms_node *node,
@@ -3618,6 +3632,8 @@ int wally_descriptor_parse(const char *miniscript,
         else
             ret = analyze_miniscript(ctx, ctx->src, ctx->src_len, kind,
                                      flags, NULL, NULL, &ctx->top_node);
+        if (ret == WALLY_OK && is_wrong_network(ctx, ctx->addr_ver))
+            ret = WALLY_EINVAL; /* Bitcoin/Elements expression/network mismatch */
         if (ret == WALLY_OK)
             ret = node_generation_size(ctx->top_node, &ctx->script_len);
         if (ret == WALLY_OK && (flags & WALLY_MINISCRIPT_POLICY_TEMPLATE)) {
@@ -3872,6 +3888,8 @@ int wally_descriptor_get_network(const struct wally_descriptor *descriptor,
 int wally_descriptor_set_network(struct wally_descriptor *descriptor,
                                  uint32_t network)
 {
+    const struct addr_ver_t *addr_ver = addr_ver_from_network(network);
+
      /* Allow setting a non-NONE network only if there isn't one already */
     if (!descriptor || network == WALLY_NETWORK_NONE)
         return WALLY_EINVAL;
@@ -3879,8 +3897,10 @@ int wally_descriptor_set_network(struct wally_descriptor *descriptor,
         return WALLY_OK; /* No-op */
     if (descriptor->addr_ver)
         return WALLY_EINVAL; /* Already have a network */
-    descriptor->addr_ver = addr_ver_from_network(network);
-    return descriptor->addr_ver ? WALLY_OK : WALLY_EINVAL;
+    if (!addr_ver || is_wrong_network(descriptor, addr_ver))
+        return WALLY_EINVAL; /* Unknown or mismatched network */
+    descriptor->addr_ver = addr_ver;
+    return WALLY_OK;
 }
 
 static int descriptor_uint32(const void *descriptor,

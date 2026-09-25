@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import random
 import unittest
 from util import *
 
@@ -180,6 +181,64 @@ class DescriptorTests(unittest.TestCase):
         self.assertEqual(ret, WALLY_OK)
         self.assertEqual(addrs[0], utf8('3ETTzkMnuA4PguZeWYtdCT6Rva3yTHATyP'))
         wally_descriptor_free(d)
+
+        # Bitcoin taproot cannot be used on Elements networks, since
+        # Elements tweaks taproot keys differently
+        k = '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'
+        for descriptor in [f'tr({k})', f'tr({k},pk({k}))']:
+            parse = lambda n, f: wally_descriptor_parse(descriptor, None, n, f, d)
+            for network in [NETWORK_LIQUID, NETWORK_LIQUID_REG]:
+                self.assertEqual(parse(network, 0), WALLY_EINVAL)
+            self.assertEqual(parse(NETWORK_NONE, 0), WALLY_OK)
+            ret = wally_descriptor_set_network(d, NETWORK_LIQUID)
+            self.assertEqual(ret, WALLY_EINVAL)
+            # Network can only be set once, so pick at random
+            network = random.choice([NETWORK_BTC_MAIN, NETWORK_BTC_TEST, NETWORK_BTC_REG])
+            ret = wally_descriptor_set_network(d, network)
+            self.assertEqual(ret, WALLY_OK)
+            wally_descriptor_free(d)
+            if wally_is_elements_build()[1]:
+                # Parsing as elements or the el-prefixed version works
+                explicit_cases = [(descriptor, AS_ELEMENTS), ('el' + descriptor, 0)]
+                for descriptor, flags in explicit_cases:
+                    ret = wally_descriptor_parse(descriptor, None,
+                                                 NETWORK_LIQUID, flags, d)
+                    self.assertEqual(ret, WALLY_OK)
+                    wally_descriptor_free(d)
+        # Non-taproot descriptors are unaffected
+        ret = wally_descriptor_parse(f'wpkh({k})', None, NETWORK_LIQUID, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        wally_descriptor_free(d)
+
+        # Elements descriptors cannot be used on Bitcoin networks
+        if wally_is_elements_build()[1]:
+            s = 'b2396b3ee20509cdb64fe24180a14a72dbd671728eaa49bac69d2bdecb5f5a04'
+            for descriptor, flags in [
+                (f'ct(slip77({s}),elwpkh({k}))', 0),
+                (f'ct(slip77({s}),elpkh({k}))',  0),
+                (f'ct(slip77({s}),tr({k}))',     0),
+                (f'ct({k},elwpkh({k}))',         0),
+                (f'ct({k},wpkh({k}))',           0),
+                (f'elwpkh({k})',                 0),
+                (f'eltr({k})',                   0),
+                (f'tr({k})',                     AS_ELEMENTS)
+            ]:
+                parse = lambda n: wally_descriptor_parse(descriptor, None, n, flags, d)
+                # Parsing as Liquid is OK
+                self.assertEqual(parse(NETWORK_LIQUID), WALLY_OK)
+                wally_descriptor_free(d)
+                # Parsing as Bitcoin fails
+                for network in [NETWORK_BTC_MAIN, NETWORK_BTC_TEST, NETWORK_BTC_REG]:
+                    self.assertEqual(parse(network), WALLY_EINVAL)
+                # Parse without a network: We can then only set the network to Liquid
+                self.assertEqual(parse(NETWORK_NONE), WALLY_OK)
+                for network in [NETWORK_BTC_MAIN, NETWORK_BTC_TEST, NETWORK_BTC_REG]:
+                    ret = wally_descriptor_set_network(d, network)
+                    self.assertEqual(ret, WALLY_EINVAL)
+                network = random.choice([NETWORK_LIQUID, NETWORK_LIQUID_REG])
+                ret = wally_descriptor_set_network(d, network)
+                self.assertEqual(ret, WALLY_OK)
+                wally_descriptor_free(d)
 
     def test_descriptor_to_addresses(self):
         addrs_len = 64
