@@ -43,7 +43,9 @@ static const uint8_t PSET_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
  * indices can never be valid on BTC either */
 #define MASK_INDEX(index) ((index) & WALLY_TX_INDEX_MASK)
 
-#define TR_MAX_MERKLE_PATH_LEN 128u
+/* BIP-371 does not limit the number of tapleaf hashes per key. Limit
+ * to 512 hashes until a need is demonstrated for a larger limit */
+#define PSBT_TAPLEAF_HASHES_MAX_LEN (512u * SHA256_LEN)
 
 #ifdef BUILD_ELEMENTS
 /* The PSET key prefix is the same as the first 4 PSET magic bytes */
@@ -237,6 +239,9 @@ int wally_psbt_get_input_signature_type(const struct wally_psbt *psbt,
                                      child_path, child_path_len); \
     }
 
+static int map_leaf_hashes_verify(const unsigned char *key, size_t key_len,
+                                  const unsigned char *val, size_t val_len);
+
 /* Add a taproot keypath to parent structs keypaths member */
 #define ADD_TAP_KEYPATH(PARENT) \
     int PARENT ## _taproot_keypath_add(struct PARENT *parent, \
@@ -246,7 +251,7 @@ int wally_psbt_get_input_signature_type(const struct wally_psbt *psbt,
                                        const uint32_t *child_path, size_t child_path_len) { \
         int ret; \
         if (!parent) return WALLY_EINVAL; \
-        ret = wally_merkle_path_xonly_public_key_verify(pub_key, pub_key_len, tapleaf_hashes, tapleaf_hashes_len); \
+        ret = map_leaf_hashes_verify(pub_key, pub_key_len, tapleaf_hashes, tapleaf_hashes_len); \
         if (ret == WALLY_OK) \
             ret = wally_map_keypath_add(&parent->taproot_leaf_paths, \
                                          pub_key, pub_key_len, \
@@ -525,7 +530,7 @@ static int map_leaf_hashes_verify(const unsigned char *key, size_t key_len,
     int ret = wally_ec_xonly_public_key_verify(key, key_len);
     if (ret == WALLY_OK) {
         if (BYTES_INVALID(val, val_len) || (val_len && val_len % SHA256_LEN) ||
-            val_len > TR_MAX_MERKLE_PATH_LEN * SHA256_LEN)
+            val_len > PSBT_TAPLEAF_HASHES_MAX_LEN)
             ret = WALLY_EINVAL;
     }
     return ret;
