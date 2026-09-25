@@ -148,6 +148,8 @@ class TransactionTests(unittest.TestCase):
             self.assertEqual(WALLY_EINVAL, wally_tx_add_raw_output(*args))
             # Testing only wally_tx_add_raw_output, because it calls wally_tx_add_output and
             # wally_tx_get_total_output_satoshi
+        self.assertEqual(WALLY_EINVAL, wally_tx_add_output(wally_tx(), None)) # NULL output
+        self.assertEqual(WALLY_EINVAL, wally_tx_add_output_at(wally_tx(), 0, None)) # NULL output
 
         # Remove
         for args in [

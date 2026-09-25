@@ -1426,7 +1426,7 @@ int wally_tx_add_output_at(struct wally_tx *tx, uint32_t index,
 {
     uint64_t total;
     int ret;
-    const bool is_elements = output->features & WALLY_TX_IS_ELEMENTS;
+    const bool is_elements = output && (output->features & WALLY_TX_IS_ELEMENTS);
 
     if (!is_valid_tx(tx) || index > tx->num_outputs)
         return WALLY_EINVAL;
