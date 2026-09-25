@@ -2148,8 +2148,105 @@ static const taproot_descriptor_test g_taproot_cases[] = {
         /* k1,k2,k3 inside multi_a() (as x-only) */
          { TR_K3("8bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048", "a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7", "b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284" ) },
          { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }
-    }}
-    /* FIXME: Elements test cases */
+    }},
+#ifdef BUILD_ELEMENTS
+    /* Elements taptrees use the "/elements" tagged hashes and the Elements
+     * tapscript leaf version 0xc4 (not 0xc0). Expected values are computed
+     * independently of wally following Elements' taproot_construct().
+     */
+    {{
+        "eltr - single leaf pk",
+        "eltr(x_only,pk(key_1))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0,
+        "512009d43e325715a7bf0c323f770430e6b2e365ca6a87eb9b86d3c695ef4f068300",
+        "", VARS_STD
+    },
+    3,
+    "b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e",
+    "3796c4fa9bdb7a19f38edcce3e908cc7a364c70e21d15b3f1c45dde8e45963b7",
+    {
+        /* scripts */
+        "208bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac",
+        "", "", "", "",
+    }, {
+        /* hashes */
+        "3796c4fa9bdb7a19f38edcce3e908cc7a364c70e21d15b3f1c45dde8e45963b7",
+        "", "", "", "",
+    }, {
+        /* control blocks: 0xc4 | odd output key parity */
+        "c5b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e",
+        "", "", "", "",
+    }, {
+        /* leaf_keys */
+        { TR_K1("8bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048") },
+        { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }
+    }},
+    {{
+        "eltr - tr() as elements - single leaf pk",
+        "tr(x_only,pk(key_1))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, WALLY_MINISCRIPT_AS_ELEMENTS,
+        "512009d43e325715a7bf0c323f770430e6b2e365ca6a87eb9b86d3c695ef4f068300",
+        "", VARS_STD
+    },
+    3,
+    "b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e",
+    "3796c4fa9bdb7a19f38edcce3e908cc7a364c70e21d15b3f1c45dde8e45963b7",
+    {
+        /* scripts */
+        "208bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac",
+        "", "", "", "",
+    }, {
+        /* hashes */
+        "3796c4fa9bdb7a19f38edcce3e908cc7a364c70e21d15b3f1c45dde8e45963b7",
+        "", "", "", "",
+    }, {
+        /* control blocks */
+        "c5b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e",
+        "", "", "", "",
+    }, {
+        /* leaf_keys */
+        { TR_K1("8bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048") },
+        { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }
+    }},
+    {{
+        "eltr - 3 leaf right balanced",
+        "eltr(x_only,{pk(key_1),{pk(key_2),pk(key_3)}})",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0,
+        "5120d08a01f83338d5af74fa32802da45efa9836b64fd0e491fc56673081e567f1cb",
+        "", VARS_STD
+    },
+    5,
+    "b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e",
+    "7aca839053aa7171103ecf85b7a1f249f52f1707e7086f36ef131a655a5a687d",
+    {
+        /* scripts */
+        "208bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac", /* [k1] CHECKSIG */
+        "20a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac", /* [k2] CHECKSIG */
+        "20b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac", /* [k3] CHECKSIG */
+        "", "",
+    }, {
+        /* hashes */
+        "3796c4fa9bdb7a19f38edcce3e908cc7a364c70e21d15b3f1c45dde8e45963b7", /* k1 */
+        "ab10947edf94833e249d1841b3a2732618135e500df66a93584232dcbf7a211b", /* k2 */
+        "c334a00c7dda9e85ebb762ca8a4c457dcfd00c2c2a77a09621625ef55fe0437c", /* k3 */
+        "", "",
+    }, {
+        /* control blocks: 0xc4 | even output key parity */
+        /* /LHS: [internal_key] + branch(k2,k3) */
+        "c4b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0eee914a8c1458861503e47da32d83caaec61e9108a7daf5982276750cc0f35278",
+        /* /RHS/LHS: [internal_key] + k3 + k1 */
+        "c4b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0ec334a00c7dda9e85ebb762ca8a4c457dcfd00c2c2a77a09621625ef55fe0437c3796c4fa9bdb7a19f38edcce3e908cc7a364c70e21d15b3f1c45dde8e45963b7",
+        /* /RHS/RHS: [internal_key] + k2 + k1 */
+        "c4b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0eab10947edf94833e249d1841b3a2732618135e500df66a93584232dcbf7a211b3796c4fa9bdb7a19f38edcce3e908cc7a364c70e21d15b3f1c45dde8e45963b7",
+        "", "",
+    }, {
+        /* leaf_keys */
+        { TR_K1("8bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048") }, /* k1 xo */
+        { TR_K1("a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7") }, /* k2 xo */
+        { TR_K1("b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284") }, /* k3 xo */
+        { TR_K_NONE }, { TR_K_NONE }
+    }},
+#endif /* BUILD_ELEMENTS */
 };
 
 
@@ -2592,6 +2689,13 @@ static const struct address_test {
         WALLY_NETWORK_LIQUID,
         0, 0, 0,
         ADDR("lq1pq26fndnz8ef6umlz6e2755sm6j5jwxv3tdt2295mr4mx6ux0uf8vcc2tuvwx7k7g9kvhhpux07vqpm3qjj8uwdj94650265ustv0xy8z8wfacw9e5a5t")
+    }, {
+        /* Taptree leaves use the Elements tapscript leaf version 0xc4 */
+        "address - slip77 eltr script tree",
+        "ct(slip77(slip77_key),eltr(x_only,{pk(key_1),{pk(key_2),pk(key_3)}}))",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("lq1pqvrmexgzdqfplvx5lmtytu2jqwyqklahrva5pr87ujeq0c6s7el285y2q8urxwx44a605v5q9kj9a75cx6myl58yj879veess8jk0uwtedks5lxz9v7l")
     },
 #endif /* BUILD_ELEMENTS */
     /*
