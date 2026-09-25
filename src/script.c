@@ -811,8 +811,10 @@ int wally_scriptsig_multisig_from_bytes(
                                        0, p, len, &der_len[0]);
     if (ret != WALLY_OK)
         goto cleanup;
-    if (len < der_len[0])
-        return WALLY_ERROR; /* Required length mismatch, should not happen! */
+    if (len < der_len[0]) {
+        ret = WALLY_ERROR; /* Required length mismatch, should not happen! */
+        goto cleanup;
+    }
     *written = required;
 
 cleanup:
