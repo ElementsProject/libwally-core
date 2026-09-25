@@ -48,6 +48,12 @@
 #define TXIO_SHA_OUTPUT_WITNESSES_D   (TXIO_SHA_OUTPUTS | TXIO_SHA256_D)
 /* ... end of segwit cached data */
 
+/* Data cached by binary value */
+#define TXIO_CACHED_ANNEX             1
+#define TXIO_CACHED_TAPLEAF           2
+/* Type byte + version byte + hash */
+#define TXIO_CACHED_BYTES_LEN         (2 + SHA256_LEN)
+
 static const unsigned char zero_hash[SHA256_LEN];
 static const unsigned char EMPTY_PRE_SW_OUTPUT[9] = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00
@@ -217,6 +223,38 @@ static void txio_hash_sha256_ctx(cursor_io *io, struct sha256_ctx *ctx, int key)
     hash_bytes(&io->ctx, hash.u.u8, sizeof(hash));
     if (io->cache && (key & ~TXIO_SHA256_D) != TXIO_UNCACHED)
         wally_map_add_integer(io->cache, key, hash.u.u8, sizeof(hash));
+}
+
+static bool txio_hash_cached_bytes(cursor_io *io,
+                                   unsigned char type, unsigned char leaf_version,
+                                   const unsigned char *key, size_t key_len)
+{
+    const struct wally_map_item *item;
+    item = io->cache ? wally_map_get(io->cache, key, key_len) : NULL;
+    if (!item || item->value_len != TXIO_CACHED_BYTES_LEN ||
+        item->value[0] != type || item->value[1] != leaf_version)
+        return false; /* Not cached, or cached as a different type */
+    hash_bytes(&io->ctx, item->value + 2, SHA256_LEN);
+    return true;
+}
+
+static void txio_hash_and_cache_bytes(cursor_io *io,
+                                      unsigned char type, unsigned char leaf_version,
+                                      const unsigned char *key, size_t key_len,
+                                      const unsigned char *hash)
+{
+    hash_bytes(&io->ctx, hash, SHA256_LEN);
+    if (io->cache) {
+        unsigned char value[TXIO_CACHED_BYTES_LEN];
+        value[0] = type;
+        value[1] = leaf_version;
+        memcpy(value + 2, hash, SHA256_LEN);
+        /* If the key is already cached as a different type, this leaves
+         * the original cached value in place; caching will be slightly
+         * less efficient, but this isn't expected to happen in practice.
+         */
+        wally_map_add(io->cache, key, key_len, value, sizeof(value));
+    }
 }
 
 static int txio_done(cursor_io *io, uint32_t flags)
@@ -556,19 +594,14 @@ static void txio_hash_sha_single_output(cursor_io *io,
 static void txio_hash_annex(cursor_io *io,
                             const unsigned char *annex, size_t annex_len)
 {
-    const struct wally_map_item *item;
-    item = io->cache ? wally_map_get(io->cache, annex, annex_len) : NULL;
-    if (item)
-        hash_bytes(&io->ctx, item->value, item->value_len);
-    else {
+    if (!txio_hash_cached_bytes(io, TXIO_CACHED_ANNEX, 0, annex, annex_len)) {
         struct sha256_ctx ctx;
         sha256_init(&ctx);
         hash_varbuff(&ctx, annex, annex_len);
         struct sha256 hash;
         sha256_done(&ctx, &hash);
-        hash_bytes(&io->ctx, hash.u.u8, sizeof(hash));
-        if (io->cache)
-            wally_map_add(io->cache, annex, annex_len, hash.u.u8, sizeof(hash));
+        txio_hash_and_cache_bytes(io, TXIO_CACHED_ANNEX, 0,
+                                  annex, annex_len, hash.u.u8);
     }
 }
 
@@ -632,20 +665,13 @@ static void txio_hash_tapleaf_hash(cursor_io *io, unsigned char leaf_version,
                                    const unsigned char *tapleaf_script, size_t tapleaf_script_len,
                                    bool is_elements)
 {
-    const struct wally_map_item *item;
-#ifndef BUILD_ELEMENTS
-    (void)is_elements;
-#endif
-    item = io->cache ? wally_map_get(io->cache, tapleaf_script, tapleaf_script_len) : NULL;
-    if (item) {
-        hash_bytes(&io->ctx, item->value, item->value_len);
-    } else {
+    if (!txio_hash_cached_bytes(io, TXIO_CACHED_TAPLEAF, leaf_version,
+                                tapleaf_script, tapleaf_script_len)) {
         unsigned char hash[SHA256_LEN];
         bip341_tapleaf_hash(leaf_version, tapleaf_script, tapleaf_script_len,
                             is_elements, hash, sizeof(hash));
-        hash_bytes(&io->ctx, hash, sizeof(hash));
-        if (io->cache)
-            wally_map_add(io->cache, tapleaf_script, tapleaf_script_len, hash, sizeof(hash));
+        txio_hash_and_cache_bytes(io, TXIO_CACHED_TAPLEAF, leaf_version,
+                                  tapleaf_script, tapleaf_script_len, hash);
     }
 }
 

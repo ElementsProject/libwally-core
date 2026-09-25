@@ -680,22 +680,39 @@ class TransactionTests(unittest.TestCase):
             flags = SIGTYPE_SW_V1
             annex = None
             annex_len = 0
+            cache = None
 
             args = [tx, index, scripts, assets, values, tapleaf_script, tapleaf_script_len,
                     key_version, codesep_pos, annex, annex_len, genesis, genesis_len,
-                    sighash, flags, None, bytes_out, out_len]
+                    sighash, flags, cache, bytes_out, out_len]
 
             self.assertEqual(wally_tx_get_input_signature_hash(*args), WALLY_OK)
             self.assertEqual(out_len, 32)
             self.assertEqual(expected, h(bytes_out[:out_len]))
 
         # Test that signing with a provided tapleaf script/annex works
-        args[5] = fake_script
-        args[6] = fake_script_len
-        self.assertEqual(wally_tx_get_input_signature_hash(*args), WALLY_OK)
-        args[9] = fake_annex
-        args[10] = fake_annex_len
-        self.assertEqual(wally_tx_get_input_signature_hash(*args), WALLY_OK)
+        for calls in [
+            [('00',   None)],    # tapleaf script only
+            [(None,   '5000')],  # annex only
+            [('00',   '5000')],  # tapleaf script and annex
+            # Permutations of identical tapleaf script and annex
+            [('5051', '5051')],
+            [('5051', '5051'), ('5051', '5051')],
+            [(None,   '5051'), ('5051', None),   ('5051', '5051')],
+            [('5051',  None),  (None,   '5051'), ('5051', '5051')],
+        ]:
+            cache = make_map(0)
+            for tapleaf_script, annex in calls:
+                args[5], args[6] = make_cbuffer(tapleaf_script) if tapleaf_script else (None, 0)
+                args[9], args[10] = make_cbuffer(annex) if annex else (None, 0)
+                args[15] = None
+                self.assertEqual(wally_tx_get_input_signature_hash(*args), WALLY_OK)
+                uncached = h(bytes_out[:out_len])
+                args[15] = cache
+                self.assertEqual(wally_tx_get_input_signature_hash(*args), WALLY_OK)
+                cached = h(bytes_out[:out_len])
+                self.assertEqual(uncached, cached)
+            wally_map_free(cache)
 
         # Script path signing commits to the Elements tapscript leaf version
         # 0xc4 (not 0xc0). Expected values are computed independently of wally
