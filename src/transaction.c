@@ -358,6 +358,7 @@ int wally_tx_input_clone(const struct wally_tx_input *src,
         !clone_bytes(&new_inflation_keys, src->inflation_keys, src->inflation_keys_len) ||
         !clone_bytes(&new_issuance_amount_rangeproof, src->issuance_amount_rangeproof, src->issuance_amount_rangeproof_len) ||
         !clone_bytes(&new_inflation_keys_rangeproof, src->inflation_keys_rangeproof, src->inflation_keys_rangeproof_len) ||
+        (src->pegin_witness && !new_pegin_witness) ||
 #endif
         (src->witness && !new_witness)) {
         clear_and_free(new_script, src->script_len);

@@ -20,6 +20,16 @@ with open(root_dir + 'src/data/bip341_vectors.json', 'r') as f:
     JSON = json.load(f)
 
 
+def tx_witness_stack_create(items):
+    """Create a witness stack from a list of hex witness items"""
+    wit_p = pointer(wally_tx_witness_stack())
+    assert wally_tx_witness_stack_init_alloc(len(items), wit_p) == WALLY_OK
+    for i in items:
+        item, item_len = make_cbuffer(i)
+        assert wally_tx_witness_stack_add(wit_p.contents, item, item_len) == WALLY_OK
+    return wit_p
+
+
 class TransactionTests(unittest.TestCase):
 
     def tx_deserialize_hex(self, hex_, is_elements=False):
@@ -868,6 +878,37 @@ class TransactionTests(unittest.TestCase):
             self.assertEqual((txout.asset_len, txout.value_len), (asset_len, value_len))
         self.assertEqual(WALLY_OK, wally_tx_elements_input_issuance_free(txin))
         self.assertEqual(WALLY_OK, wally_tx_elements_output_commitment_free(txout))
+
+    def test_elements_input_clone_malloc_fail(self):
+        """Test that allocation failures when cloning inputs return WALLY_ENOMEM"""
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Elements support not enabled')
+
+        txhash, txhash_len = make_cbuffer('00' * 32)
+        script, script_len = make_cbuffer('51')
+        witness = tx_witness_stack_create(['aa' * 4])
+        pegin_witness = tx_witness_stack_create(['aa' * 4] * 2)
+        src = pointer(wally_tx_input())
+        ret = wally_tx_elements_input_init_alloc(txhash, txhash_len, 0, 0xffffffff,
+                                                 script, script_len, witness,
+                                                 None, 0, None, 0, None, 0, None, 0,
+                                                 None, 0, None, 0, pegin_witness, src)
+        self.assertEqual(ret, WALLY_OK)
+        wally_tx_witness_stack_free(witness)
+        wally_tx_witness_stack_free(pegin_witness)
+
+        def check_clone():
+            clone = pointer(wally_tx_input())
+            ret = wally_tx_input_clone_alloc(src, clone)
+            if ret != WALLY_ENOMEM:
+                self.assertEqual(clone.contents.witness.contents.num_items, 1)
+                self.assertEqual(clone.contents.pegin_witness.contents.num_items, 2)
+                wally_tx_input_free(clone)
+            return ret
+
+        self.assertEqual(malloc_fail_loop(check_clone), WALLY_OK)
+        wally_tx_input_free(src)
+
 
 if __name__ == '__main__':
     unittest.main()
