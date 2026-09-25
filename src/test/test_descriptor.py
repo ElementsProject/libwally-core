@@ -721,36 +721,73 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual(num_mallocs, max_mallocs)
             self.assertEqual(results, {WALLY_OK, WALLY_ENOMEM})
 
+    def test_taproot_control_block_malloc_fail(self):
+        """Test that control block allocation failures return no length"""
+        buf, buf_len = make_cbuffer('00' * 1024)
+        d = c_void_p()
+        ret = wally_descriptor_parse('tr(x_only,pk(xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/0/*))',
+                                     self.keys, NETWORK_BTC_MAIN, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+
+        results = set()
+        max_mallocs = 2
+
+        @malloc_fail(range(max_mallocs))
+        def get_taproot_control_block():
+            ret, written = wally_descriptor_get_taproot_control_block(d, 0, 0, 0, 0,
+                                                                      buf, buf_len)
+            self.assertIn(ret, [WALLY_OK, WALLY_ENOMEM])
+            self.assertEqual(written, 33 if ret == WALLY_OK else 0)
+            results.add(ret)
+
+        num_mallocs = get_taproot_control_block()
+        self.assertEqual(num_mallocs, max_mallocs)
+        self.assertEqual(results, {WALLY_OK, WALLY_ENOMEM})
+        wally_descriptor_free(d)
+
     def test_taproot_bad_args(self):
         buf, buf_len = make_cbuffer('00' * 1024)
         d = c_void_p()
         ret = wally_descriptor_parse('tr(x_only,pk(key_local))',
                                      self.keys, NETWORK_BTC_MAIN, 0, d)
         self.assertEqual(ret, WALLY_OK)
-        for args in [
+        bad_args = [
             (None, 0, 0, 0, 0, buf,  buf_len),  # NULL descriptor
             (d,    1, 0, 0, 0, buf,  buf_len),  # Invalid leaf_index
             (d,    0, 1, 0, 0, buf,  buf_len),  # Invalid multi_index
             (d,    0, 0, 1, 0, buf,  buf_len),  # Invalid child_num
             (d,    0, 0, 0, 1, buf,  buf_len),  # Invalid flags
-            (None, 0, 0, 0, 0, None, buf_len),  # NULL output buff
-            (None, 0, 0, 0, 0, buf,  0),        # Empty output buff
-        ]:
+            (d,    0, 0, 0, 0, None, buf_len),  # NULL output buff
+            (d,    0, 0, 0, 0, buf,  0),        # Empty output buff
+        ]
+        for args in bad_args:
             ret = wally_descriptor_get_taproot_control_block(*args)
             self.assertEqual(ret, (WALLY_EINVAL, 0))
             ret = wally_descriptor_get_taproot_control_block_len(*(args[:-2]))
-            self.assertEqual(ret, (WALLY_EINVAL, 0))
+            if args == bad_args[-1] or args == bad_args[-2]:
+                # _len doesn't take the buf args so succeeds
+                self.assertEqual(ret, (WALLY_OK, 33))
+            else:
+                self.assertEqual(ret, (WALLY_EINVAL, 0))
             ret = wally_descriptor_get_taproot_leaf_script(*args)
             self.assertEqual(ret, (WALLY_EINVAL, 0))
             ret = wally_descriptor_get_taproot_leaf_script_len(*(args[:-2]))
-            self.assertEqual(ret, (WALLY_EINVAL, 0))
+            if args == bad_args[-1] or args == bad_args[-2]:
+                # _len doesn't take the buf args so succeeds
+                self.assertEqual(ret, (WALLY_OK, 34))
+            else:
+                self.assertEqual(ret, (WALLY_EINVAL, 0))
             ret = wally_descriptor_get_taproot_leaf_hash(*(args[:-1] + (32,)))
-            self.assertEqual(ret, WALLY_EINVAL)
-            if args[1] != 1:
-                # Not a leaf_index test case, test calls that don't take it
-                merkle_internal_args = (args[0],) + args[2:-1] + (32,)
-                ret = wally_descriptor_get_taproot_merkle_root(*merkle_internal_args)
+            if args == bad_args[-1]:
+                # _leaf_hash doesn't take the buf len arg so succeeds
+                self.assertEqual(ret, WALLY_OK)
+            else:
                 self.assertEqual(ret, WALLY_EINVAL)
+                if args[1] != 1:
+                    # Not a leaf_index test case, test calls that don't take it
+                    merkle_internal_args = (args[0],) + args[2:-1] + (32,)
+                    ret = wally_descriptor_get_taproot_merkle_root(*merkle_internal_args)
+                    self.assertEqual(ret, WALLY_EINVAL)
 
         ret = wally_descriptor_get_taproot_num_leaves(None) # NULL descriptor
         self.assertEqual(ret, (WALLY_EINVAL, 0))

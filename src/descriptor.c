@@ -4306,14 +4306,19 @@ int wally_descriptor_get_taproot_control_block(
 
     ret = wally_descriptor_get_taproot_control_block_len(descriptor,
             leaf_index, multi_index, child_num, flags, written);
-    if (ret != WALLY_OK || BYTES_INVALID(bytes_out, len))
+    if (ret != WALLY_OK || BYTES_INVALID(bytes_out, len)) {
+        if (written)
+            *written = 0;
         return WALLY_EINVAL;
+    }
 
     if (!bytes_out || len < *written)
         return WALLY_OK; /* Size query, or buffer too small to generate into */
 
-    if ((ret = ctx_clone(descriptor, 0, multi_index, child_num, &ctx)) != WALLY_OK)
+    if ((ret = ctx_clone(descriptor, 0, multi_index, child_num, &ctx)) != WALLY_OK) {
+        *written = 0;
         return ret;
+    }
 
     /* Generate an untweaked p2tr script OP_1 [x-only internal key],
      * collecting the path and merkle root if a taptree is present. */
@@ -4332,6 +4337,8 @@ int wally_descriptor_get_taproot_control_block(
         /* Followed by the path already written by tr_impl() above */
     }
     ctx_clear(&ctx);
+    if (ret != WALLY_OK)
+        *written = 0;
     return ret;
 }
 
