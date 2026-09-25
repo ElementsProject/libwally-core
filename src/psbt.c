@@ -5283,6 +5283,7 @@ int wally_psbt_blind(struct wally_psbt *psbt,
     const secp256k1_context *ctx = secp_ctx();
     unsigned char *fixed_input_tags, *ephemeral_input_tags, *input_abfs;
     unsigned char input_scalar[EC_SCALAR_LEN] = { 0 }, output_scalar[EC_SCALAR_LEN] = { 0 };
+    unsigned char tmp[EC_SCALAR_LEN], vbf_buf[EC_SCALAR_LEN];
     unsigned char *output_statuses; /* Blinding status of each output */
     size_t i, num_to_blind = 0, num_blinded = 0;
     bool did_find_input = false, did_blind_output = false, did_blind_last = false;
@@ -5332,7 +5333,6 @@ int wally_psbt_blind(struct wally_psbt *psbt,
             const struct wally_map_item *asset = wally_map_get_integer(assets, i);
             const struct wally_map_item *abf = wally_map_get_integer(abfs, i);
             const struct wally_map_item *vbf = wally_map_get_integer(vbfs, i);
-            unsigned char tmp[EC_SCALAR_LEN];
             uint64_t satoshi;
 
             did_find_input = true; /* This input belongs to us */
@@ -5389,10 +5389,8 @@ int wally_psbt_blind(struct wally_psbt *psbt,
         const unsigned char *surjectionproof_seed = explicit_rangeproof_seed + BLINDING_FACTOR_LEN;
         const struct wally_map_item *p = wally_map_get_integer(&out->pset_fields, PSET_OUT_ASSET);
         const unsigned char *asset = p && p->value_len == ASSET_TAG_LEN ? p->value : NULL;
-        unsigned char tmp[EC_SCALAR_LEN];
         unsigned char asset_commitment[ASSET_COMMITMENT_LEN];
         unsigned char value_commitment[ASSET_COMMITMENT_LEN];
-        unsigned char vbf_buf[EC_SCALAR_LEN];
         const size_t entropy_per_output = 5;
 
         if (output_index != WALLY_PSET_BLIND_ALL && output_index != i)
@@ -5550,6 +5548,8 @@ int wally_psbt_blind(struct wally_psbt *psbt,
 done:
     if (ret != WALLY_OK)
         wally_map_clear(ephemeral_keys_out);
+    wally_clear_4(input_scalar, sizeof(input_scalar), output_scalar, sizeof(output_scalar),
+                  tmp, sizeof(tmp), vbf_buf, sizeof(vbf_buf));
     clear_and_free(output_statuses, psbt->num_outputs * sizeof(unsigned char));
     clear_and_free(fixed_input_tags, psbt->num_inputs * ASSET_TAG_LEN);
     clear_and_free(ephemeral_input_tags, psbt->num_inputs * ASSET_GENERATOR_LEN);
