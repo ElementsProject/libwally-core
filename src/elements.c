@@ -943,6 +943,7 @@ int wally_elip150_private_key_to_ec_private_key(
                                   tweaked, sizeof(tweaked));
         if (ret == WALLY_OK)
             memcpy(bytes_out, tweaked, sizeof(tweaked));
+        wally_clear(tweaked, sizeof(tweaked));
     }
     return ret;
 #endif /* BUILD_ELEMENTS */

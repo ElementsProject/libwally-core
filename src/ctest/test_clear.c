@@ -9,6 +9,7 @@
 #include <wally_bip32.h>
 #include <wally_bip39.h>
 #include <wally_crypto.h>
+#include <wally_elements.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -212,6 +213,30 @@ static bool test_hmac_sha256(void)
     return !in_stack("wally_hmac_sha256", SECRET32, sizeof(SECRET32));
 }
 
+#ifdef BUILD_ELEMENTS
+/* Call from deeper in the stack, so that the frame of in_stack() does
+ * not overwrite any secret left in the callee's own frame */
+WALLY_NO_OPTIMIZE static int elip150_private_key_deep(unsigned char *out, size_t len)
+{
+    static unsigned char script[22] = { 0x00, 0x14 };
+    volatile unsigned char pad[1024];
+
+    pad[0] = 0;
+    return pad[0] + wally_elip150_private_key_to_ec_private_key(SECRET32, sizeof(SECRET32),
+                                                                script, sizeof(script),
+                                                                out, len);
+}
+
+static bool test_elip150_private_key(void)
+{
+    static unsigned char out[EC_PRIVATE_KEY_LEN];
+    /* The derived private key is the secret. */
+    if (elip150_private_key_deep(out, sizeof(out)))
+        return false;
+    return !in_stack("wally_elip150_private_key_to_ec_private_key", out, sizeof(out));
+}
+#endif /* BUILD_ELEMENTS */
+
 static void *run_tests(void *passed_stack)
 {
     if (passed_stack != gstack) {
@@ -246,6 +271,11 @@ static void *run_tests(void *passed_stack)
 
     ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
     RUN(test_hmac_sha256);
+
+#ifdef BUILD_ELEMENTS
+    ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
+    RUN(test_elip150_private_key);
+#endif /* BUILD_ELEMENTS */
 
     return NULL;
 }
