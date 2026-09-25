@@ -35,6 +35,12 @@ AM_INIT_AUTOMAKE([1.11.2 foreign subdir-objects])
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
+# Note whether the user set CFLAGS, before AC_PROG_CC gives it a default
+if test "${CFLAGS+set}" = "set"; then
+    cflags_overridden=yes
+else
+    cflags_overridden=no
+fi
 AC_PROG_CC
 AM_PROG_AR
 #saved_cflags="$CFLAGS"
@@ -120,6 +126,11 @@ AX_CHECK_COMPILE_FLAG([-O0], [NOOPT_CFLAGS="-O0"])
 
 if test "x$debug" = "xyes"; then
     # Make debugging easier, leave assertions in
+    if test "x$cflags_overridden" = "xno"; then
+        # CFLAGS follows AM_CFLAGS when compiling, so drop the -O2 from
+        # autoconf's default CFLAGS, which would otherwise override -O0
+        CFLAGS="-g"
+    fi
     AM_CFLAGS="$AM_CFLAGS $NOOPT_CFLAGS"
     AX_CHECK_COMPILE_FLAG([-ggdb], [AM_CFLAGS="$AM_CFLAGS -ggdb"])
     AX_CHECK_LINK_FLAG([-O0], [LDFLAGS="$LDFLAGS -O0"])
