@@ -145,6 +145,23 @@ class Base58Tests(unittest.TestCase):
             ret, _ = wally_base58_n_to_bytes(utf8(s), str_len, 0, buf, buf_len)
             self.assertEqual(ret, WALLY_EINVAL)
 
+    def test_get_length(self):
+        # NULL written (call the C functions directly, bypassing the wrappers)
+        ret = libwally.wally_base58_get_length(utf8('BXvDbH'), None)
+        self.assertEqual(ret, WALLY_EINVAL)
+        ret = libwally.wally_base58_n_get_length(utf8('BXvDbH'), 6, None)
+        self.assertEqual(ret, WALLY_EINVAL)
+
+        # written is set to 0 on error
+        for bad in [None, utf8(''), utf8('0'), utf8('x0'), utf8('x\x80x')]:
+            written = c_size_t(1)
+            ret = libwally.wally_base58_get_length(bad, byref(written))
+            self.assertEqual((ret, written.value), (WALLY_EINVAL, 0))
+            written = c_size_t(1)
+            bad_len = len(bad) if bad is not None else 0
+            ret = libwally.wally_base58_n_get_length(bad, bad_len, byref(written))
+            self.assertEqual((ret, written.value), (WALLY_EINVAL, 0))
+
     def test_from_bytes(self):
 
         # Leading zeros become ones

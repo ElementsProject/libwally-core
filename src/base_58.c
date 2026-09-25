@@ -261,12 +261,18 @@ cleanup:
 
 int wally_base58_n_get_length(const char *str_in, size_t str_len, size_t *written)
 {
+    if (written)
+        *written = 0;
+
+    if (!written)
+        return WALLY_EINVAL;
+
     return base58_decode(str_in, str_len, NULL, written);
 }
 
 int wally_base58_get_length(const char *str_in, size_t *written)
 {
-    return base58_decode(str_in, str_in ? strlen(str_in) : 0, NULL, written);
+    return wally_base58_n_get_length(str_in, str_in ? strlen(str_in) : 0, written);
 }
 
 int wally_base58_n_to_bytes(const char *str_in, size_t str_len, uint32_t flags,
