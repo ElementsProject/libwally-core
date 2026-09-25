@@ -171,7 +171,7 @@ int wally_base58_from_bytes(const unsigned char *bytes, size_t bytes_len,
     uint32_t checksum, *cs_p = NULL;
     unsigned char bn_buf[BIGNUM_BYTES];
     unsigned char *bn = bn_buf, *top_byte, *bn_p;
-    size_t bn_bytes = 0, zeros, i, orig_len = bytes_len;
+    size_t bn_bytes = 0, digits_len, zeros, i, orig_len = bytes_len;
     int ret = WALLY_EINVAL;
 
     if (output)
@@ -234,17 +234,17 @@ int wally_base58_from_bytes(const unsigned char *bytes, size_t bytes_len,
         ++top_byte; /* Skip leading zero bytes in our bignum */
 
     /* Copy the result */
-    bn_bytes = bn + bn_bytes - top_byte;
+    digits_len = bn + bn_bytes - top_byte;
 
-    if (!(*output = wally_malloc(zeros + bn_bytes + 1))) {
+    if (!(*output = wally_malloc(zeros + digits_len + 1))) {
         ret = WALLY_ENOMEM;
         goto cleanup;
     }
 
     memset(*output, '1', zeros);
-    for (i = 0; i < bn_bytes; ++i)
+    for (i = 0; i < digits_len; ++i)
         (*output)[zeros + i] = byte_to_base58[top_byte[i]];
-    (*output)[zeros + bn_bytes] = '\0';
+    (*output)[zeros + digits_len] = '\0';
 
     ret = WALLY_OK;
 

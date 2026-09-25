@@ -264,6 +264,47 @@ static bool test_asset_scalar_offset(void)
 }
 #endif /* BUILD_ELEMENTS */
 
+/* Call wally_base58_from_bytes() deeper in the stack than in_stack() reaches,
+ * so that searching does not overwrite what the call left behind */
+WALLY_NO_OPTIMIZE static int base58_from_bytes_deep(const unsigned char *bytes, size_t bytes_len,
+                                                    char **output)
+{
+    volatile unsigned char pad[1024];
+    pad[0] = 0;
+    return pad[0] + wally_base58_from_bytes(bytes, bytes_len, 0, output);
+}
+
+static bool test_base58_from_bytes(void)
+{
+    /* The bignum buffer is sized from an over-estimate of the number of
+     * base58 digits. Encode data for which the estimate is several bytes
+     * too large and check that the least significant digits, which are
+     * stored at the end of the buffer, are wiped. */
+    static const char *b58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+    static unsigned char digits[6];
+    static char *output;
+    static size_t i, j, output_len;
+    static bool found;
+
+    gbytes[0] = 0x01;
+    for (i = 1; i < 370; ++i)
+        gbytes[i] = 0xa5;
+    if (base58_from_bytes_deep(gbytes, 370, &output))
+        return false;
+
+    /* Convert the trailing base58 characters back to digit values */
+    for (output_len = 0; output[output_len]; ++output_len)
+        ; /* no-op */
+    for (i = 0; i < sizeof(digits); ++i)
+        for (j = 0; j < 58; ++j)
+            if (b58[j] == output[output_len - sizeof(digits) + i])
+                digits[i] = j;
+
+    found = in_stack("wally_base58_from_bytes", digits, sizeof(digits));
+    wally_free_string(output);
+    return !found;
+}
+
 static void *run_tests(void *passed_stack)
 {
     if (passed_stack != gstack) {
@@ -298,6 +339,9 @@ static void *run_tests(void *passed_stack)
 
     ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
     RUN(test_hmac_sha256);
+
+    ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
+    RUN(test_base58_from_bytes);
 
 #ifdef BUILD_ELEMENTS
     ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
