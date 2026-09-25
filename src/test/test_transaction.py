@@ -90,6 +90,25 @@ class TransactionTests(unittest.TestCase):
             self.assertEqual(utf8(self.tx_serialize_hex(tx_copy)),
                              utf8(self.tx_serialize_hex(tx_nf)))
 
+    def test_serialization_malloc_fail(self):
+        """Testing deserialization when allocations fail"""
+        # Failing any allocation, including the input, output and
+        # witness item arrays, must fail cleanly with WALLY_ENOMEM
+        results = set()
+        max_mallocs = 10
+
+        @malloc_fail(range(max_mallocs))
+        def check_from_hex():
+            tx = pointer(wally_tx())
+            ret = wally_tx_from_hex(TX_WITNESS_HEX, 0, tx)
+            if ret == WALLY_OK:
+                wally_tx_free(tx)
+            results.add(ret)
+
+        num_mallocs = check_from_hex()
+        self.assertEqual(num_mallocs, max_mallocs)
+        self.assertEqual(results, {WALLY_OK, WALLY_ENOMEM})
+
     def test_lengths(self):
         """Testing functions measuring different lengths for a tx"""
         for tx_hex, length in [
