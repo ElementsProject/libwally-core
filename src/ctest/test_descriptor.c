@@ -348,6 +348,12 @@ static const descriptor_test g_descriptor_cases[] = {
         "00204616bb4e66d0b540b480c5b26c619385c4c2b83ed79f4f3eab09b01745443a55",
         "t2zpj2eu", VARS_STD
     },{
+        "descriptor - p2wpkh-xpub - even length key expression over 130 chars",
+        "wpkh(xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/2147483647/214748364)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
+        "0014f2f9552281efff1fe5fab494fced061c43fe59f2",
+        "rvz3vjkv", VARS_STD
+    },{
         "descriptor - p2wsh-sortedmulti-xpub",
         "wsh(sortedmulti(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,key_4/0/0/*))",
         WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_16, 0,

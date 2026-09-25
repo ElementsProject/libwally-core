@@ -2709,10 +2709,12 @@ static int analyze_key_hex(ms_ctx *ctx, ms_node *node,
     size_t key_len;
     bool allow_xonly, make_xonly = false, is_private = false;
 
+    /* Strings too long for 'key' return OK without being hex checked */
     *is_hex = wally_hex_n_to_bytes(node->data, node->data_len,
-                                   key, sizeof(key), &key_len) == WALLY_OK;
+                                   key, sizeof(key), &key_len) == WALLY_OK &&
+              key_len <= sizeof(key);
     if (!*is_hex)
-        return WALLY_OK; /* Not a hex string */
+        return WALLY_OK; /* Not a hex string, or too long to be a key */
 
     if (key_len == EC_PRIVATE_KEY_LEN && is_ct_key) {
         if (wally_ec_private_key_verify(key, key_len) != WALLY_OK)
