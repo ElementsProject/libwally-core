@@ -236,6 +236,16 @@ class TransactionTests(unittest.TestCase):
 
         for fn in [wally_tx_witness_stack_get_num_items, wally_tx_witness_stack_get_length]:
             self.assertEqual((WALLY_EINVAL, 0), fn(None)) # NULL stack
+
+        # Indices that would overflow the size of the witness array fail
+        w = pointer(wally_tx_witness_stack())
+        self.assertEqual(WALLY_OK, wally_tx_witness_stack_init_alloc(2, w))
+        size_max = 2 ** (8 * sizeof(c_size_t)) - 1
+        for index in [size_max // sizeof(wally_tx_witness_item), size_max]:
+            ret = wally_tx_witness_stack_set(w, index, item, item_len)
+            self.assertEqual(ret, WALLY_ENOMEM)
+        self.assertEqual((WALLY_OK, 0), wally_tx_witness_stack_get_num_items(w))
+        self.assertEqual(WALLY_OK, wally_tx_witness_stack_free(w))
         # An empty stack has no items and is serialized as a single 0x00 byte
         self.assertEqual((WALLY_OK, 0), wally_tx_witness_stack_get_num_items(witness))
         self.assertEqual((WALLY_OK, 1), wally_tx_witness_stack_get_length(witness))
