@@ -1105,7 +1105,8 @@ int wally_tx_get_input_signature_hash(
         case WALLY_SIGHASH_ALL | WALLY_SIGHASH_ANYPREVOUT | WALLY_SIGHASH_ANYONECANPAY:
         case WALLY_SIGHASH_NONE | WALLY_SIGHASH_ANYPREVOUT | WALLY_SIGHASH_ANYONECANPAY:
         case WALLY_SIGHASH_SINGLE | WALLY_SIGHASH_ANYPREVOUT | WALLY_SIGHASH_ANYONECANPAY:
-            if (sighash_type == WALLY_SIGTYPE_SW_V0) {
+            if (sighash_type == WALLY_SIGTYPE_PRE_SW ||
+                sighash_type == WALLY_SIGTYPE_SW_V0) {
                 if (!is_elements)
                     return WALLY_EINVAL; /* ANYPREVOUT == FORKID for BTC */
                 break; /* ANYPREVOUT == RANGEPROOF for Elements */
