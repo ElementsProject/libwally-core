@@ -610,6 +610,13 @@ class TransactionTests(unittest.TestCase):
             ret = wally_tx_get_btc_taproot_signature_hash(*args)
             self.assertEqual(ret, WALLY_EINVAL)
 
+        # Too many values: the allocation size would overflow
+        args = [tx, index, scripts, values, num_values, tapleaf_script, tapleaf_script_len,
+                key_version, codesep_pos, annex, annex_len, sighash, flags, bytes_out, out_len]
+        args[4] = (2 ** (8 * sizeof(c_size_t)) - 1) // sizeof(wally_map_item) + 1
+        ret = wally_tx_get_btc_taproot_signature_hash(*args)
+        self.assertEqual(ret, WALLY_ENOMEM)
+
     def test_get_elements_taproot_signature_hash(self):
         """Tests for computing the Elements taproot signature hash"""
         _, is_elements_build = wally_is_elements_build()

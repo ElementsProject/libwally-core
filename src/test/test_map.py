@@ -22,6 +22,10 @@ class MapTests(unittest.TestCase):
 
         # Check invalid args
         self.assertEqual(wally_map_init_alloc(0, None, None), WALLY_EINVAL)
+        # Allocation lengths whose size would overflow fail
+        too_many = (2 ** (8 * sizeof(c_size_t)) - 1) // sizeof(wally_map_item) + 1
+        self.assertEqual(wally_map_init_alloc(too_many, None, m), WALLY_ENOMEM)
+        self.assertEqual(wally_map_init(too_many, None, pointer(wally_map())), WALLY_ENOMEM)
         self.assertEqual(wally_map_init_alloc(0, None, m), WALLY_OK)
 
         self.assertEqual(wally_map_clear(None), WALLY_EINVAL) # Null map

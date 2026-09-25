@@ -15,7 +15,7 @@ int wally_map_init(size_t allocation_len, wally_map_verify_fn_t verify_fn, struc
 
     wally_clear(output, sizeof(*output));
     if (allocation_len) {
-        output->items = wally_calloc(allocation_len * sizeof(*output->items));
+        output->items = array_calloc(allocation_len, sizeof(*output->items));
         if (!output->items)
             return WALLY_ENOMEM;
     }
