@@ -164,6 +164,7 @@ _crypto_scrypt(const uint8_t * passwd, size_t passwdlen,
 
 err3:
 	/* Free memory. */
+	wally_clear_3(B, 128 * r * p, XY, 256 * r + 64, V, 128 * r * N);
 #if defined(MAP_ANON) && defined(HAVE_MMAP)
 	if (munmap(V0, 128 * r * N)) {
 		ret = WALLY_ENOMEM;
