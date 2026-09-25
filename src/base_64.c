@@ -12,6 +12,8 @@ int wally_base64_from_bytes(const unsigned char *bytes, size_t bytes_len,
 
     if (!bytes || !bytes_len || flags || !output)
         return WALLY_EINVAL;
+    if (bytes_len > (SIZE_MAX - 1) / 4 * 3)
+        return WALLY_EINVAL; /* Encoded length would overflow */
 
     encoded_len = base64_encoded_length(bytes_len) + 1; /* +1 for NUL */
     if ((encoded = wally_malloc(encoded_len)) == NULL)
