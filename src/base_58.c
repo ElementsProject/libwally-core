@@ -289,12 +289,17 @@ int wally_base58_n_to_bytes(const char *str_in, size_t str_len, uint32_t flags,
 
     *written = len;
     ret = base58_decode(str_in, str_len, bytes_out, written);
-    if (!ret && *written > len)
+    if (ret != WALLY_OK) {
+        *written = 0;
+        return ret;
+    }
+    if (*written > len)
         return WALLY_OK; /* not enough space, return required amount */
 
-    if (!ret && (flags & BASE58_FLAG_CHECKSUM)) {
+    if (flags & BASE58_FLAG_CHECKSUM) {
         if (*written <= BASE58_CHECKSUM_LEN) {
             wally_clear(bytes_out, len);
+            *written = 0;
             return WALLY_EINVAL; /* Input not long enough to contain a checksum */
         }
 
@@ -303,6 +308,7 @@ int wally_base58_n_to_bytes(const char *str_in, size_t str_len, uint32_t flags,
 
         if (memcmp(bytes_out + offset, &checksum, sizeof(checksum))) {
             wally_clear(bytes_out, len);
+            *written = 0;
             return WALLY_EINVAL; /* Checksum mismatch */
         }
 

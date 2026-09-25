@@ -84,8 +84,8 @@ class Base58Tests(unittest.TestCase):
                      '\x80',    # High bit set
                      'x\x80x',  # High bit set, internal
                    ]:
-            ret, _ = wally_base58_to_bytes(utf8(bad), 0, buf, buf_len)
-            self.assertEqual(ret, WALLY_EINVAL)
+            ret = wally_base58_to_bytes(utf8(bad), 0, buf, buf_len)
+            self.assertEqual(ret, (WALLY_EINVAL, 0))
 
         # Bad checksummed base58 strings
         for bad in [ # libbase58: decode-b58c-fail
@@ -94,8 +94,8 @@ class Base58Tests(unittest.TestCase):
                     '1119DXstMaV43WpYg4ceREiiTv2UntmoiA9a',
                     # libbase58: decode-b58c-tooshort
                     '111111111111111111114oLvT2']:
-            ret, _ = wally_base58_to_bytes(utf8(bad), self.FLAG_CHECKSUM, buf, buf_len)
-            self.assertEqual(ret, WALLY_EINVAL)
+            ret = wally_base58_to_bytes(utf8(bad), self.FLAG_CHECKSUM, buf, buf_len)
+            self.assertEqual(ret, (WALLY_EINVAL, 0))
 
         for base58 in ['BXvDbH', '16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM']:
             ret, out_len = wally_base58_get_length(utf8(base58))
@@ -114,9 +114,9 @@ class Base58Tests(unittest.TestCase):
         # Also the input string must contain at least CHECKSUM_LEN + 1
         # bytes worth of data
         for i in range(self.CHECKSUM_LEN):
-            ret, bin_len = wally_base58_to_bytes(utf8('1'*i), self.FLAG_CHECKSUM,
-                                                 buf, buf_len)
-            self.assertEqual(ret, WALLY_EINVAL)
+            ret = wally_base58_to_bytes(utf8('1'*i), self.FLAG_CHECKSUM,
+                                        buf, buf_len)
+            self.assertEqual(ret, (WALLY_EINVAL, 0))
 
         # Leading ones become zeros
         for i in range(1, 10):
