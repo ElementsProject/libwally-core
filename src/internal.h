@@ -122,9 +122,10 @@ WALLY_INTERNAL_API bool clone_data(void **dst, const void *src, size_t len);
 WALLY_INTERNAL_API bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len);
 WALLY_INTERNAL_API int replace_bytes(const unsigned char *bytes, size_t bytes_len,
                                      unsigned char **bytes_out, size_t *bytes_len_out);
+/* Allocate a zeroed array of n items of size bytes */
+WALLY_INTERNAL_API void *array_calloc(size_t n, size_t size);
 WALLY_INTERNAL_API void *array_realloc(const void *src, size_t old_n,
                                        size_t new_n, size_t size);
-
 WALLY_INTERNAL_API int array_grow(void **src, size_t num_items,
                                   size_t *allocation_len, size_t item_size);
 
