@@ -2708,27 +2708,28 @@ static int analyze_key_hex(ms_ctx *ctx, ms_node *node,
     unsigned char key[EC_PUBLIC_KEY_UNCOMPRESSED_LEN], *key_p = key;
     size_t key_len;
     bool allow_xonly, make_xonly = false, is_private = false;
+    int ret = WALLY_OK;
 
     /* Strings too long for 'key' return OK without being hex checked */
     *is_hex = wally_hex_n_to_bytes(node->data, node->data_len,
                                    key, sizeof(key), &key_len) == WALLY_OK &&
               key_len <= sizeof(key);
     if (!*is_hex)
-        return WALLY_OK; /* Not a hex string, or too long to be a key */
+        goto cleanup; /* Not a hex string, or too long to be a key */
 
     if (key_len == EC_PRIVATE_KEY_LEN && is_ct_key) {
         if (wally_ec_private_key_verify(key, key_len) != WALLY_OK)
-            return WALLY_OK; /* Not a valid private key */
+            goto cleanup; /* Not a valid private key */
         is_private = true;
     } else if (key_len == EC_XONLY_PUBLIC_KEY_LEN) {
         if (wally_ec_xonly_public_key_verify(key, key_len) != WALLY_OK)
-            return WALLY_OK; /* Not a valid x-only key */
+            goto cleanup; /* Not a valid x-only key */
     } else if (key_len == EC_PUBLIC_KEY_LEN ||
                key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN) {
         if (wally_ec_public_key_verify(key, key_len) != WALLY_OK)
-            return WALLY_OK; /* Not a valid compressed/uncompressed pubkey */
+            goto cleanup; /* Not a valid compressed/uncompressed pubkey */
     } else
-        return WALLY_OK; /* Not a pubkey */
+        goto cleanup; /* Not a pubkey */
 
     if (!is_private) {
         /* Ensure the pubkey is allowed in this context/convert as needed */
@@ -2737,9 +2738,9 @@ static int analyze_key_hex(ms_ctx *ctx, ms_node *node,
              node->parent->kind == KIND_DESCRIPTOR_TR);
         allow_xonly = make_xonly || flags & WALLY_MINISCRIPT_TAPSCRIPT;
         if (key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN && allow_xonly)
-            return WALLY_OK; /* Uncompressed key not allowed here */
+            goto cleanup; /* Uncompressed key not allowed here */
         if (key_len == EC_XONLY_PUBLIC_KEY_LEN && !allow_xonly)
-            return WALLY_OK; /* X-only not allowed here */
+            goto cleanup; /* X-only not allowed here */
         if (key_len != EC_XONLY_PUBLIC_KEY_LEN) {
             if (flags & WALLY_MINISCRIPT_TAPSCRIPT) {
                 /* In tapscript, compressed keys are accepted and stripped to x-only */
@@ -2753,8 +2754,10 @@ static int analyze_key_hex(ms_ctx *ctx, ms_node *node,
         }
     }
 
-    if (!clone_bytes((unsigned char **)&node->data, key_p, key_len))
-        return WALLY_ENOMEM;
+    if (!clone_bytes((unsigned char **)&node->data, key_p, key_len)) {
+        ret = WALLY_ENOMEM;
+        goto cleanup;
+    }
     node->data_len = key_len;
 
     if (is_ct_key)
@@ -2762,11 +2765,11 @@ static int analyze_key_hex(ms_ctx *ctx, ms_node *node,
     if (is_private) {
         node->kind = KIND_PRIVATE_KEY;
         node->flags |= (WALLY_MS_IS_PRIVATE | WALLY_MS_IS_RAW);
-        return WALLY_OK;
+        goto cleanup;
     }
     node->kind = KIND_PUBLIC_KEY;
     if (is_ct_key)
-        return WALLY_OK;
+        goto cleanup;
     if (key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN) {
         node->flags |= WALLY_MS_IS_UNCOMPRESSED;
         ctx->features |= WALLY_MS_IS_UNCOMPRESSED;
@@ -2777,7 +2780,10 @@ static int analyze_key_hex(ms_ctx *ctx, ms_node *node,
     }
     node->flags |= WALLY_MS_IS_RAW;
     ctx->features |= WALLY_MS_IS_RAW;
-    return ctx_add_key_node(ctx, node);
+    ret = ctx_add_key_node(ctx, node);
+cleanup:
+    wally_clear(key, sizeof(key));
+    return ret;
 }
 
 static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,

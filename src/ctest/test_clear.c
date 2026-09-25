@@ -6,9 +6,11 @@
 #include "internal.h"
 #undef malloc
 #undef free
+#include <wally_address.h>
 #include <wally_bip32.h>
 #include <wally_bip39.h>
 #include <wally_crypto.h>
+#include <wally_descriptor.h>
 #include <wally_elements.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -308,6 +310,38 @@ static bool test_asset_scalar_offset(void)
         return false;
     return !in_stack("wally_asset_scalar_offset", product, sizeof(product));
 }
+
+/* Call from deeper in the stack, as for elip150_private_key_deep() */
+WALLY_NO_OPTIMIZE static int descriptor_parse_deep(const char *descriptor,
+                                                   struct wally_descriptor **output)
+{
+    volatile unsigned char pad[1024];
+
+    pad[0] = 0;
+    return pad[0] + wally_descriptor_parse(descriptor, NULL, WALLY_NETWORK_LIQUID,
+                                           0, output);
+}
+
+static bool test_descriptor_parse_ct_key(void)
+{
+    /* The hex ELIP-150 blinding private key (SECRET32) is the secret */
+    static const char *descriptor = "ct(a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5"
+                                    "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5,"
+                                    "elwpkh(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798))";
+    static struct wally_descriptor *output;
+    static bool found;
+
+    /* Parse once first so that resolving lazily bound symbols, which
+     * uses a lot of stack, does not overwrite what the parse leaves */
+    if (descriptor_parse_deep(descriptor, &output))
+        return false;
+    wally_descriptor_free(output);
+    if (descriptor_parse_deep(descriptor, &output))
+        return false;
+    found = in_stack("wally_descriptor_parse", SECRET32, sizeof(SECRET32));
+    wally_descriptor_free(output);
+    return !found;
+}
 #endif /* BUILD_ELEMENTS */
 
 /* Call wally_base58_from_bytes() deeper in the stack than in_stack() reaches,
@@ -398,6 +432,9 @@ static void *run_tests(void *passed_stack)
 
     ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
     RUN(test_asset_scalar_offset);
+
+    ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
+    RUN(test_descriptor_parse_ct_key);
 #endif /* BUILD_ELEMENTS */
 
     return NULL;
