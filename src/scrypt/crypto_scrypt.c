@@ -149,7 +149,9 @@ _crypto_scrypt(const uint8_t * passwd, size_t passwdlen,
 #endif
 
 	/* 1: (B_0 ... B_{p-1}) <-- PBKDF2(P, S, 1, p * MFLen) */
-	PBKDF2_SHA256(passwd, passwdlen, salt, saltlen, 1, B, p * 128 * r);
+	ret = PBKDF2_SHA256(passwd, passwdlen, salt, saltlen, 1, B, p * 128 * r);
+	if (ret != WALLY_OK)
+		goto err3;
 
 	/* 2: for i = 0 to p - 1 do */
 	for (i = 0; i < p; i++) {
@@ -158,8 +160,9 @@ _crypto_scrypt(const uint8_t * passwd, size_t passwdlen,
 	}
 
 	/* 5: DK <-- PBKDF2(P, B, 1, dkLen) */
-	PBKDF2_SHA256(passwd, passwdlen, B, p * 128 * r, 1, buf, buflen);
+	ret = PBKDF2_SHA256(passwd, passwdlen, B, p * 128 * r, 1, buf, buflen);
 
+err3:
 	/* Free memory. */
 #if defined(MAP_ANON) && defined(HAVE_MMAP)
 	if (munmap(V0, 128 * r * N)) {
@@ -172,8 +175,7 @@ _crypto_scrypt(const uint8_t * passwd, size_t passwdlen,
 	free(XY0);
 	free(B0);
 
-	/* Success! */
-	return (0);
+	return ret;
 
 err2:
 	free(XY0);

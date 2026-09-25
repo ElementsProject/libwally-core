@@ -68,6 +68,20 @@ class ScryptTests(unittest.TestCase):
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(h(out_buf), utf8(expected))
 
+    def test_scrypt_malloc(self):
+        # Allocation failures in either internal PBKDF2 call must be reported
+        pwd, salt, cost, block, p, l, _ = cases[0]
+        pwd, salt = utf8(pwd), utf8(salt)
+        out_buf, out_len = make_cbuffer('00' * l)
+
+        @malloc_fail([1, 2])
+        def do_wally_scrypt():
+            ret = wally_scrypt(pwd, len(pwd), salt, len(salt),
+                               cost, block, p, out_buf, out_len)
+            self.assertEqual(ret, WALLY_ENOMEM)
+
+        do_wally_scrypt()
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -22,14 +22,14 @@ static void le32enc(void *p, uint32_t value)
     memcpy(p, &tmp, sizeof(tmp));
 }
 
-static void PBKDF2_SHA256(const unsigned char *pass, size_t pass_len,
-                          const unsigned char *salt, size_t salt_len,
-                          uint64_t cost,
-                          unsigned char *bytes_out, size_t len)
+static int PBKDF2_SHA256(const unsigned char *pass, size_t pass_len,
+                         const unsigned char *salt, size_t salt_len,
+                         uint64_t cost,
+                         unsigned char *bytes_out, size_t len)
 {
     const uint32_t flags = 0;
-    wally_pbkdf2_hmac_sha256(pass, pass_len, (unsigned char *)salt, salt_len,
-                             flags, (uint32_t)cost, bytes_out, len);
+    return wally_pbkdf2_hmac_sha256(pass, pass_len, (unsigned char *)salt, salt_len,
+                                    flags, (uint32_t)cost, bytes_out, len);
 }
 
 /* Include a suitable smix function/functions */
