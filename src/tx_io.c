@@ -220,11 +220,15 @@ static bool txio_hash_cached_item(cursor_io *io, uint32_t key)
 static void txio_hash_sha256_ctx(cursor_io *io, struct sha256_ctx *ctx, int key)
 {
     struct sha256 hash;
-    sha256_done(ctx, &hash);
-    if (key & TXIO_SHA256_D) {
+    bool ok = sha256_done(ctx, &hash);
+    if (ok && (key & TXIO_SHA256_D)) {
         struct sha256 hash2;
-        sha256(&hash2, hash.u.u8, sizeof(hash));
+        ok = sha256(&hash2, hash.u.u8, sizeof(hash));
         memcpy(hash.u.u8, hash2.u.u8, sizeof(hash));
+    }
+    if (!ok) {
+        io->hash_failed = true; /* Don't cache the failed hash */
+        return;
     }
     hash_bytes(&io->ctx, hash.u.u8, sizeof(hash));
     if (io->cache && (key & ~TXIO_SHA256_D) != TXIO_UNCACHED)
@@ -266,13 +270,15 @@ static void txio_hash_and_cache_bytes(cursor_io *io,
 static int txio_done(cursor_io *io, uint32_t flags)
 {
     struct sha256 hash;
-    sha256_done(&io->ctx, &hash);
-    if (flags & TXIO_SHA256_D) {
+    bool ok = sha256_done(&io->ctx, &hash);
+    if (ok && (flags & TXIO_SHA256_D)) {
         struct sha256 hash2;
-        sha256(&hash2, hash.u.u8, sizeof(hash));
-        push_bytes(&io->cursor, &io->max, hash2.u.u8, sizeof(hash2));
-    } else
-        push_bytes(&io->cursor, &io->max, hash.u.u8, sizeof(hash));
+        ok = sha256(&hash2, hash.u.u8, sizeof(hash));
+        memcpy(hash.u.u8, hash2.u.u8, sizeof(hash));
+    }
+    if (!ok || io->hash_failed)
+        return WALLY_ERROR;
+    push_bytes(&io->cursor, &io->max, hash.u.u8, sizeof(hash));
     if (io->max)
         return WALLY_ERROR; /* Wrote the wrong number of bytes: should not happen! */
     return WALLY_OK;
@@ -605,7 +611,10 @@ static void txio_hash_annex(cursor_io *io,
         sha256_init(&ctx);
         hash_varbuff(&ctx, annex, annex_len);
         struct sha256 hash;
-        sha256_done(&ctx, &hash);
+        if (!sha256_done(&ctx, &hash)) {
+            io->hash_failed = true; /* Don't cache the failed hash */
+            return;
+        }
         txio_hash_and_cache_bytes(io, TXIO_CACHED_ANNEX, 0,
                                   annex, annex_len, hash.u.u8);
     }
@@ -639,7 +648,8 @@ int bip341_tapbranch_hash(const unsigned char *lhs, size_t lhs_len,
     }
     hash_bytes(&ctx, lhs, lhs_len);
     hash_bytes(&ctx, rhs, rhs_len);
-    sha256_done(&ctx, &hash);
+    if (!sha256_done(&ctx, &hash))
+        return WALLY_ERROR;
     memcpy(bytes_out, hash.u.u8, sizeof(hash));
     return WALLY_OK;
 }
@@ -662,7 +672,8 @@ int bip341_tapleaf_hash(unsigned char leaf_version,
     tagged_hash_init(&ctx, TAPLEAF_SHA256(is_elements), SHA256_LEN);
     hash_u8(&ctx, leaf_version);
     hash_varbuff(&ctx, script, script_len);
-    sha256_done(&ctx, &hash);
+    if (!sha256_done(&ctx, &hash))
+        return WALLY_ERROR;
     memcpy(bytes_out, hash.u.u8, sizeof(hash));
     return WALLY_OK;
 }
@@ -674,8 +685,11 @@ static void txio_hash_tapleaf_hash(cursor_io *io, unsigned char leaf_version,
     if (!txio_hash_cached_bytes(io, TXIO_CACHED_TAPLEAF, leaf_version,
                                 tapleaf_script, tapleaf_script_len)) {
         unsigned char hash[SHA256_LEN];
-        bip341_tapleaf_hash(leaf_version, tapleaf_script, tapleaf_script_len,
-                            is_elements, hash, sizeof(hash));
+        if (bip341_tapleaf_hash(leaf_version, tapleaf_script, tapleaf_script_len,
+                                is_elements, hash, sizeof(hash)) != WALLY_OK) {
+            io->hash_failed = true; /* Don't cache the failed hash */
+            return;
+        }
         txio_hash_and_cache_bytes(io, TXIO_CACHED_TAPLEAF, leaf_version,
                                   tapleaf_script, tapleaf_script_len, hash);
     }
@@ -714,6 +728,7 @@ static int legacy_signature_hash(
     io.cache = cache;
     io.cursor = bytes_out;
     io.max = len;
+    io.hash_failed = false;
     sha256_init(&io.ctx);
     /* Tx data */
     hash_le32(&io.ctx, tx->version);
@@ -812,6 +827,7 @@ static int bip143_signature_hash(
     io.cache = cache;
     io.cursor = bytes_out;
     io.max = len;
+    io.hash_failed = false;
     sha256_init(&io.ctx);
     /* Tx data */
     hash_le32(&io.ctx, tx->version);
@@ -977,6 +993,7 @@ static int bip341_signature_hash(
     io.cache = cache;
     io.cursor = bytes_out;
     io.max = len;
+    io.hash_failed = false;
     txio_bip341_init(&io, genesis_blockhash, genesis_blockhash_len);
     if (!is_elements)
         hash_u8(&io.ctx, 0); /* sighash epoch */

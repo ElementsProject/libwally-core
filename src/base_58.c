@@ -153,15 +153,15 @@ cleanup:
     return ret;
 }
 
-uint32_t base58_get_checksum(const unsigned char *bytes, size_t bytes_len)
+int base58_get_checksum(const unsigned char *bytes, size_t bytes_len,
+                        uint32_t *checksum)
 {
     struct sha256 sha;
-    uint32_t checksum;
+    int ret = wally_sha256d(bytes, bytes_len, (unsigned char *)&sha, sizeof(sha));
 
-    wally_sha256d(bytes, bytes_len, (unsigned char *)&sha, sizeof(sha));
-    checksum = sha.u.u32[0];
+    *checksum = ret == WALLY_OK ? sha.u.u32[0] : 0;
     wally_clear(&sha, sizeof(sha));
-    return checksum;
+    return ret;
 }
 
 
@@ -181,7 +181,8 @@ int wally_base58_from_bytes(const unsigned char *bytes, size_t bytes_len,
         goto cleanup; /* Invalid argument */
 
     if (flags & BASE58_FLAG_CHECKSUM) {
-        checksum = base58_get_checksum(bytes, bytes_len);
+        if ((ret = base58_get_checksum(bytes, bytes_len, &checksum)) != WALLY_OK)
+            goto cleanup;
         cs_p = &checksum;
         bytes_len += 4;
     }
@@ -310,7 +311,11 @@ int wally_base58_n_to_bytes(const char *str_in, size_t str_len, uint32_t flags,
         }
 
         offset = *written - BASE58_CHECKSUM_LEN;
-        checksum = base58_get_checksum(bytes_out, offset);
+        if ((ret = base58_get_checksum(bytes_out, offset, &checksum)) != WALLY_OK) {
+            wally_clear(bytes_out, len);
+            *written = 0;
+            return ret;
+        }
 
         if (memcmp(bytes_out + offset, &checksum, sizeof(checksum))) {
             wally_clear(bytes_out, len);

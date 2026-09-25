@@ -314,10 +314,10 @@ static int key_compute_pub_key(struct ext_key *key_out)
                                                 sizeof(key_out->pub_key));
 }
 
-static void key_compute_hash160(struct ext_key *key_out)
+WARN_UNUSED_RESULT static int key_compute_hash160(struct ext_key *key_out)
 {
-    wally_hash160(key_out->pub_key, sizeof(key_out->pub_key),
-                  key_out->hash160, sizeof(key_out->hash160));
+    return wally_hash160(key_out->pub_key, sizeof(key_out->pub_key),
+                         key_out->hash160, sizeof(key_out->hash160));
 }
 
 int bip32_key_free(const struct ext_key *hdkey)
@@ -343,6 +343,13 @@ static int wipe_key_fail(struct ext_key *key_out)
 {
     wally_clear(key_out, sizeof(*key_out));
     return WALLY_EINVAL;
+}
+
+/* Wipe a key and return a hashing failure for the caller to propagate */
+static int wipe_key_error(struct ext_key *key_out)
+{
+    wally_clear(key_out, sizeof(*key_out));
+    return WALLY_ERROR;
 }
 
 int bip32_key_from_private_key(uint32_t version,
@@ -400,16 +407,17 @@ int bip32_key_from_seed_custom(const unsigned char *bytes, size_t bytes_len,
     }
 
     /* Generate private key and chain code */
-    hmac_sha512_impl(&sha, hmac_key, hmac_key_len, bytes, bytes_len);
-
-    ret = bip32_key_from_private_key(version, sha.u.u8, EC_PRIVATE_KEY_LEN, key_out);
+    ret = hmac_sha512_impl(&sha, hmac_key, hmac_key_len, bytes, bytes_len);
+    if (ret == WALLY_OK)
+        ret = bip32_key_from_private_key(version, sha.u.u8, EC_PRIVATE_KEY_LEN, key_out);
     if (ret == WALLY_OK) {
         /* Copy the chain code and set other members */
         wally_memcpy(key_out->chain_code, sha.u.u8 + sizeof(sha) / 2, sizeof(sha) / 2);
         key_out->depth = 0; /* Master key, depth 0 */
         key_out->child_num = 0;
-        if (!(flags & BIP32_FLAG_SKIP_HASH))
-            key_compute_hash160(key_out);
+        if (!(flags & BIP32_FLAG_SKIP_HASH) &&
+            (ret = key_compute_hash160(key_out)) != WALLY_OK)
+            wally_clear(key_out, sizeof(*key_out));
     }
     wally_clear(&sha, sizeof(sha));
     return ret;
@@ -589,7 +597,8 @@ int bip32_key_unserialize(const unsigned char *bytes, size_t bytes_len,
         bip32_key_strip_private_key(key_out);
     }
 
-    key_compute_hash160(key_out);
+    if (key_compute_hash160(key_out) != WALLY_OK)
+        return wipe_key_error(key_out);
     return WALLY_OK;
 }
 
@@ -650,6 +659,7 @@ int bip32_key_from_parent(const struct ext_key *hdkey, uint32_t child_num,
     const bool we_are_private = hdkey && key_is_private(hdkey);
     const bool derive_private = !(flags & BIP32_FLAG_KEY_PUBLIC);
     const bool hardened = child_is_hardened(child_num);
+    int ret = WALLY_EINVAL;
 
     if (hdkey == key_out)
         return WALLY_EINVAL; /* Cannot derive a key in place */
@@ -698,9 +708,12 @@ int bip32_key_from_parent(const struct ext_key *hdkey, uint32_t child_num,
     key_out->child_num = cpu_to_be32(child_num);
 
     /* I = HMAC-SHA512(Key = cpar, Data) */
-    hmac_sha512_impl(&sha, hdkey->chain_code, sizeof(hdkey->chain_code),
-                     key_out->priv_key,
-                     sizeof(key_out->priv_key) + sizeof(key_out->child_num));
+    if (hmac_sha512_impl(&sha, hdkey->chain_code, sizeof(hdkey->chain_code),
+                         key_out->priv_key,
+                         sizeof(key_out->priv_key) + sizeof(key_out->child_num)) != WALLY_OK) {
+        ret = WALLY_ERROR;
+        goto fail;
+    }
 
     /* Split I into two 32-byte sequences, IL and IR
      * The returned chain code ci is IR (i.e. the 2nd half of our hmac sha512)
@@ -764,13 +777,16 @@ int bip32_key_from_parent(const struct ext_key *hdkey, uint32_t child_num,
                       &key_out->hash160, sizeof(key_out->hash160));
     else {
         memcpy(key_out->parent160, hdkey->hash160, sizeof(hdkey->hash160));
-        key_compute_hash160(key_out);
+        if (key_compute_hash160(key_out) != WALLY_OK) {
+            ret = WALLY_ERROR;
+            goto fail;
+        }
     }
     wally_clear(&sha, sizeof(sha));
     return WALLY_OK;
 fail:
-    wally_clear(&sha, sizeof(sha));
-    return wipe_key_fail(key_out);
+    wally_clear_2(&sha, sizeof(sha), key_out, sizeof(*key_out));
+    return ret;
 }
 
 int bip32_key_from_parent_alloc(const struct ext_key *hdkey,
@@ -1028,8 +1044,8 @@ int bip32_key_init(uint32_t version, uint32_t depth, uint32_t child_num,
     }
     if (hash160)
         memcpy(key_out->hash160, hash160, key_size(hash160));
-    else
-        key_compute_hash160(key_out);
+    else if (key_compute_hash160(key_out) != WALLY_OK)
+        return wipe_key_error(key_out);
     if (parent160)
         memcpy(key_out->parent160, parent160, parent160_len);
 
@@ -1117,8 +1133,11 @@ int bip32_key_get_fingerprint(struct ext_key *hdkey,
         return WALLY_EINVAL;
 
     /* Derive hash160 if needed. */
-    if (mem_is_zero(hdkey->hash160, sizeof(hdkey->hash160))) {
-        key_compute_hash160(hdkey);
+    if (mem_is_zero(hdkey->hash160, sizeof(hdkey->hash160)) &&
+        key_compute_hash160(hdkey) != WALLY_OK) {
+        /* Leave hash160 zeroed so that it is computed again next time */
+        wally_clear(hdkey->hash160, sizeof(hdkey->hash160));
+        return WALLY_ERROR;
     }
 
     /* Fingerprint is first 32 bits of the key hash. */

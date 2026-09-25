@@ -30,8 +30,8 @@ int wally_bip32_key_to_address(const struct ext_key *hdkey, uint32_t flags,
     if (flags & WALLY_ADDRESS_TYPE_P2PKH) {
         /* pub_key_hash = ripemd160(sha256(pubkey) */
         address[0] = (unsigned char) version & 0xff;
-        if (wally_hash160(hdkey->pub_key, sizeof(hdkey->pub_key), address + 1, HASH160_LEN) != WALLY_OK)
-            return WALLY_EINVAL;
+        if ((ret = wally_hash160(hdkey->pub_key, sizeof(hdkey->pub_key), address + 1, HASH160_LEN)) != WALLY_OK)
+            return ret;
     } else {
         /* redeem_script = SegWit version 0 + push(keyhash) = OP_0 + 0x20 + [key_hash]
            where key_hash = ripemd160(sha256(pubkey)) */
@@ -39,13 +39,13 @@ int wally_bip32_key_to_address(const struct ext_key *hdkey, uint32_t flags,
         redeem_script[0] = OP_0;
         redeem_script[1] = HASH160_LEN;
 
-        if (wally_hash160(hdkey->pub_key, sizeof(hdkey->pub_key), redeem_script + 2, HASH160_LEN) != WALLY_OK)
-            return WALLY_EINVAL;
+        if ((ret = wally_hash160(hdkey->pub_key, sizeof(hdkey->pub_key), redeem_script + 2, HASH160_LEN)) != WALLY_OK)
+            return ret;
 
         /* P2SH address = version (e.g. 0x05) + ripemd160(sha256(redeem_script)) */
         address[0] = (unsigned char) version & 0xff;
-        if (wally_hash160(redeem_script, sizeof(redeem_script), address + 1, HASH160_LEN) != WALLY_OK)
-            return WALLY_EINVAL;
+        if ((ret = wally_hash160(redeem_script, sizeof(redeem_script), address + 1, HASH160_LEN)) != WALLY_OK)
+            return ret;
     }
 
     ret = wally_base58_from_bytes(address, sizeof(address), BASE58_FLAG_CHECKSUM, output);
@@ -70,8 +70,8 @@ int wally_bip32_key_to_addr_segwit(const struct ext_key *hdkey, const char *addr
     if (!hdkey || !output)
         return WALLY_EINVAL;
 
-    if (wally_hash160(hdkey->pub_key, sizeof(hdkey->pub_key), witness_program_bytes + 2, HASH160_LEN) != WALLY_OK)
-        return WALLY_EINVAL;
+    if ((ret = wally_hash160(hdkey->pub_key, sizeof(hdkey->pub_key), witness_program_bytes + 2, HASH160_LEN)) != WALLY_OK)
+        return ret;
 
     ret = wally_addr_segwit_from_bytes(witness_program_bytes, HASH160_LEN + 2, addr_family, flags, output);
 

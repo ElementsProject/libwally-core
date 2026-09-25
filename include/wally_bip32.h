@@ -151,7 +151,9 @@ WALLY_CORE_API int bip32_key_init_alloc(
  * This creates a new master key, i.e. the root of a new HD tree.
  * The entropy passed in may produce an invalid key. If this happens,
  * WALLY_ERROR will be returned and the caller should retry with
- * new entropy.
+ * new entropy. WALLY_ERROR is also returned if hashing fails, which can
+ * only happen with hashing backends that can fail at runtime; retrying
+ * with the same entropy may then succeed.
  *
  * :param bytes: Entropy to use.
  * :param bytes_len: Size of ``bytes`` in bytes. Must be one of the :ref:`bip32-entropy-length`

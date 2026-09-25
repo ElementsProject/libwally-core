@@ -161,22 +161,25 @@ int wally_bip340_tagged_hash(const unsigned char *bytes, size_t bytes_len,
 {
     struct sha256 sha;
     struct sha256_ctx ctx;
+    int ret = WALLY_ERROR;
 
     if (!bytes || !bytes_len || !tag || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
     /* SHA256(SHA256(tag) || SHA256(tag) || msg) */
     /* TODO: Add optimised impls for Taproot fixed tags */
-    sha256(&sha, tag, strlen(tag));
-    sha256_init(&ctx);
-    sha256_update(&ctx, &sha, sizeof(sha));
-    sha256_update(&ctx, &sha, sizeof(sha));
-    sha256_update(&ctx, bytes, bytes_len);
-    sha256_done(&ctx, &sha);
-
-    memcpy(bytes_out, &sha, sizeof(sha));
+    if (sha256(&sha, tag, strlen(tag))) {
+        sha256_init(&ctx);
+        sha256_update(&ctx, &sha, sizeof(sha));
+        sha256_update(&ctx, &sha, sizeof(sha));
+        sha256_update(&ctx, bytes, bytes_len);
+        if (sha256_done(&ctx, &sha)) {
+            memcpy(bytes_out, &sha, sizeof(sha));
+            ret = WALLY_OK;
+        }
+    }
     wally_clear_2(&sha, sizeof(sha), &ctx, sizeof(ctx));
-    return WALLY_OK;
+    return ret;
 }
 
 int wally_sha256(const unsigned char *bytes, size_t bytes_len,
@@ -184,14 +187,19 @@ int wally_sha256(const unsigned char *bytes, size_t bytes_len,
 {
     struct sha256 sha;
     const bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u32[0]));
+    bool ok;
 
     if ((!bytes && bytes_len != 0) || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
-    sha256(aligned ? (void *)bytes_out : (void *)&sha, bytes, bytes_len);
+    ok = sha256(aligned ? (void *)bytes_out : (void *)&sha, bytes, bytes_len);
     if (!aligned) {
         memcpy(bytes_out, &sha, sizeof(sha));
         wally_clear(&sha, sizeof(sha));
+    }
+    if (!ok) {
+        wally_clear(bytes_out, len);
+        return WALLY_ERROR;
     }
     return WALLY_OK;
 }
@@ -267,17 +275,22 @@ int wally_sha256d(const unsigned char *bytes, size_t bytes_len,
 {
     struct sha256 sha_1, sha_2;
     const bool aligned = alignment_ok(bytes_out, sizeof(sha_1.u.u32[0]));
+    bool ok;
 
     if ((!bytes && bytes_len != 0) || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
-    sha256(&sha_1, bytes, bytes_len);
-    sha256(aligned ? (void *)bytes_out : (void *)&sha_2, &sha_1, sizeof(sha_1));
+    ok = sha256(&sha_1, bytes, bytes_len) &&
+         sha256(aligned ? (void *)bytes_out : (void *)&sha_2, &sha_1, sizeof(sha_1));
     if (!aligned) {
         memcpy(bytes_out, &sha_2, sizeof(sha_2));
         wally_clear(&sha_2, sizeof(sha_2));
     }
     wally_clear(&sha_1, sizeof(sha_1));
+    if (!ok) {
+        wally_clear(bytes_out, len);
+        return WALLY_ERROR;
+    }
     return WALLY_OK;
 }
 
@@ -286,14 +299,19 @@ int wally_sha512(const unsigned char *bytes, size_t bytes_len,
 {
     struct sha512 sha;
     const bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u64[0]));
+    bool ok;
 
     if ((!bytes && bytes_len != 0) || !bytes_out || len != SHA512_LEN)
         return WALLY_EINVAL;
 
-    sha512(aligned ? (void *)bytes_out : (void *)&sha, bytes, bytes_len);
+    ok = sha512(aligned ? (void *)bytes_out : (void *)&sha, bytes, bytes_len);
     if (!aligned) {
         memcpy(bytes_out, &sha, sizeof(sha));
         wally_clear(&sha, sizeof(sha));
+    }
+    if (!ok) {
+        wally_clear(bytes_out, len);
+        return WALLY_ERROR;
     }
     return WALLY_OK;
 }
@@ -323,14 +341,15 @@ int wally_hash160(const unsigned char *bytes, size_t bytes_len,
     unsigned char buff[SHA256_LEN];
     struct ripemd160 ripemd;
     const bool aligned = alignment_ok(bytes_out, sizeof(ripemd.u.u32[0]));
+    int ret;
 
     if (!bytes_out || len != HASH160_LEN)
         return WALLY_EINVAL;
 
     BUILD_ASSERT(sizeof(ripemd) == HASH160_LEN);
 
-    if (wally_sha256(bytes, bytes_len, buff, sizeof(buff)) != WALLY_OK)
-        return WALLY_EINVAL;
+    if ((ret = wally_sha256(bytes, bytes_len, buff, sizeof(buff))) != WALLY_OK)
+        return ret;
 
     ripemd160(aligned ? (void *)bytes_out : (void *)&ripemd, &buff, sizeof(buff));
     if (!aligned) {

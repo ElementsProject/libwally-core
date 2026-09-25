@@ -15,6 +15,7 @@ typedef struct cursor_io
     struct wally_map *cache;
     unsigned char *cursor;
     size_t max;
+    bool hash_failed; /* A sub-hash failed: txio_done() must fail */
 } cursor_io;
 
 /* Hash helpers */
@@ -26,7 +27,7 @@ void hash_varbuff(struct sha256_ctx *ctx,
 
 int bip341_tapbranch_hash(const unsigned char *lhs, size_t lhs_len,
                           const unsigned char *rhs, size_t rhs_len,
-                          bool is_elements, unsigned char *bytes_out, size_t len);
+                          bool is_elements, unsigned char *bytes_out, size_t len) WARN_UNUSED_RESULT;
 
 /* The tapscript leaf version: 0xc0 (BIP-342) for BTC, 0xc4 for Elements */
 #define TAPSCRIPT_LEAF_VERSION(is_elements) ((is_elements) ? \
@@ -34,6 +35,6 @@ int bip341_tapbranch_hash(const unsigned char *lhs, size_t lhs_len,
 
 int bip341_tapleaf_hash(unsigned char leaf_version,
                         const unsigned char *script, size_t script_len,
-                        bool is_elements, unsigned char *bytes_out, size_t len);
+                        bool is_elements, unsigned char *bytes_out, size_t len) WARN_UNUSED_RESULT;
 
 #endif /* LIBWALLY_CORE_TX_IO_H */

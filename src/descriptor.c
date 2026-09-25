@@ -2664,6 +2664,8 @@ static int analyze_address(ms_ctx *ctx, const char *str, size_t str_len,
 
     ret = wally_base58_n_to_bytes(str, str_len, BASE58_FLAG_CHECKSUM,
                                   decoded, sizeof(decoded), &decoded_len);
+    if (ret == WALLY_ERROR)
+        return ret; /* Hashing the checksum failed */
     if (ret == WALLY_OK && decoded_len == HASH160_LEN + 1) {
         /* P2PKH or P2SH address */
         bool is_p2sh;
@@ -2860,9 +2862,12 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
         return ret;
 
     /* Check for a WIF private key (not allowed for ct() blinding keys) */
-    if (!is_ct_key)
+    if (!is_ct_key) {
         ret = wally_base58_n_to_bytes(node->data, node->data_len, BASE58_FLAG_CHECKSUM,
                                       privkey, sizeof(privkey), &privkey_len);
+        if (ret == WALLY_ERROR)
+            return ret; /* Hashing the checksum failed */
+    }
     if (ret == WALLY_OK && privkey_len && privkey_len <= EC_PRIVATE_KEY_LEN + 2) {
         if (ctx->addr_ver && ctx->addr_ver->version_wif != privkey[0])
             ret = WALLY_EINVAL;

@@ -99,14 +99,19 @@ static size_t len_to_mask(size_t len)
     return 0;
 }
 
-static size_t bip39_checksum(const unsigned char *bytes, size_t bytes_len, size_t mask)
+static int bip39_checksum(const unsigned char *bytes, size_t bytes_len,
+                          size_t mask, size_t *checksum)
 {
     struct sha256 sha;
-    size_t ret;
-    sha256(&sha, bytes, bytes_len);
-    ret = sha.u.u8[0] | (sha.u.u8[1] << 8);
+    int ret = WALLY_ERROR;
+
+    *checksum = 0;
+    if (sha256(&sha, bytes, bytes_len)) {
+        *checksum = (sha.u.u8[0] | (sha.u.u8[1] << 8)) & mask;
+        ret = WALLY_OK;
+    }
     wally_clear(&sha, sizeof(sha));
-    return ret & mask;
+    return ret;
 }
 
 int bip39_mnemonic_from_bytes(const struct words *w,
@@ -115,6 +120,7 @@ int bip39_mnemonic_from_bytes(const struct words *w,
 {
     unsigned char tmp_bytes[BIP39_ENTROPY_MAX_LEN];
     size_t checksum, mask;
+    int ret;
 
     if (output)
         *output = NULL;
@@ -127,8 +133,9 @@ int bip39_mnemonic_from_bytes(const struct words *w,
     if (w->bits != 11u || !(mask = len_to_mask(bytes_len)))
         return WALLY_EINVAL;
 
+    if ((ret = bip39_checksum(bytes, bytes_len, mask, &checksum)) != WALLY_OK)
+        return ret;
     wally_memcpy(tmp_bytes, bytes, bytes_len);
-    checksum = bip39_checksum(bytes, bytes_len, mask);
     tmp_bytes[bytes_len] = checksum & 0xff;
     if (mask > 0xff)
         tmp_bytes[++bytes_len] = (checksum >> 8) & 0xff;
@@ -137,14 +144,16 @@ int bip39_mnemonic_from_bytes(const struct words *w,
     return *output ? WALLY_OK : WALLY_ENOMEM;
 }
 
-static bool checksum_ok(const unsigned char *bytes, size_t idx, size_t mask)
+static int verify_checksum(const unsigned char *bytes, size_t idx, size_t mask)
 {
     /* The checksum is stored after the data to sum */
-    size_t calculated = bip39_checksum(bytes, idx, mask);
-    size_t stored = bytes[idx];
+    size_t calculated, stored = bytes[idx];
+    int ret = bip39_checksum(bytes, idx, mask, &calculated);
     if (mask > 0xff)
         stored |= (bytes[idx + 1] << 8);
-    return (stored & mask) == calculated;
+    if (ret == WALLY_OK && (stored & mask) != calculated)
+        ret = WALLY_EINVAL; /* Bad checksum */
+    return ret;
 }
 
 int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
@@ -174,7 +183,7 @@ int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
 
     ret = mnemonic_to_bytes(w, mnemonic, tmp_bytes, sizeof(tmp_bytes), &tmp_len);
 
-    if (!ret) {
+    if (ret == WALLY_OK) {
         /* Remove checksum bytes from the output length */
         --tmp_len;
         if (tmp_len > BIP39_ENTROPY_LEN_256)
@@ -184,11 +193,12 @@ int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
             ret = WALLY_EINVAL; /* Too big for biggest supported entropy */
         else {
             if (tmp_len <= len) {
-                if (!(mask = len_to_mask(tmp_len)) ||
-                    !checksum_ok(tmp_bytes, tmp_len, mask)) {
+                if (!(mask = len_to_mask(tmp_len)))
+                    ret = WALLY_EINVAL;
+                else
+                    ret = verify_checksum(tmp_bytes, tmp_len, mask);
+                if (ret != WALLY_OK)
                     tmp_len = 0;
-                    ret = WALLY_EINVAL; /* Bad checksum */
-                }
                 else
                     wally_memcpy(bytes_out, tmp_bytes, tmp_len);
             }
@@ -196,7 +206,7 @@ int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
     }
 
     wally_clear(tmp_bytes, sizeof(tmp_bytes));
-    if (!ret && written)
+    if (ret == WALLY_OK && written)
         *written = tmp_len;
     return ret;
 }
@@ -240,7 +250,7 @@ int bip39_mnemonic_to_seed(const char *mnemonic, const char *passphrase,
                                    salt, salt_len, 0,
                                    bip9_cost, bytes_out, len);
 
-    if (!ret && written)
+    if (ret == WALLY_OK && written)
         *written = BIP39_SEED_LEN_512; /* Succeeded */
 
     clear_and_free(salt, salt_len);

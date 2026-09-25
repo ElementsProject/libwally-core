@@ -77,19 +77,18 @@ static int tx_clone_alloc(const struct wally_tx *src, struct wally_tx **dst) {
     return wally_tx_clone_alloc(src, 0, dst);
 }
 
-static bool is_matching_txid(const struct wally_tx *tx,
-                             const unsigned char *txid, size_t txid_len)
+static int is_matching_txid(const struct wally_tx *tx,
+                            const unsigned char *txid, size_t txid_len)
 {
     unsigned char src_txid[WALLY_TXHASH_LEN];
-    bool ret;
+    int ret;
 
     if (!tx || !txid || txid_len != WALLY_TXHASH_LEN)
-        return false;
+        return WALLY_EINVAL;
 
-    if (wally_tx_get_txid(tx, src_txid, sizeof(src_txid)) != WALLY_OK)
-        return false;
-
-    ret = memcmp(src_txid, txid, txid_len) == 0;
+    ret = wally_tx_get_txid(tx, src_txid, sizeof(src_txid));
+    if (ret == WALLY_OK && memcmp(src_txid, txid, txid_len))
+        ret = WALLY_EINVAL; /* Txid doesn't match */
     wally_clear(src_txid, sizeof(src_txid));
     return ret;
 }
@@ -4353,16 +4352,18 @@ int wally_psbt_get_input_bip32_key_from_alloc(const struct wally_psbt *psbt,
     return ret;
 }
 
-static bool is_matching_redeem(const unsigned char *scriptpk, size_t scriptpk_len,
-                               const unsigned char *redeem, size_t redeem_len)
+static int is_matching_redeem(const unsigned char *scriptpk, size_t scriptpk_len,
+                              const unsigned char *redeem, size_t redeem_len)
 {
     unsigned char p2sh[WALLY_SCRIPTPUBKEY_P2SH_LEN];
     size_t p2sh_len;
     int ret = wally_scriptpubkey_p2sh_from_bytes(redeem, redeem_len,
                                                  WALLY_SCRIPT_HASH160,
                                                  p2sh, sizeof(p2sh), &p2sh_len);
-    return ret == WALLY_OK && p2sh_len == scriptpk_len &&
-           !memcmp(p2sh, scriptpk, p2sh_len);
+    if (ret == WALLY_OK &&
+        (p2sh_len != scriptpk_len || memcmp(p2sh, scriptpk, p2sh_len)))
+        ret = WALLY_EINVAL; /* Redeem script doesn't match */
+    return ret;
 }
 
 /* Get the scriptpubkey or redeem script from an input */
@@ -4372,6 +4373,7 @@ static int get_signing_script(const struct wally_psbt *psbt, size_t index,
     const struct wally_psbt_input *inp = psbt_get_input(psbt, index);
     const struct wally_tx_output *utxo = utxo_from_input(psbt, inp);
     const struct wally_map_item *item;
+    int ret;
 
     *script = NULL;
     *script_len = 0;
@@ -4380,9 +4382,9 @@ static int get_signing_script(const struct wally_psbt *psbt, size_t index,
 
     item = wally_map_get_integer(&inp->psbt_fields, PSBT_IN_REDEEM_SCRIPT);
     if (item) {
-        if (!is_matching_redeem(utxo->script, utxo->script_len,
-                                item->value, item->value_len))
-            return WALLY_EINVAL;
+        if ((ret = is_matching_redeem(utxo->script, utxo->script_len,
+                                      item->value, item->value_len)) != WALLY_OK)
+            return ret;
         *script = item->value;
         *script_len = item->value_len;
     } else {
@@ -4469,7 +4471,9 @@ static int get_scriptcode(const struct wally_psbt *psbt, size_t index,
                                                    WALLY_SCRIPT_SHA256,
                                                    p2wsh, sizeof(p2wsh),
                                                    &written);
-            if (ret != WALLY_OK || written != sizeof(p2wsh) ||
+            if (ret != WALLY_OK)
+                return ret;
+            if (written != sizeof(p2wsh) ||
                 written != scriptcode_len || memcmp(p2wsh, scriptcode, written))
                 return WALLY_EINVAL;
             *script = wit_script->value; /* Return the witness script */
@@ -4492,8 +4496,10 @@ static int get_scriptcode(const struct wally_psbt *psbt, size_t index,
         unsigned char txid[WALLY_TXHASH_LEN];
 
         ret = wally_psbt_get_input_previous_txid(psbt, index, txid, sizeof(txid));
-        if (ret != WALLY_OK || !is_matching_txid(inp->utxo, txid, sizeof(txid)))
-            return WALLY_EINVAL; /* Prevout doesn't match input */
+        if (ret != WALLY_OK)
+            return WALLY_EINVAL;
+        if ((ret = is_matching_txid(inp->utxo, txid, sizeof(txid))) != WALLY_OK)
+            return ret; /* Prevout doesn't match input, or hashing failed */
         *script = scriptcode;
         *script_len = scriptcode_len;
         return WALLY_OK;

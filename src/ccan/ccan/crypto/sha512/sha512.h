@@ -2,6 +2,7 @@
 #define CCAN_CRYPTO_SHA512_H
 /* BSD-MIT - see LICENSE file for details */
 #include "config.h"
+#include <ccan/compiler/compiler.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -50,7 +51,7 @@ struct sha512 {
  * are unspecified. Only backends that can fail at runtime (such as
  * hardware accelerated ones) return false.
  */
-bool sha512(struct sha512 *sha, const void *p, size_t size);
+bool sha512(struct sha512 *sha, const void *p, size_t size) WARN_UNUSED_RESULT;
 
 /**
  * struct sha512_ctx - structure to store running context for sha512
@@ -155,6 +156,6 @@ void sha512_update(struct sha512_ctx *ctx, const void *p, size_t size);
  * sha512_update(), which cannot report errors themselves: backends that
  * can fail must remember the failure until sha512_done() is called.
  */
-bool sha512_done(struct sha512_ctx *sha512, struct sha512 *res);
+bool sha512_done(struct sha512_ctx *sha512, struct sha512 *res) WARN_UNUSED_RESULT;
 
 #endif /* CCAN_CRYPTO_SHA512_H */

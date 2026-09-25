@@ -234,9 +234,11 @@ int map_add(struct wally_map *map_in,
     size_t is_found;
     int ret;
 
-    if (!map_in || (key && !key_len) || BYTES_INVALID(val, val_len) ||
-        (map_in->verify_fn && map_in->verify_fn(key, key_len, val, val_len) != WALLY_OK))
+    if (!map_in || (key && !key_len) || BYTES_INVALID(val, val_len))
         return WALLY_EINVAL;
+    if (map_in->verify_fn &&
+        (ret = map_in->verify_fn(key, key_len, val, val_len)) != WALLY_OK)
+        return ret;
 
     if ((ret = map_find(map_in, 0, key, key_len, &is_found)) != WALLY_OK)
         return ret;
@@ -627,12 +629,12 @@ int wally_keypath_bip32_verify(const unsigned char *key, size_t key_len,
                                const unsigned char *val, size_t val_len)
 {
     struct ext_key extkey;
+    int ret = keypath_key_verify(key, key_len, &extkey);
 
-    if (keypath_key_verify(key, key_len, &extkey) != WALLY_OK ||
-        !extkey.version ||
-        keypath_path_verify(val, val_len, &extkey) != WALLY_OK)
-        return WALLY_EINVAL;
-    return WALLY_OK;
+    if (ret == WALLY_OK &&
+        (!extkey.version || keypath_path_verify(val, val_len, &extkey) != WALLY_OK))
+        ret = WALLY_EINVAL;
+    return ret;
 }
 
 int wally_keypath_public_key_verify(const unsigned char *key, size_t key_len,
@@ -836,12 +838,14 @@ static int hash_verify(const unsigned char *key, size_t key_len,
                        psbt_hash_fn_t hash_fn, size_t hash_len)
 {
     unsigned char buff[SHA256_LEN];
+    int ret;
 
-    if (key_len == hash_len &&
-        hash_fn(val, val_len, buff, hash_len) == WALLY_OK &&
-        !memcmp(key, buff, hash_len))
-        return WALLY_OK; /* Provided key is the correct hash of the preimage */
-    return WALLY_EINVAL; /* Invalid key */
+    if (key_len != hash_len)
+        return WALLY_EINVAL; /* Invalid key */
+    if ((ret = hash_fn(val, val_len, buff, hash_len)) == WALLY_OK &&
+        memcmp(key, buff, hash_len))
+        ret = WALLY_EINVAL; /* Provided key is not the hash of the preimage */
+    return ret;
 }
 
 int wally_map_hash_preimage_verify(const unsigned char *key, size_t key_len,
@@ -911,11 +915,12 @@ static int preimage_add(struct wally_map *map_in,
                         size_t type, psbt_hash_fn_t hash_fn, size_t len)
 {
     unsigned char tmp[SHA256_LEN];
+    int ret;
 
     if (!map_in || !val || !val_len)
         return WALLY_EINVAL;
-    if (hash_fn(val, val_len, tmp, len) != WALLY_OK)
-        return WALLY_EINVAL;
+    if ((ret = hash_fn(val, val_len, tmp, len)) != WALLY_OK)
+        return ret;
     return map_add_preimage_and_hash(map_in, tmp, len, val, val_len, type, true);
 }
 

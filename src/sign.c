@@ -717,10 +717,14 @@ int wally_format_bitcoin_message(const unsigned char *bytes, size_t bytes_len,
     memcpy(out, bytes, bytes_len);
 
     if (do_hash) {
-        wally_sha256d(msg_buf, msg_len, bytes_out, SHA256_LEN);
+        int ret = wally_sha256d(msg_buf, msg_len, bytes_out, SHA256_LEN);
         wally_clear(msg_buf, msg_len);
         if (msg_buf != buf)
             wally_free(msg_buf);
+        if (ret != WALLY_OK) {
+            *written = 0;
+            return ret;
+        }
     }
     return WALLY_OK;
 }
