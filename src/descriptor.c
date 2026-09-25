@@ -2650,12 +2650,9 @@ static int analyze_address(ms_ctx *ctx, const char *str, size_t str_len,
 
     ret = wally_base58_n_to_bytes(str, str_len, BASE58_FLAG_CHECKSUM,
                                   decoded, sizeof(decoded), &decoded_len);
-    if (ret == WALLY_OK) {
-        /* P2PKH/P2SH base58 address */
+    if (ret == WALLY_OK && decoded_len == HASH160_LEN + 1) {
+        /* P2PKH or P2SH address */
         bool is_p2sh;
-
-        if (decoded_len != HASH160_LEN + 1)
-            return WALLY_EINVAL; /* Unexpected address length */
 
         if (!addr_ver_from_version(decoded[0], ctx->addr_ver, &is_p2sh))
             return WALLY_EINVAL; /* Network not found */

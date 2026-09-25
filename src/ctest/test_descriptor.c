@@ -366,6 +366,12 @@ static const descriptor_test g_descriptor_cases[] = {
         "00201863143c14c5166804bd19203356da136c985678cd4d27a1b8c6329604903262",
         "8kzm8txf", VARS_STD
     },{
+        "descriptor - addr-btc-segwit-mainnet - only base58 characters",
+        "addr(bc1qcgvxu7yr4n5hvnad25uw3fjckmn5mswpjxn4xa)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "0014c2186e7883ace9764fad5538e8a658b6e74dc1c1",
+        "jy6njaxl", VARS_STD
+    },{
         "descriptor - empty raw",
         "raw()",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
@@ -2424,6 +2430,12 @@ static const struct address_test {
         WALLY_NETWORK_BITCOIN_MAINNET,
         0, 0, 0,
         ADDR("bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3")
+    },{
+        "address - addr-btc-segwit-mainnet - only base58 characters",
+        "addr(bc1qcgvxu7yr4n5hvnad25uw3fjckmn5mswpjxn4xa)",
+        WALLY_NETWORK_BITCOIN_MAINNET,
+        0, 0, 0,
+        ADDR("bc1qcgvxu7yr4n5hvnad25uw3fjckmn5mswpjxn4xa")
     },{
         "address - p2pkh-xpriv",
         "pkh(mainnet_xpriv/1h/2)",
