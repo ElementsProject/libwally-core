@@ -49,6 +49,8 @@ class ScryptTests(unittest.TestCase):
             [pwd, len(pwd), salt, len(salt), cost, block, p, None,    out_len], # Null output
             [pwd, len(pwd), salt, len(salt), cost, block, p, out_buf, 0],       # Empty output
             [pwd, len(pwd), salt, len(salt), cost, block, p, out_buf, 33],      # Len not % 32
+            [pwd, len(pwd), salt, len(salt), cost, 0,     p, out_buf, out_len], # Zero block size
+            [pwd, len(pwd), salt, len(salt), cost, block, 0, out_buf, out_len], # Zero parallelism
         ]
         for c in invalid:
             ret = wally_scrypt(*c)
