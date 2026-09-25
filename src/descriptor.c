@@ -2834,8 +2834,8 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
 
     /* Check for a hex public key (hex private keys allowed for ct() only) */
     ret = analyze_key_hex(ctx, node, flags, is_ct_key, &is_hex);
-    if (ret == WALLY_OK && is_hex)
-        return WALLY_OK;
+    if (ret != WALLY_OK || is_hex)
+        return ret;
 
     /* Check for a WIF private key (not allowed for ct() blinding keys) */
     if (!is_ct_key)
