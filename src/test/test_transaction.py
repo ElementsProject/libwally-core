@@ -329,6 +329,7 @@ class TransactionTests(unittest.TestCase):
             (tx, 0, script, script_len, 1, 1, 16, out, out_len), # Invalid flags
             (tx, 0, script, script_len, 1, 1, 0, None, out_len), # Empty bytes
             (tx, 0, script, script_len, 1, 1, 0, out, 31), # Short len
+            (tx, 1, script, script_len, 1, 1, 1, out, out_len), # Invalid index (only with segwit)
         ]:
             self.assertEqual(WALLY_EINVAL, wally_tx_get_btc_signature_hash(*args))
 
@@ -630,6 +631,15 @@ class TransactionTests(unittest.TestCase):
 
         tx = self.tx_deserialize_hex(keyspend_case['given']['rawUnsignedTx'], True)
         bytes_out, out_len = make_cbuffer('00'*32)
+
+        # Segwit v0 signature hashes require a valid input index
+        ret, num_inputs = wally_tx_get_num_inputs(tx)
+        self.assertEqual(ret, WALLY_OK)
+        value, value_len = make_cbuffer('010000000000001388')
+        ret = wally_tx_get_elements_signature_hash(tx, num_inputs, fake_script, fake_script_len,
+                                                   value, value_len, 1, 1,
+                                                   bytes_out, out_len)
+        self.assertEqual(ret, WALLY_EINVAL)
 
         for input_index in range(len(input_spending)):
             sighash = input_spending[input_index]['given']['hashType']

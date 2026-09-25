@@ -759,8 +759,8 @@ static int bip143_signature_hash(
     cursor_io io;
 
     /* Note that scriptcode can be empty, so we don't check it here */
-    if (!tx || !values || BYTES_INVALID(scriptcode, scriptcode_len) ||
-        sighash & 0xffffff00)
+    if (!tx || index >= tx->num_inputs || !values ||
+        BYTES_INVALID(scriptcode, scriptcode_len) || sighash & 0xffffff00)
         return WALLY_EINVAL;
 
     {
