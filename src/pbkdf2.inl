@@ -24,13 +24,8 @@ int SHA_POST(wally_pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
     BUILD_ASSERT(sizeof(beint32_t) == PBKDF2_HMAC_EXTRA_LEN);
     BUILD_ASSERT(sizeof(d1) == PBKDF2_HMAC_SHA_LEN);
 
-    if (!bytes_out || !len)
-        return WALLY_EINVAL;
-
-    if (flags)
-        return WALLY_EINVAL; /* Invalid flag */
-
-    if (!len || len % PBKDF2_HMAC_SHA_LEN)
+    if ((!pass && pass_len) || (!salt && salt_len) || flags ||
+        !bytes_out || !len || len % PBKDF2_HMAC_SHA_LEN)
         return WALLY_EINVAL;
 
     tmp_salt = wally_malloc(salt_len + PBKDF2_HMAC_EXTRA_LEN);

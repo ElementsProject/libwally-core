@@ -68,6 +68,17 @@ class PBKDF2Tests(unittest.TestCase):
             self.assertEqual(h(out_buf), h(case.expected))
 
 
+    def test_pbkdf2_hmac_sha_invalid(self):
+        buf, buf_len = make_cbuffer('aabbccdd')
+        for fn, len in [(wally_pbkdf2_hmac_sha256, PBKDF2_HMAC_SHA256_LEN),
+                        (wally_pbkdf2_hmac_sha512, PBKDF2_HMAC_SHA512_LEN)]:
+            out_buf, out_len = make_cbuffer('00' * len)
+            for args in [(None, buf_len, buf,  buf_len),  # NULL password
+                         (buf,  buf_len, None, buf_len)]: # NULL salt
+                ret = fn(*args, 0, 1, out_buf, out_len)
+                self.assertEqual(ret, WALLY_EINVAL)
+
+
     def _pbkdf2_hmac_sha_malloc_fail(self, fn, len):
         fake_buf, fake_len = make_cbuffer('aabbccdd')
         out_buf, out_len = make_cbuffer('00' * len)

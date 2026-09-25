@@ -46,11 +46,13 @@ class ScryptTests(unittest.TestCase):
         pwd, salt = utf8(pwd), utf8(salt)
         out_buf, out_len = make_cbuffer('0' * l)
         invalid = [
-            [pwd, len(pwd), salt, len(salt), cost, block, p, None,    out_len], # Null output
-            [pwd, len(pwd), salt, len(salt), cost, block, p, out_buf, 0],       # Empty output
-            [pwd, len(pwd), salt, len(salt), cost, block, p, out_buf, 33],      # Len not % 32
-            [pwd, len(pwd), salt, len(salt), cost, 0,     p, out_buf, out_len], # Zero block size
-            [pwd, len(pwd), salt, len(salt), cost, block, 0, out_buf, out_len], # Zero parallelism
+            [None, 1,        salt, len(salt), cost, block, p, out_buf, out_len], # NULL password
+            [pwd,  len(pwd), None, 1,         cost, block, p, out_buf, out_len], # NULL salt
+            [pwd,  len(pwd), salt, len(salt), cost, block, p, None,    out_len], # Null output
+            [pwd,  len(pwd), salt, len(salt), cost, block, p, out_buf, 0],       # Empty output
+            [pwd,  len(pwd), salt, len(salt), cost, block, p, out_buf, 33],      # Len not % 32
+            [pwd,  len(pwd), salt, len(salt), cost, 0,     p, out_buf, out_len], # Zero block size
+            [pwd,  len(pwd), salt, len(salt), cost, block, 0, out_buf, out_len], # Zero parallelism
         ]
         for c in invalid:
             ret = wally_scrypt(*c)
