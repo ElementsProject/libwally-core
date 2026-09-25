@@ -177,7 +177,6 @@ static int segwit_addr_encode(char *output, const char *hrp, size_t hrp_len, uin
     ++datalen;
     return bech32_encode(output, hrp, hrp_len, data, datalen, 90, witver != 0);
 fail:
-    wally_clear_2(data, sizeof(data), (void *)witprog, witprog_len);
     return 0;
 }
 

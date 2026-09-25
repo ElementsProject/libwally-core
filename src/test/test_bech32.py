@@ -129,6 +129,7 @@ class Bech32Tests(unittest.TestCase):
             script_buf, script_len = make_cbuffer(script_hex)
             ret, retstr = wally_addr_segwit_from_bytes(script_buf, script_len, utf8('bc'), 0)
             self.assertEqual((ret, retstr), (WALLY_EINVAL, None))
+            self.assertEqual(h(script_buf[:script_len]), utf8(script_hex)) # Unmodified
 
         out, out_len = make_cbuffer('00' * (32 + 2))
         bad = utf8('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefg')
