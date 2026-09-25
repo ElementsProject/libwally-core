@@ -4124,6 +4124,8 @@ int wally_descriptor_derive_bip32_key(
     ret = node_derive_key(ctx_p, node, flags, output);
     if (ctx_p)
         ctx_clear(ctx_p);
+    if (ret != WALLY_OK)
+        wally_clear(output, sizeof(*output));
     return ret;
 }
 
