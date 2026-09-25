@@ -1830,11 +1830,9 @@ int wally_psbt_add_tx_input_at(struct wally_psbt *psbt,
             memcpy(dst, &tmp, sizeof(tmp));
             wally_clear(&tmp, sizeof(tmp));
             psbt->num_inputs += 1;
-        }
+        } else if (psbt->version == PSBT_0)
+            wally_tx_remove_input(psbt->tx, index); /* Undo tx insertion */
     }
-
-    if (ret != WALLY_OK && psbt->version == PSBT_0)
-        wally_tx_remove_input(psbt->tx, index);
     wally_clear(&txin_copy, sizeof(txin_copy));
     return ret;
 }
@@ -1987,11 +1985,9 @@ int wally_psbt_add_tx_output_at(struct wally_psbt *psbt,
             memcpy(dst, &tmp, sizeof(tmp));
             wally_clear(&tmp, sizeof(tmp));
             psbt->num_outputs += 1;
-        }
+        } else if (psbt->version == PSBT_0)
+            wally_tx_remove_output(psbt->tx, index); /* Undo tx insertion */
     }
-
-    if (ret != WALLY_OK && psbt->version == PSBT_0)
-        wally_tx_remove_output(psbt->tx, index);
     return ret;
 }
 

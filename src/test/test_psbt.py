@@ -424,6 +424,37 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(WALLY_EINVAL, ret)
             wally_psbt_free(psbt)
 
+    def test_add_tx_in_out_failure(self):
+        """Test that failing to add a tx in/output leaves a v0 PSBT unchanged"""
+        tx = pointer(wally_tx())
+        self.assertEqual(WALLY_OK, wally_tx_init_alloc(2, 0, 1, 1, tx))
+        txhash, txhash_len = make_cbuffer('11' * 32)
+        tx_in = pointer(wally_tx_input())
+        ret = wally_tx_input_init_alloc(txhash, txhash_len, 0, 0xffffffff, None, 0, None, tx_in)
+        self.assertEqual(WALLY_OK, ret)
+        self.assertEqual(WALLY_OK, wally_tx_add_input(tx, tx_in))
+        tx_out = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK, wally_tx_output_init_alloc(1234, b'\x59\x59', 2, tx_out))
+        self.assertEqual(WALLY_OK, wally_tx_add_output(tx, tx_out))
+
+        # Make tx_in scriptSig invalid (length with no pointer)
+        tx_in.contents.script_len = 5  # Make tx input scripSig invalid
+        # Make tx_out amount invalid (would overflow tx total)
+        tx_out.contents.satoshi = 2100000000000000
+
+        psbt = pointer(wally_psbt())
+        self.assertEqual(WALLY_OK, wally_psbt_from_tx(tx, 0, 0, psbt))
+        expected = self.to_base64(psbt)
+        for index in [0, 1]:
+            # Adding tx_in or tx_out now fail
+            ret = wally_psbt_add_tx_input_at(psbt, index, 0, tx_in)
+            self.assertEqual(WALLY_EINVAL, ret)
+            ret = wally_psbt_add_tx_output_at(psbt, index, 0, tx_out)
+            self.assertEqual(WALLY_EINVAL, ret)
+            self.assertEqual(self.to_base64(psbt), expected)  # PSBT is unchanged
+        wally_psbt_free(psbt)
+        wally_tx_free(tx)
+
     def test_invalid_args(self):
         """Test invalid arguments to various PSBT functions"""
         psbt = pointer(wally_psbt())
