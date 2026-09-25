@@ -24,6 +24,10 @@
 #endif
 #endif
 
+#ifdef CCAN_CRYPTO_SHA256_USE_PSA
+#include <psa/crypto.h>
+#endif
+
 /**
  * struct sha256 - structure representing a completed SHA256.
  * @u.u8: an unsigned char array.
@@ -43,7 +47,7 @@ struct sha256 {
  */
 void sha256_optimize(void);
 
-#ifdef CCAN_CRYPTO_SHA256_USE_MBEDTLS
+#if defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS) || defined(CCAN_CRYPTO_SHA256_USE_PSA)
 /**
  * sha256_sw_transform - run the portable SHA-256 compression function.
  * @s: the 8 word running state to update.
@@ -80,6 +84,8 @@ struct sha256_ctx {
 #elif defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS)
 	mbedtls_sha256_context c;
 	bool failed;
+#elif defined(CCAN_CRYPTO_SHA256_USE_PSA)
+	psa_hash_operation_t op;
 #else
 	uint32_t s[8];
 	union {
@@ -98,7 +104,8 @@ struct sha256_ctx {
  * alternately you can assign SHA256_INIT.
  *
  * If it was already initialized, this forgets anything which was
- * hashed before.
+ * hashed before. Backends that hold resources for a running hash (such
+ * as PSA Crypto) require it to be finished with sha256_done() first.
  *
  * Example:
  * static bool hash_all(const char **arr, struct sha256 *hash)
@@ -140,6 +147,8 @@ void sha256_init(struct sha256_ctx *ctx);
 			0x0, 0x20 } }
 #elif defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS)
 /* No static initializer: mbedtls contexts must be set up with sha256_init() */
+#elif defined(CCAN_CRYPTO_SHA256_USE_PSA)
+/* No static initializer: PSA contexts must be set up with sha256_init() */
 #else
 #define SHA256_INIT							\
 	{ { 0x6a09e667ul, 0xbb67ae85ul, 0x3c6ef372ul, 0xa54ff53aul,	\

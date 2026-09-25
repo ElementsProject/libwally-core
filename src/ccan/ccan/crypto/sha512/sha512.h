@@ -24,6 +24,10 @@
 #endif
 #endif
 
+#ifdef CCAN_CRYPTO_SHA512_USE_PSA
+#include <psa/crypto.h>
+#endif
+
 /**
  * struct sha512 - structure representing a completed SHA512.
  * @u.u8: an unsigned char array.
@@ -62,6 +66,8 @@ struct sha512_ctx {
 #elif defined(CCAN_CRYPTO_SHA512_USE_MBEDTLS)
 	mbedtls_sha512_context c;
 	bool failed;
+#elif defined(CCAN_CRYPTO_SHA512_USE_PSA)
+	psa_hash_operation_t op;
 #else
 	uint64_t s[8];
 	union {
@@ -80,7 +86,8 @@ struct sha512_ctx {
  * alternately you can assign SHA512_INIT.
  *
  * If it was already initialized, this forgets anything which was
- * hashed before.
+ * hashed before. Backends that hold resources for a running hash (such
+ * as PSA Crypto) require it to be finished with sha512_done() first.
  *
  * Example:
  * static bool hash_all(const char **arr, struct sha512 *hash)
@@ -123,6 +130,8 @@ void sha512_init(struct sha512_ctx *ctx);
 	    0, 0x40 } }
 #elif defined(CCAN_CRYPTO_SHA512_USE_MBEDTLS)
 /* No static initializer: mbedtls contexts must be set up with sha512_init() */
+#elif defined(CCAN_CRYPTO_SHA512_USE_PSA)
+/* No static initializer: PSA contexts must be set up with sha512_init() */
 #else
 #define SHA512_INIT						\
 	{ { 0x6a09e667f3bcc908ull, 0xbb67ae8584caa73bull,	\

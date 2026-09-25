@@ -11,9 +11,11 @@
 
 #define SIGTYPE_ALL (WALLY_SIGTYPE_PRE_SW | WALLY_SIGTYPE_SW_V0 | WALLY_SIGTYPE_SW_V1)
 
-#if defined(CCAN_CRYPTO_SHA256_USE_OPENSSL) || defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS)
+#if defined(CCAN_CRYPTO_SHA256_USE_OPENSSL) || defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS) || \
+    defined(CCAN_CRYPTO_SHA256_USE_PSA)
 /* For external sha256 implementations, we cannot cache the sha256 context as
- * they require extra setup before use that only sha256_init() provides.
+ * they require extra setup before use that only sha256_init() provides, and
+ * their state may be opaque or heap-backed and so cannot be copied by value.
  */
 #define TXIO_CTX_CACHEABLE 0
 #else

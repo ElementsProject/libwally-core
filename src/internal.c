@@ -204,12 +204,12 @@ int wally_sha256(const unsigned char *bytes, size_t bytes_len,
     return WALLY_OK;
 }
 
-#ifdef CCAN_CRYPTO_SHA256_USE_MBEDTLS
+#if defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS) || defined(CCAN_CRYPTO_SHA256_USE_PSA)
 /* The running state of an mbedtls context is not always readable: hardware
  * implementations may hold it elsewhere or only update it later, and may hold
- * resources until the context is finished or freed. Compute the midstate with
- * the software transform instead. Only whole 64-byte blocks contribute, as
- * with the builtin implementation.
+ * resources until the context is finished or freed. PSA contexts are opaque.
+ * Compute the midstate with the software transform instead. Only whole
+ * 64-byte blocks contribute, as with the builtin implementation.
  */
 static void sha256_midstate_sw(const unsigned char *bytes, size_t bytes_len,
                                struct sha256 *res)
@@ -240,7 +240,7 @@ static void sha256_midstate(struct sha256_ctx *ctx, struct sha256 *res)
         res->u.u32[i] = cpu_to_be32(ctx->s[i]);
     ctx->bytes = (size_t)-1;
 }
-#endif /* CCAN_CRYPTO_SHA256_USE_MBEDTLS */
+#endif /* CCAN_CRYPTO_SHA256_USE_MBEDTLS || CCAN_CRYPTO_SHA256_USE_PSA */
 
 int wally_sha256_midstate(const unsigned char *bytes, size_t bytes_len,
                           unsigned char *bytes_out, size_t len)
@@ -251,7 +251,7 @@ int wally_sha256_midstate(const unsigned char *bytes, size_t bytes_len,
     if ((!bytes && bytes_len != 0) || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
-#ifdef CCAN_CRYPTO_SHA256_USE_MBEDTLS
+#if defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS) || defined(CCAN_CRYPTO_SHA256_USE_PSA)
     sha256_midstate_sw(bytes, bytes_len, aligned ? (void *)bytes_out : (void *)&sha);
 #else
     {
@@ -617,6 +617,11 @@ int wally_init(uint32_t flags)
         return WALLY_EINVAL;
 
     if (!wally_init_done) {
+#if defined(CCAN_CRYPTO_SHA256_USE_PSA) || defined(CCAN_CRYPTO_SHA512_USE_PSA)
+        /* Idempotent; ESP-IDF calls this at boot but other platforms may not */
+        if (psa_crypto_init() != PSA_SUCCESS)
+            return WALLY_ERROR;
+#endif
         sha256_optimize();
         wally_init_done = true;
     }
