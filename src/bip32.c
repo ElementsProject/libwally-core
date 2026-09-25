@@ -646,17 +646,23 @@ int bip32_key_from_parent(const struct ext_key *hdkey, uint32_t child_num,
     const bool derive_private = !(flags & BIP32_FLAG_KEY_PUBLIC);
     const bool hardened = child_is_hardened(child_num);
 
-    if (flags & ~BIP32_ALL_DEFINED_FLAGS)
+    if (hdkey == key_out)
+        return WALLY_EINVAL; /* Cannot derive a key in place */
+
+    if (key_out)
+        wally_clear(key_out, sizeof(*key_out)); /* Clear padding bytes */
+
+   if (flags & ~BIP32_ALL_DEFINED_FLAGS)
         return WALLY_EINVAL; /* These flags are not defined yet */
 
     if (!hdkey || !key_out)
         return WALLY_EINVAL;
 
     if (!we_are_private && (derive_private || hardened))
-        return wipe_key_fail(key_out); /* Unsupported derivation */
+        return WALLY_EINVAL; /* Unsupported derivation */
 
     if (hdkey->depth == 0xff)
-        return wipe_key_fail(key_out); /* Maximum depth reached */
+        return WALLY_EINVAL; /* Maximum depth reached */
 
     /*
      *  Private parent -> private child:

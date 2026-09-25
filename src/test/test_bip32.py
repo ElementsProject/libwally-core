@@ -193,6 +193,9 @@ class BIP32Tests(unittest.TestCase):
             ret = bip32_key_from_parent_path_str(byref(parent), str_path, 0,
                                                  flags, byref(str_key_out))
             self.assertEqual(ret, expected)
+            # The padding must not be filled with uninitialized memory
+            for k in [key_out, str_key_out]:
+                self.assertEqual(bytes(k.pad1) + bytes(k.pad2), bytes(13))
         return key_out, str_key_out
 
     def compare_keys(self, key, expected, flags):
