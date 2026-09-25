@@ -837,5 +837,37 @@ class TransactionTests(unittest.TestCase):
             tx = self.tx_deserialize_hex(tx_hex, is_elements=True)
             self.assertEqual(tx_hex, self.tx_serialize_hex(tx))
 
+    def test_elements_issuance_commitment_set(self):
+        """Tests for setting Elements input issuance and output commitments"""
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Elements support not enabled')
+
+        nonce, nonce_len = make_cbuffer('11' * 32)
+        asset, asset_len = make_cbuffer('01' + '22' * 32)
+        value, value_len = make_cbuffer('01' + '00' * 7 + '01')
+
+        # NULL input/output
+        self.assertEqual(WALLY_EINVAL, wally_tx_elements_input_issuance_set(
+            None, nonce, nonce_len, nonce, nonce_len, value, value_len,
+            None, 0, None, 0, None, 0))
+        self.assertEqual(WALLY_EINVAL, wally_tx_elements_output_commitment_set(
+            None, asset, asset_len, value, value_len, None, 0, None, 0, None, 0))
+
+        # Setting twice replaces (and frees) the previously set values
+        txin = wally_tx_input()
+        txout = wally_tx_output()
+        for _ in range(2):
+            ret = wally_tx_elements_input_issuance_set(
+                txin, nonce, nonce_len, nonce, nonce_len, value, value_len,
+                None, 0, None, 0, None, 0)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(txin.issuance_amount_len, value_len)
+            ret = wally_tx_elements_output_commitment_set(
+                txout, asset, asset_len, value, value_len, None, 0, None, 0, None, 0)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual((txout.asset_len, txout.value_len), (asset_len, value_len))
+        self.assertEqual(WALLY_OK, wally_tx_elements_input_issuance_free(txin))
+        self.assertEqual(WALLY_OK, wally_tx_elements_output_commitment_free(txout))
+
 if __name__ == '__main__':
     unittest.main()

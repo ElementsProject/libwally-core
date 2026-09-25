@@ -512,39 +512,41 @@ int wally_tx_elements_input_issuance_set(
     const unsigned char *inflation_keys_rangeproof,
     size_t inflation_keys_rangeproof_len)
 {
+    if (!input)
+        return WALLY_EINVAL;
+    else {
 #ifdef BUILD_ELEMENTS
-    unsigned char *input_issuance_amount = input->issuance_amount;
-    size_t input_issuance_amount_len = input->issuance_amount_len;
-    unsigned char *input_inflation_keys = input->inflation_keys;
-    size_t input_inflation_keys_len = input->inflation_keys_len;
-    unsigned char *input_issuance_amount_rangeproof = input->issuance_amount_rangeproof;
-    size_t input_issuance_amount_rangeproof_len = input->issuance_amount_rangeproof_len;
-    unsigned char *input_inflation_keys_rangeproof = input->inflation_keys_rangeproof;
-    size_t input_inflation_keys_rangeproof_len = input->inflation_keys_rangeproof_len;
+        unsigned char *input_issuance_amount = input->issuance_amount;
+        size_t input_issuance_amount_len = input->issuance_amount_len;
+        unsigned char *input_inflation_keys = input->inflation_keys;
+        size_t input_inflation_keys_len = input->inflation_keys_len;
+        unsigned char *input_issuance_amount_rangeproof = input->issuance_amount_rangeproof;
+        size_t input_issuance_amount_rangeproof_len = input->issuance_amount_rangeproof_len;
+        unsigned char *input_inflation_keys_rangeproof = input->inflation_keys_rangeproof;
+        size_t input_inflation_keys_rangeproof_len = input->inflation_keys_rangeproof_len;
 #endif /* BUILD_ELEMENTS */
-    int ret = tx_elements_input_issuance_init(input,
-                                              nonce,
-                                              nonce_len,
-                                              entropy,
-                                              entropy_len,
-                                              issuance_amount,
-                                              issuance_amount_len,
-                                              inflation_keys,
-                                              inflation_keys_len,
-                                              issuance_amount_rangeproof,
-                                              issuance_amount_rangeproof_len,
-                                              inflation_keys_rangeproof,
-                                              inflation_keys_rangeproof_len,
-                                              true);
+        int ret = tx_elements_input_issuance_init(input,
+                                                  nonce, nonce_len,
+                                                  entropy, entropy_len,
+                                                  issuance_amount,
+                                                  issuance_amount_len,
+                                                  inflation_keys,
+                                                  inflation_keys_len,
+                                                  issuance_amount_rangeproof,
+                                                  issuance_amount_rangeproof_len,
+                                                  inflation_keys_rangeproof,
+                                                  inflation_keys_rangeproof_len,
+                                                  true);
 #ifdef BUILD_ELEMENTS
-    if (ret == WALLY_OK) {
-        clear_and_free(input_issuance_amount, input_issuance_amount_len);
-        clear_and_free(input_inflation_keys, input_inflation_keys_len);
-        clear_and_free(input_issuance_amount_rangeproof, input_issuance_amount_rangeproof_len);
-        clear_and_free(input_inflation_keys_rangeproof, input_inflation_keys_rangeproof_len);
+        if (ret == WALLY_OK) {
+            clear_and_free(input_issuance_amount, input_issuance_amount_len);
+            clear_and_free(input_inflation_keys, input_inflation_keys_len);
+            clear_and_free(input_issuance_amount_rangeproof, input_issuance_amount_rangeproof_len);
+            clear_and_free(input_inflation_keys_rangeproof, input_inflation_keys_rangeproof_len);
+        }
+#endif /* BUILD_ELEMENTS */
+        return ret;
     }
-#endif /* BUILD_ELEMENTS */
-    return ret;
 }
 
 int wally_tx_elements_input_issuance_free(
@@ -931,33 +933,39 @@ int wally_tx_elements_output_commitment_set(
     const unsigned char *rangeproof,
     size_t rangeproof_len)
 {
+    if (!output)
+        return WALLY_EINVAL;
+    else {
 #ifdef BUILD_ELEMENTS
-    unsigned char *output_asset = output->asset;
-    size_t output_asset_len = output->asset_len;
-    unsigned char *output_value = output->value;
-    size_t output_value_len = output->value_len;
-    unsigned char *output_nonce = output->nonce;
-    size_t output_nonce_len = output->nonce_len;
-    unsigned char *output_surjectionproof = output->surjectionproof;
-    size_t output_surjectionproof_len = output->surjectionproof_len;
-    unsigned char *output_rangeproof = output->rangeproof;
-    size_t output_rangeproof_len = output->rangeproof_len;
+       unsigned char *output_asset = output->asset;
+       size_t output_asset_len = output->asset_len;
+       unsigned char *output_value = output->value;
+       size_t output_value_len = output->value_len;
+       unsigned char *output_nonce = output->nonce;
+       size_t output_nonce_len = output->nonce_len;
+       unsigned char *output_surjectionproof = output->surjectionproof;
+       size_t output_surjectionproof_len = output->surjectionproof_len;
+       unsigned char *output_rangeproof = output->rangeproof;
+       size_t output_rangeproof_len = output->rangeproof_len;
 #endif /* BUILD_ELEMENTS */
-    int ret = tx_elements_output_commitment_init(output, asset, asset_len,
-                                                 value, value_len,
-                                                 nonce, nonce_len,
-                                                 surjectionproof, surjectionproof_len,
-                                                 rangeproof, rangeproof_len, true);
-    if (ret == WALLY_OK) {
+       int ret = tx_elements_output_commitment_init(output, asset, asset_len,
+                                                    value, value_len,
+                                                    nonce, nonce_len,
+                                                    surjectionproof,
+                                                    surjectionproof_len,
+                                                    rangeproof, rangeproof_len,
+                                                    true);
 #ifdef BUILD_ELEMENTS
-        clear_and_free(output_asset, output_asset_len);
-        clear_and_free(output_value, output_value_len);
-        clear_and_free(output_nonce, output_nonce_len);
-        clear_and_free(output_surjectionproof, output_surjectionproof_len);
-        clear_and_free(output_rangeproof, output_rangeproof_len);
+        if (ret == WALLY_OK) {
+            clear_and_free(output_asset, output_asset_len);
+            clear_and_free(output_value, output_value_len);
+            clear_and_free(output_nonce, output_nonce_len);
+            clear_and_free(output_surjectionproof, output_surjectionproof_len);
+            clear_and_free(output_rangeproof, output_rangeproof_len);
+        }
 #endif /* BUILD_ELEMENTS */
+        return ret;
     }
-    return ret;
 }
 
 int wally_tx_elements_output_commitment_free(
