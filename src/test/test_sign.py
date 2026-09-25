@@ -427,6 +427,7 @@ class SignTests(unittest.TestCase):
         self.assertEqual(sub(zero, None), (WALLY_EINVAL, zero_hex))
         self.assertEqual(add(zero, bad), (WALLY_ERROR, zero_hex))
         self.assertEqual(add(bad, zero), (WALLY_ERROR, zero_hex))
+        self.assertEqual(sub(bad, bad), (WALLY_ERROR, zero_hex))
         self.assertEqual(sub(zero, zero), (WALLY_OK, zero_hex))
         self.assertEqual(sub(zero, scalar), (WALLY_OK, negative_hex))
         self.assertEqual(sub(zero, negative), (WALLY_OK, scalar_hex))
@@ -441,6 +442,10 @@ class SignTests(unittest.TestCase):
         self.assertEqual(mul(zero, zero), (WALLY_OK, zero_hex))
         self.assertEqual(mul(zero, scalar), (WALLY_OK, zero_hex))
         self.assertEqual(mul(zero, negative), (WALLY_OK, zero_hex))
+
+        # A failed operation on non-zero operands leaves no partial result
+        for fn in [add, sub, mul]:
+            self.assertEqual(fn(bad, scalar), (WALLY_ERROR, zero_hex))
 
     def test_bip340_sigs(self):
 

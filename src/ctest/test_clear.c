@@ -213,6 +213,52 @@ static bool test_hmac_sha256(void)
     return !in_stack("wally_hmac_sha256", SECRET32, sizeof(SECRET32));
 }
 
+/* Call from deeper in the stack, so that the frame of in_stack() does
+ * not overwrite any secret left in the callee's own frame */
+WALLY_NO_OPTIMIZE static int ec_scalar_op_deep(bool subtract,
+                                               const unsigned char *scalar,
+                                               unsigned char *out, size_t len)
+{
+    volatile unsigned char pad[1024];
+
+    pad[0] = 0;
+    if (subtract)
+        return pad[0] + wally_ec_scalar_subtract(scalar, EC_SCALAR_LEN,
+                                                 SECRET32, sizeof(SECRET32),
+                                                 out, len);
+    return pad[0] + wally_ec_scalar_add(scalar, EC_SCALAR_LEN,
+                                        SECRET32, sizeof(SECRET32), out, len);
+}
+
+static bool test_ec_scalar_add_subtract(void)
+{
+    static const unsigned char zero[EC_SCALAR_LEN];
+    static const unsigned char one[EC_SCALAR_LEN] = { [31] = 1 };
+    static unsigned char negated[EC_SCALAR_LEN], out[EC_SCALAR_LEN];
+
+    /* The negated operand is the secret */
+    if (wally_ec_scalar_subtract(zero, sizeof(zero), SECRET32, sizeof(SECRET32),
+                                 negated, sizeof(negated)))
+        return false;
+
+    /* 1 + X */
+    if (ec_scalar_op_deep(false, one, out, sizeof(out)) ||
+        in_stack("wally_ec_scalar_add", negated, sizeof(negated)))
+        return false;
+
+    /* -X + X = 0 */
+    if (ec_scalar_op_deep(false, negated, out, sizeof(out)) ||
+        in_stack("wally_ec_scalar_add", negated, sizeof(negated)))
+        return false;
+
+    /* 1 - X */
+    if (ec_scalar_op_deep(true, one, out, sizeof(out)) ||
+        in_stack("wally_ec_scalar_subtract", negated, sizeof(negated)))
+        return false;
+
+    return true;
+}
+
 #ifdef BUILD_ELEMENTS
 /* Call from deeper in the stack, so that the frame of in_stack() does
  * not overwrite any secret left in the callee's own frame */
@@ -339,6 +385,9 @@ static void *run_tests(void *passed_stack)
 
     ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
     RUN(test_hmac_sha256);
+
+    ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
+    RUN(test_ec_scalar_add_subtract);
 
     ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
     RUN(test_base58_from_bytes);
