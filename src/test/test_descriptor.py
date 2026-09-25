@@ -350,6 +350,13 @@ class DescriptorTests(unittest.TestCase):
                 # returned.
                 (f'ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elpkh({k1}))',
                  0, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS|MS_IS_ELIP150, 3, 1),
+                # ct() descriptors are elements even without the el prefix
+                (f'ct({k1},pkh({k1}))',
+                 0, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS|MS_IS_ELIP150, 3, 1),
+                (f'ct(0286fc9a38e765d955e9b0bcc18fa9ae81b0c893e2dd1ef5542a9c73780a086b90,wpkh({k1}))',
+                 0, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS|MS_IS_ELIP150, 3, 1),
+                (f'ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,tr({k1}))',
+                 0, MS_IS_DESCRIPTOR|MS_IS_TAPROOT|MS_IS_ELEMENTS|MS_IS_ELIP150, 3, 1),
                 ])
 
         for descriptor, flags, expected_features, expected_depth, expected_keys in cases:
@@ -486,6 +493,26 @@ class DescriptorTests(unittest.TestCase):
 
             wally_map_free(keys)
             wally_descriptor_free(d)
+
+        # ct() policies are elements even without the el prefix, and
+        # generate the same confidential addresses as el-prefixed policies
+        keys = wally_map_from_dict({'@B': xpub1, '@0': xpub2})
+        for policy in ['ct(@B,{}pkh(@0/*))', 'ct(@B,{}wpkh(@0/*))',
+                       'ct(@B,{}sh(wpkh(@0/*)))', 'ct(@B,{}tr(@0/*))']:
+            addrs = []
+            for prefix in ['el', '']:
+                ret = wally_descriptor_parse(policy.format(prefix), keys,
+                                             NETWORK_LIQUID, P, d)
+                self.assertEqual(ret, WALLY_OK)
+                ret, features = wally_descriptor_get_features(d)
+                self.assertEqual(ret, WALLY_OK)
+                self.assertTrue(features & MS_IS_ELEMENTS)
+                ret, addr = wally_descriptor_to_address(d, 0, 0, 0, 0)
+                self.assertEqual(ret, WALLY_OK)
+                addrs.append(addr)
+                wally_descriptor_free(d)
+            self.assertEqual(addrs[0], addrs[1])
+        wally_map_free(keys)
 
     def test_key_iteration(self):
         """Test iterating descriptor keys"""

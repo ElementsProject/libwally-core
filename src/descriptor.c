@@ -3137,8 +3137,12 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
                     /* Not a pure descriptor */
                     ctx->features &= ~WALLY_MS_IS_DESCRIPTOR;
                 }
-                if (builtin_is_elements(str + offset, i - offset))
+                if (builtin_is_elements(str + offset, i - offset) ||
+                    node->kind == KIND_DESCRIPTOR_CT) {
+                    /* ct() is Elements-only: treat its descriptor as Elements
+                     * without an el prefix, e.g. wpkh() as elwpkh() */
                     ctx->features |= WALLY_MS_IS_ELEMENTS;
+                }
                 if (node->kind == KIND_DESCRIPTOR_TR)
                     ctx->features |= WALLY_MS_IS_TAPROOT;
                 offset = i + 1;
