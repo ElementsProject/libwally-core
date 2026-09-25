@@ -123,11 +123,83 @@ static bool tx_coinbase(const char *tx_hex)
     return true;
 }
 
+static int add_raw_io(struct wally_tx *tx, uint32_t i)
+{
+    static const unsigned char script[] = { 0x51, 0x52 };
+    unsigned char txhash[WALLY_TXHASH_LEN];
+    int ret;
+
+    memset(txhash, i + 1, sizeof(txhash));
+    ret = wally_tx_add_raw_input(tx, txhash, sizeof(txhash), i, i,
+                                 script, i + 1, NULL, 0);
+    if (ret == WALLY_OK)
+        ret = wally_tx_add_raw_output(tx, i + 1, script, i + 1, 0);
+    return ret;
+}
+
+/* Test adding inputs/outputs that point into the tx's own arrays */
+static bool tx_add_aliased(size_t allocation_len)
+{
+    struct wally_tx *tx, *expected;
+    char *hex, *expected_hex;
+    bool is_ok;
+    int ret;
+
+    ret = wally_tx_init_alloc(2, 0, allocation_len, allocation_len, &tx);
+    check_ret(ret);
+    ret = add_raw_io(tx, 0);
+    check_ret(ret);
+    ret = add_raw_io(tx, 1);
+    check_ret(ret);
+
+    /* Insert copies of the last input/output at the front: the arrays
+     * are reallocated if full, otherwise their contents are shifted */
+    ret = wally_tx_add_input_at(tx, 0, &tx->inputs[1]);
+    check_ret(ret);
+    ret = wally_tx_add_output_at(tx, 0, &tx->outputs[1]);
+    check_ret(ret);
+    /* Append copies of the first input/output */
+    ret = wally_tx_add_input(tx, &tx->inputs[0]);
+    check_ret(ret);
+    ret = wally_tx_add_output(tx, &tx->outputs[0]);
+    check_ret(ret);
+
+    ret = wally_tx_init_alloc(2, 0, 4, 4, &expected);
+    check_ret(ret);
+    ret = add_raw_io(expected, 1);
+    check_ret(ret);
+    ret = add_raw_io(expected, 0);
+    check_ret(ret);
+    ret = add_raw_io(expected, 1);
+    check_ret(ret);
+    ret = add_raw_io(expected, 1);
+    check_ret(ret);
+
+    ret = wally_tx_to_hex(tx, 0, &hex);
+    check_ret(ret);
+    ret = wally_tx_to_hex(expected, 0, &expected_hex);
+    check_ret(ret);
+    is_ok = !strcmp(hex, expected_hex);
+
+    /* Clean up (for valgrind heap checking) */
+    wally_free_string(hex);
+    wally_free_string(expected_hex);
+    wally_tx_free(tx);
+    wally_tx_free(expected);
+    return is_ok;
+}
+
 static bool test_tx_parse(void)
 {
     return tx_roundtrip(p2pkh_hex) &&
            tx_roundtrip(wit_hex) &&
            tx_coinbase(coinbase_hex);
+}
+
+static bool test_tx_add_aliased(void)
+{
+    return tx_add_aliased(2) && /* Arrays are reallocated */
+           tx_add_aliased(4); /* Arrays are shifted */
 }
 
 int main(void)
@@ -137,6 +209,7 @@ int main(void)
 #define RUN(t) if (!t()) { printf(#t " test_tx() test failed!\n"); tests_ok = false; }
 
     RUN(test_tx_parse);
+    RUN(test_tx_add_aliased);
 
     return tests_ok ? 0 : 1;
 }
