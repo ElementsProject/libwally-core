@@ -1689,8 +1689,8 @@ static int generate_multi(ms_ctx *ctx, ms_node *node,
             if (ret == WALLY_OK) {
                 *written = offset + number_len + 1;
                 if (!is_tapscript && *written > REDEEM_SCRIPT_MAX_SIZE)
-                    return WALLY_EINVAL;
-                if (*written <= script_len)
+                    ret = WALLY_EINVAL;
+                else if (*written <= script_len)
                     script[*written - 1] = is_tapscript ? OP_NUMEQUAL : OP_CHECKMULTISIG;
             }
         }

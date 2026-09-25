@@ -293,6 +293,13 @@ static const descriptor_test g_descriptor_cases[] = {
         "a914276b4ebc33265436a9c9b46ca23d6781aef98fe087",
         "pckwejvm", VARS_STD
     },{
+        "descriptor - p2sh multisig too large",
+        /*          1            2            3            4            5            6            7            8 */
+        "sh(multi(1,uncompressed,uncompressed,uncompressed,uncompressed,uncompressed,uncompressed,uncompressed,uncompressed))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
+        NULL,
+        "", VARS_STD
+    },{
         "descriptor - p2pk-xpub",
         "pk(xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8)",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
