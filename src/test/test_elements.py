@@ -87,6 +87,63 @@ class ElementsTests(unittest.TestCase):
         self.assertEqual((ret, value_out, asset_out, abf_out, vbf_out),
                          (WALLY_OK, 80000000, UNBLINDED_ASSET, UNBLINDED_ABF, UNBLINDED_VBF))
 
+    def test_asset_unblind_invalid(self):
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Elements support not enabled')
+
+        value = 12345
+        abf, abf_len = make_cbuffer('22' * 32)
+        vbf, vbf_len = make_cbuffer('44' * 32)
+        generator, generator_len = make_cbuffer('00' * 33)
+        ret = wally_asset_generator_from_bytes(UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+                                               abf, abf_len, generator, generator_len)
+        self.assertEqual(ret, WALLY_OK)
+        commitment, commitment_len = make_cbuffer('00' * 33)
+        ret = wally_asset_value_commitment(value, vbf, vbf_len, generator, generator_len,
+                                           commitment, commitment_len)
+        self.assertEqual(ret, WALLY_OK)
+        nonce, nonce_len = make_cbuffer('00' * 32)
+        ret = wally_ecdh_nonce_hash(UNBLIND_SENDER_PK, UNBLIND_SENDER_PK_LEN,
+                                    UNBLIND_OUR_SK, UNBLIND_OUR_SK_LEN,
+                                    nonce, nonce_len)
+        self.assertEqual(ret, WALLY_OK)
+
+        # A rangeproof whose message has a different abf to the generator's
+        msg_abf, msg_abf_len = make_cbuffer('23' * 32)
+        proof, proof_len = make_cbuffer('00' * 5134)
+        ret, proof_len = wally_asset_rangeproof_with_nonce(
+            value, nonce, nonce_len, UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+            msg_abf, msg_abf_len, vbf, vbf_len, commitment, commitment_len,
+            None, 0, generator, generator_len, 1, 0, 52, proof, proof_len)
+        self.assertEqual(ret, WALLY_OK)
+        # An explicit rangeproof, which has no message
+        explicit_proof, explicit_proof_len = make_cbuffer('00' * 73)
+        ret, explicit_proof_len = wally_explicit_rangeproof(
+            value, nonce, nonce_len, vbf, vbf_len, commitment, commitment_len,
+            generator, generator_len, explicit_proof, explicit_proof_len)
+        self.assertEqual(ret, WALLY_OK)
+
+        zeros, _ = make_cbuffer('00' * 32)
+        key_args = [
+            (wally_asset_unblind_with_nonce, (nonce, nonce_len)),
+            (wally_asset_unblind, (UNBLIND_SENDER_PK, UNBLIND_SENDER_PK_LEN,
+                                   UNBLIND_OUR_SK, UNBLIND_OUR_SK_LEN)),
+        ]
+        for p, p_len in [(proof, proof_len), (explicit_proof, explicit_proof_len)]:
+            for fn, keys in key_args:
+                asset_out, _ = make_cbuffer('ff' * 32)
+                abf_out, _ = make_cbuffer('ff' * 32)
+                vbf_out, _ = make_cbuffer('ff' * 32)
+                args = keys + (p, p_len, commitment, commitment_len, None, 0,
+                               generator, generator_len,
+                               asset_out, 32, abf_out, 32, vbf_out, 32)
+                # The proofs rewind, recovering the vbf and value, but
+                # don't unblind: all outputs must be wiped
+                ret, value_out = fn(*args)
+                self.assertEqual((ret, value_out, asset_out, abf_out, vbf_out),
+                                 (WALLY_ERROR, 0, zeros, zeros, zeros))
+
+
     def test_asset_final_vbf(self):
         """Test computing the final value blinding factor"""
         if not wally_is_elements_build()[1]:
