@@ -101,6 +101,32 @@ class PSBTTests(unittest.TestCase):
 
             wally_psbt_free(psbt)
 
+    def test_global_tx_malloc_fail(self):
+        """Test allocation failures when setting a v0 PSBTs global tx"""
+        # Failing any allocation, including the input and output
+        # arrays, must fail cleanly with WALLY_ENOMEM
+        tx_hex = '0200000001268171371edff285e937adeea4b37b78000c0566cbb3ad64641713ca42171bf60000000000feffffff02d3dff505000000001976a914d0c59903c5bac2868760e90fd521a4665aa7652088ac00e1f5050000000017a9143545e6e33b832c47050f24d3eeb93c9c03948bc787b32e1300'
+        tx = pointer(wally_tx())
+        self.assertEqual(wally_tx_from_hex(tx_hex, 1, tx), WALLY_OK)
+
+        results = set()
+        max_mallocs = 8
+
+        @malloc_fail(range(max_mallocs))
+        def check_set_global_tx():
+            psbt = pointer(wally_psbt())
+            ret = wally_psbt_init_alloc(0, 0, 0, 0, 0, psbt)
+            if ret == WALLY_OK:
+                ret = wally_psbt_set_global_tx(psbt, tx)
+                wally_psbt_free(psbt)
+            self.assertIn(ret, [WALLY_OK, WALLY_ENOMEM])
+            results.add(ret)
+
+        num_mallocs = check_set_global_tx()
+        self.assertEqual(num_mallocs, max_mallocs)
+        self.assertEqual(results, {WALLY_OK, WALLY_ENOMEM})
+        wally_tx_free(tx)
+
     def test_creator_role(self):
         """Test the PSBT creator role"""
         psbt = pointer(wally_psbt())
