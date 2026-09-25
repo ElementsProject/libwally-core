@@ -1755,11 +1755,12 @@ static int leaf_tapleaf_hash(ms_ctx *ctx, ms_node *leaf,
     if (ret == WALLY_OK) {
         if (written > buf_len)
             ret = WALLY_ERROR; /* Should not happen! */
-        else
-            ret = bip341_tapleaf_hash(WALLY_LEAF_VERSION_TAPSCRIPT,
-                                      buf, written,
-                                      ms_ctx_is_elements(ctx),
+        else {
+            const bool is_elements = ms_ctx_is_elements(ctx);
+            ret = bip341_tapleaf_hash(TAPSCRIPT_LEAF_VERSION(is_elements),
+                                      buf, written, is_elements,
                                       hash_out, hash_out_len);
+        }
     }
     wally_free(buf);
     return ret;
@@ -4300,7 +4301,8 @@ int wally_descriptor_get_taproot_control_block(
 
     if (ret == WALLY_OK) {
         /* Leaf version is ORed with the output key parity, per BIP-341 */
-        bytes_out[0] = WALLY_LEAF_VERSION_TAPSCRIPT | (tweaked[0] & 1);
+        bytes_out[0] = TAPSCRIPT_LEAF_VERSION(ms_ctx_is_elements(&ctx));
+        bytes_out[0] |= (tweaked[0] & 1);
         /* Followed by the (untweaked) x-only internal key */
         memcpy(bytes_out + 1, p2tr + 2, sizeof(p2tr) - 2);
         /* Followed by the path already written by tr_impl() above */
