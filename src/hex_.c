@@ -25,8 +25,8 @@ int wally_hex_from_bytes(const unsigned char *bytes, size_t bytes_len,
     if (output)
         *output = NULL;
 
-    if (!bytes || !output)
-        return WALLY_EINVAL;
+    if (!bytes || !output || bytes_len > (SIZE_MAX - 1) / 2)
+        return WALLY_EINVAL; /* NULL args or hex string size would overflow */
 
     *output = wally_malloc(hex_str_size(bytes_len));
     if (!*output)
