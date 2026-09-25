@@ -2697,6 +2697,56 @@ static const struct address_test {
         0, 0, 0,
         ADDR("lq1pqvrmexgzdqfplvx5lmtytu2jqwyqklahrva5pr87ujeq0c6s7el285y2q8urxwx44a605v5q9kj9a75cx6myl58yj879veess8jk0uwtedks5lxz9v7l")
     },
+    /* ct() descriptors are Elements without the el prefix, and blinded */
+    {
+        "address - ELIP 150 Valid Descriptor 1 (no el prefix)",
+        "ct(mainnet_xpub,pkh(key_4))",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("VTpvZZYdbhbyVF3Wa99eMjgXhfvu4LS26dR2FwMfNXq7FDX73HZEsZr3VvgH9EDgQnYK7sP6ACKSuMGw")
+    }, {
+        "address - ELIP 150 Valid Descriptor 2 (no el prefix)",
+        "ct(mainnet_xpub,wpkh(key_4))",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("lq1qqg5s7xj7upzl7h4q2k2wj4vq63nvaktn0egqu09nqcr6d44p4evaqknpl78t02k2xqgdh9ltmfmpy9ssk7qfvghdsfr4mvr9c")
+    }, {
+        "address - ELIP 150 Valid Descriptor 3 (no el prefix)",
+        "ct(mainnet_xpub,sh(wpkh(key_4)))",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("VJL8znN4XjXEUKzDaYsqdzRASGLY2KHxC4N6g5b5QvrNjXfeKp83Ci9AW2a8QzbZjpEffoy4PEywpLAZ")
+    }, {
+        "address - ELIP 150 Valid Descriptor 4 (no el prefix)",
+        "ct(mainnet_xpub,tr(key_4))",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("lq1pq0nsl8du3gsuk7r90sgm78259mmv6mt9d4yvj30zr3u052ufs5meuc2tuvwx7k7g9kvhhpux07vqpm3qjj8uwdj94650265ustv0xy8zrdxdfgp8g9pl")
+    }, {
+        "address - ELIP 150 View Descriptor 2 (no el prefix)",
+        "ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,wpkh(021a8fb6bd5a653b021b98a2a785725b8ddacfe3687bc043aa7f4d25d3a48d40b5))",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("lq1qq265u4g3k3m3qpyxjwpdrtnm293wuxgvs9xzmzcs2ck0mv5rx23w4d7xfsednsmmxrszfe7s9rs0c6cvf3dfytxax3utlmm46")
+    }, {
+        "address - ELIP 150 Non-View Descriptor 2 (no el prefix)",
+        "ct(0286fc9a38e765d955e9b0bcc18fa9ae81b0c893e2dd1ef5542a9c73780a086b90,wpkh(021a8fb6bd5a653b021b98a2a785725b8ddacfe3687bc043aa7f4d25d3a48d40b5))",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("lq1qq265u4g3k3m3qpyxjwpdrtnm293wuxgvs9xzmzcs2ck0mv5rx23w4d7xfsednsmmxrszfe7s9rs0c6cvf3dfytxax3utlmm46")
+    }, {
+        "address - slip77 (ELIP 150 Valid Descriptor 6, no el prefix)",
+        "ct(slip77(slip77_key),wpkh(key_4))",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("lq1qqdx5wnttttzulcs6ujlg9pfts6mp3r4sdwg5ekdej566n5wxzk88vknpl78t02k2xqgdh9ltmfmpy9ssk7qfvr33xa22hpw23")
+    }, {
+        "address - slip77 (ELIP 150 Valid Descriptor 8, no el prefix)",
+        "ct(slip77(slip77_key),tr(key_4))",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("lq1pq26fndnz8ef6umlz6e2755sm6j5jwxv3tdt2295mr4mx6ux0uf8vcc2tuvwx7k7g9kvhhpux07vqpm3qjj8uwdj94650265ustv0xy8z8wfacw9e5a5t")
+    },
 #endif /* BUILD_ELEMENTS */
     /*
      * Address error cases
