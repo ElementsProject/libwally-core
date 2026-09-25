@@ -177,7 +177,7 @@ if test "x$minimal" = "xyes"; then
 fi
 
 if test "x$builtin_memset" = "xno"; then
-    AX_CHECK_COMPILE_FLAG([-fno-builtin-memset], [AM_CFLAGS="$AM_CFLAGS -fno-builtin"])
+    AX_CHECK_COMPILE_FLAG([-fno-builtin-memset], [AM_CFLAGS="$AM_CFLAGS -fno-builtin-memset"])
 fi
 
 if test "x$fuzzing" = "xyes"; then
