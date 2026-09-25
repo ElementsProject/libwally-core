@@ -175,22 +175,38 @@ void sha256_sw_transform(uint32_t *s, const uint32_t *chunk, size_t blocks)
 	TransformDefault(s, chunk, blocks);
 }
 
+#if MBEDTLS_VERSION_NUMBER < 0x03000000
+/* Mbed TLS 2.x only reports errors from the _ret variants */
+#define SHA256_STARTS mbedtls_sha256_starts_ret
+#define SHA256_UPDATE mbedtls_sha256_update_ret
+#define SHA256_FINISH mbedtls_sha256_finish_ret
+#else
+#define SHA256_STARTS mbedtls_sha256_starts
+#define SHA256_UPDATE mbedtls_sha256_update
+#define SHA256_FINISH mbedtls_sha256_finish
+#endif
+
+/* sha256_init() and sha256_update() cannot report errors, so a failure is
+ * remembered in the context and reported by sha256_done() */
 inline void sha256_init(struct sha256_ctx *ctx)
 {
 	mbedtls_sha256_init(&ctx->c);
-	mbedtls_sha256_starts(&ctx->c, 0);
+	ctx->failed = SHA256_STARTS(&ctx->c, 0) != 0;
 }
 
 inline void sha256_update(struct sha256_ctx *ctx, const void *p, size_t size)
 {
-	mbedtls_sha256_update(&ctx->c, p, size);
+	if (!ctx->failed)
+		ctx->failed = SHA256_UPDATE(&ctx->c, p, size) != 0;
 }
 
 inline bool sha256_done(struct sha256_ctx *ctx, struct sha256* res)
 {
-	mbedtls_sha256_finish(&ctx->c, res->u.u8);
+	bool ok = !ctx->failed && SHA256_FINISH(&ctx->c, res->u.u8) == 0;
 	mbedtls_sha256_free(&ctx->c);
-	return true;
+	if (!ok)
+		memset(res, 0, sizeof(*res));
+	return ok;
 }
 void sha256_optimize(void)
 {

@@ -46,22 +46,38 @@ bool sha512_done(struct sha512_ctx *ctx, struct sha512 *res)
 	return ret;
 }
 #elif defined(CCAN_CRYPTO_SHA512_USE_MBEDTLS)
+#if MBEDTLS_VERSION_NUMBER < 0x03000000
+/* Mbed TLS 2.x only reports errors from the _ret variants */
+#define SHA512_STARTS mbedtls_sha512_starts_ret
+#define SHA512_UPDATE mbedtls_sha512_update_ret
+#define SHA512_FINISH mbedtls_sha512_finish_ret
+#else
+#define SHA512_STARTS mbedtls_sha512_starts
+#define SHA512_UPDATE mbedtls_sha512_update
+#define SHA512_FINISH mbedtls_sha512_finish
+#endif
+
+/* sha512_init() and sha512_update() cannot report errors, so a failure is
+ * remembered in the context and reported by sha512_done() */
 inline void sha512_init(struct sha512_ctx *ctx)
 {
 	mbedtls_sha512_init(&ctx->c);
-	mbedtls_sha512_starts(&ctx->c, 0);
+	ctx->failed = SHA512_STARTS(&ctx->c, 0) != 0;
 }
 
 inline void sha512_update(struct sha512_ctx *ctx, const void *p, size_t size)
 {
-	mbedtls_sha512_update(&ctx->c, p, size);
+	if (!ctx->failed)
+		ctx->failed = SHA512_UPDATE(&ctx->c, p, size) != 0;
 }
 
 inline bool sha512_done(struct sha512_ctx *ctx, struct sha512* res)
 {
-	mbedtls_sha512_finish(&ctx->c, res->u.u8);
+	bool ok = !ctx->failed && SHA512_FINISH(&ctx->c, res->u.u8) == 0;
 	mbedtls_sha512_free(&ctx->c);
-	return true;
+	if (!ok)
+		memset(res, 0, sizeof(*res));
+	return ok;
 }
 #else
 static void invalidate_sha512(struct sha512_ctx *ctx)

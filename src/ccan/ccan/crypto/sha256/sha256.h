@@ -15,6 +15,7 @@
 
 #ifdef CCAN_CRYPTO_SHA256_USE_MBEDTLS
 #include <mbedtls/sha256.h>
+#include <mbedtls/version.h>
 #include <sdkconfig.h>
 #include <soc/soc_caps.h>
 #ifdef SOC_SHA_SUPPORT_PARALLEL_ENG
@@ -77,6 +78,7 @@ struct sha256_ctx {
 	SHA256_CTX c;
 #elif defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS)
 	mbedtls_sha256_context c;
+	bool failed;
 #else
 	uint32_t s[8];
 	union {
@@ -135,6 +137,8 @@ void sha256_init(struct sha256_ctx *ctx);
 		0x0, 0x0,						\
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },	\
 			0x0, 0x20 } }
+#elif defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS)
+/* No static initializer: mbedtls contexts must be set up with sha256_init() */
 #else
 #define SHA256_INIT							\
 	{ { 0x6a09e667ul, 0xbb67ae85ul, 0x3c6ef372ul, 0xa54ff53aul,	\

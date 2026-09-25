@@ -15,6 +15,7 @@
 
 #ifdef CCAN_CRYPTO_SHA512_USE_MBEDTLS
 #include <mbedtls/sha512.h>
+#include <mbedtls/version.h>
 #include <sdkconfig.h>
 #include <soc/soc_caps.h>
 #ifdef SOC_SHA_SUPPORT_PARALLEL_ENG
@@ -59,6 +60,7 @@ struct sha512_ctx {
 	SHA512_CTX c;
 #elif defined(CCAN_CRYPTO_SHA512_USE_MBEDTLS)
 	mbedtls_sha512_context c;
+	bool failed;
 #else
 	uint64_t s[8];
 	union {
@@ -118,6 +120,8 @@ void sha512_init(struct sha512_ctx *ctx);
 	    0, 0,						\
 	    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },	\
 	    0, 0x40 } }
+#elif defined(CCAN_CRYPTO_SHA512_USE_MBEDTLS)
+/* No static initializer: mbedtls contexts must be set up with sha512_init() */
 #else
 #define SHA512_INIT						\
 	{ { 0x6a09e667f3bcc908ull, 0xbb67ae8584caa73bull,	\
