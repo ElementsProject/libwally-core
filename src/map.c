@@ -671,7 +671,7 @@ int wally_merkle_path_xonly_public_key_verify(const unsigned char *key, size_t k
         extkey.version || BYTES_INVALID(val, val_len))
         return WALLY_EINVAL;
     if (val_len && (val_len % SHA256_LEN ||
-        val_len % SHA256_LEN > WALLY_DESCRIPTOR_TAPTREE_MAX_DEPTH))
+        val_len / SHA256_LEN > WALLY_DESCRIPTOR_TAPTREE_MAX_DEPTH))
         return WALLY_EINVAL;
     return WALLY_OK;
 }

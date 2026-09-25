@@ -345,6 +345,24 @@ class MapTests(unittest.TestCase):
 
         self.assertEqual(wally_map_free(m), WALLY_OK)
 
+    def test_merkle_path(self):
+        """Test merkle path and control block verification"""
+        xonly = bytes.fromhex('79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798')
+        elem = bytes(32)
+        # BIP-341 allows at most 128 merkle path elements
+        for depth, expected in [(0, WALLY_OK), (1, WALLY_OK), (128, WALLY_OK),
+                                (129, WALLY_EINVAL), (256, WALLY_EINVAL)]:
+            path = elem * depth if depth else None
+            ret = wally_merkle_path_xonly_public_key_verify(xonly, len(xonly),
+                                                            path, depth * 32)
+            self.assertEqual(ret, expected)
+            ctrl = bytes.fromhex('55') + xonly + elem * depth
+            ret = wally_bip341_control_block_verify(ctrl, len(ctrl))
+            self.assertEqual(ret, expected)
+        # Path length not a multiple of 32
+        ctrl = bytes.fromhex('55') + xonly + elem[:-1]
+        self.assertEqual(wally_bip341_control_block_verify(ctrl, len(ctrl)), WALLY_EINVAL)
+
     def test_preimage_map(self):
         """Test preimage map functions"""
         m = pointer(wally_map())
