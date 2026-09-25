@@ -128,6 +128,8 @@ class AddressTests(unittest.TestCase):
         ret, new_addr = wally_bip32_key_to_addr_segwit(key, utf8(bech32_prefix), 0)
         self.assertEqual(ret, WALLY_OK)
         self.assertEqual(new_addr, vec[path]['address_segwit'])
+        ret = wally_bip32_key_to_addr_segwit(None, utf8(bech32_prefix), 0)
+        self.assertEqual(ret, (WALLY_EINVAL, None)) # NULL key
 
         # Parse legacy address (P2PKH):
         out, out_len = make_cbuffer('00' * SCRIPTPUBKEY_P2PKH_LEN)

@@ -64,6 +64,12 @@ int wally_bip32_key_to_addr_segwit(const struct ext_key *hdkey, const char *addr
     witness_program_bytes[0] = OP_0;
     witness_program_bytes[1] = HASH160_LEN;
 
+    if (output)
+        *output = NULL;
+
+    if (!hdkey || !output)
+        return WALLY_EINVAL;
+
     if (wally_hash160(hdkey->pub_key, sizeof(hdkey->pub_key), witness_program_bytes + 2, HASH160_LEN) != WALLY_OK)
         return WALLY_EINVAL;
 
