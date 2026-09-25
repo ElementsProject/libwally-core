@@ -387,6 +387,9 @@ class PSBTTests(unittest.TestCase):
         ]
         for args in cases:
             self.assertEqual(WALLY_EINVAL, wally_psbt_init_alloc(*args))
+        # Too many unknowns: the allocation size would overflow
+        too_many = (2 ** (8 * sizeof(c_size_t)) - 1) // sizeof(wally_map_item) + 1
+        self.assertEqual(WALLY_ENOMEM, wally_psbt_init_alloc(0, 0, 0, too_many, 0, psbt))
 
         # psbt_from_base64
         src_base64 = JSON['valid'][0]['psbt']
