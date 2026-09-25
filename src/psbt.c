@@ -2258,13 +2258,16 @@ static int pull_taproot_derivation(const unsigned char **cursor, size_t *max,
                                    struct wally_map *leaf_paths)
 {
     const unsigned char *xonly = *key, *hashes, *val;
-    size_t xonly_len = *key_len, num_hashes, hashes_len, val_len;
+    size_t xonly_len = *key_len, hashes_len, val_len;
+    uint64_t num_hashes;
     int ret;
 
     if (xonly_len != EC_XONLY_PUBLIC_KEY_LEN)
         return WALLY_EINVAL;;
     pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_len);
     num_hashes = pull_varint(&val, &val_len);
+    if (num_hashes > val_len / SHA256_LEN)
+        return WALLY_EINVAL; /* More hashes than the value holds */
     hashes_len = num_hashes * SHA256_LEN;
     if (!(hashes = pull_skip(&val, &val_len, hashes_len)))
         return WALLY_EINVAL;
