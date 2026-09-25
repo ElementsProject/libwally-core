@@ -188,6 +188,7 @@ int wally_asset_scalar_offset(uint64_t value,
                                    abf, abf_len, tmp, sizeof(tmp));
     if (ret == WALLY_OK)
         ret = wally_ec_scalar_add(tmp, sizeof(tmp), vbf, vbf_len, bytes_out, len);
+    wally_clear(tmp, sizeof(tmp));
     return ret;
 #endif /* BUILD_ELEMENTS */
 }

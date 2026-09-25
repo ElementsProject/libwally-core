@@ -235,6 +235,33 @@ static bool test_elip150_private_key(void)
         return false;
     return !in_stack("wally_elip150_private_key_to_ec_private_key", out, sizeof(out));
 }
+
+/* Call from deeper in the stack, as for elip150_private_key_deep() */
+WALLY_NO_OPTIMIZE static int asset_scalar_offset_deep(uint64_t value,
+                                                      unsigned char *out, size_t len)
+{
+    static unsigned char vbf[32] = { 0x33 };
+    volatile unsigned char pad[1024];
+
+    pad[0] = 0;
+    return pad[0] + wally_asset_scalar_offset(value, SECRET32, sizeof(SECRET32),
+                                              vbf, sizeof(vbf), out, len);
+}
+
+static bool test_asset_scalar_offset(void)
+{
+    static unsigned char value_scalar[32] = { [30] = 0x30, [31] = 0x39 };
+    static unsigned char product[32];
+    static unsigned char out[32];
+    /* value * abf is the secret: it reveals the abf */
+    if (wally_ec_scalar_multiply(value_scalar, sizeof(value_scalar),
+                                 SECRET32, sizeof(SECRET32),
+                                 product, sizeof(product)))
+        return false;
+    if (asset_scalar_offset_deep(0x3039, out, sizeof(out)))
+        return false;
+    return !in_stack("wally_asset_scalar_offset", product, sizeof(product));
+}
 #endif /* BUILD_ELEMENTS */
 
 static void *run_tests(void *passed_stack)
@@ -275,6 +302,9 @@ static void *run_tests(void *passed_stack)
 #ifdef BUILD_ELEMENTS
     ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
     RUN(test_elip150_private_key);
+
+    ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
+    RUN(test_asset_scalar_offset);
 #endif /* BUILD_ELEMENTS */
 
     return NULL;
