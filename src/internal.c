@@ -196,46 +196,64 @@ int wally_sha256(const unsigned char *bytes, size_t bytes_len,
     return WALLY_OK;
 }
 
+#ifdef CCAN_CRYPTO_SHA256_USE_MBEDTLS
+/* The running state of an mbedtls context is not always readable: hardware
+ * implementations may hold it elsewhere or only update it later, and may hold
+ * resources until the context is finished or freed. Compute the midstate with
+ * the software transform instead. Only whole 64-byte blocks contribute, as
+ * with the builtin implementation.
+ */
+static void sha256_midstate_sw(const unsigned char *bytes, size_t bytes_len,
+                               struct sha256 *res)
+{
+    uint32_t s[8] = { 0x6a09e667ul, 0xbb67ae85ul, 0x3c6ef372ul, 0xa54ff53aul,
+                      0x510e527ful, 0x9b05688cul, 0x1f83d9abul, 0x5be0cd19ul };
+    const size_t num_blocks = bytes_len / 64;
+    size_t i;
+
+    if (num_blocks && alignment_ok(bytes, sizeof(uint32_t)))
+        sha256_sw_transform(s, (const uint32_t *)(const void *)bytes, num_blocks);
+    else if (num_blocks) {
+        union { uint32_t u32[16]; unsigned char u8[64]; } buf;
+        for (i = 0; i < num_blocks; ++i) {
+            memcpy(buf.u8, bytes + i * 64, sizeof(buf));
+            sha256_sw_transform(s, buf.u32, 1);
+        }
+        wally_clear(&buf, sizeof(buf));
+    }
+    for (i = 0; i < NUM_ELEMS(s); ++i)
+        res->u.u32[i] = cpu_to_be32(s[i]);
+    wally_clear(s, sizeof(s));
+}
+#else
 static void sha256_midstate(struct sha256_ctx *ctx, struct sha256 *res)
 {
-#ifdef CCAN_CRYPTO_SHA256_USE_MBEDTLS
-#ifndef CONFIG_MBEDTLS_HARDWARE_SHA
-#define SHA_CTX_STATE c.MBEDTLS_PRIVATE(state)
-#else
-#define SHA_CTX_STATE c.state
-#endif
-#else
-#define SHA_CTX_STATE s
-#endif
-
-#if defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS) && \
-    defined(MBEDTLS_SHA256_ALT) && !defined(SOC_SHA_SUPPORT_PARALLEL_ENG)
-    /* HW: Already big endian */
-    memcpy(res->u.u32, ctx->SHA_CTX_STATE, sizeof(ctx->SHA_CTX_STATE));
-#else
-    for (size_t i = 0; i < NUM_ELEMS(ctx->SHA_CTX_STATE); i++)
-        res->u.u32[i] = cpu_to_be32(ctx->SHA_CTX_STATE[i]);
-#endif
-
-#ifndef CCAN_CRYPTO_SHA256_USE_MBEDTLS
+    for (size_t i = 0; i < NUM_ELEMS(ctx->s); i++)
+        res->u.u32[i] = cpu_to_be32(ctx->s[i]);
     ctx->bytes = (size_t)-1;
-#endif
 }
+#endif /* CCAN_CRYPTO_SHA256_USE_MBEDTLS */
 
 int wally_sha256_midstate(const unsigned char *bytes, size_t bytes_len,
                           unsigned char *bytes_out, size_t len)
 {
     struct sha256 sha;
-    struct sha256_ctx ctx;
     const bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u32[0]));
 
     if ((!bytes && bytes_len != 0) || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
-    sha256_init(&ctx);
-    sha256_update(&ctx, bytes, bytes_len);
-    sha256_midstate(&ctx, aligned ? (void *)bytes_out : (void *)&sha);
-    wally_clear(&ctx, sizeof(ctx));
+#ifdef CCAN_CRYPTO_SHA256_USE_MBEDTLS
+    sha256_midstate_sw(bytes, bytes_len, aligned ? (void *)bytes_out : (void *)&sha);
+#else
+    {
+        struct sha256_ctx ctx;
+        sha256_init(&ctx);
+        sha256_update(&ctx, bytes, bytes_len);
+        sha256_midstate(&ctx, aligned ? (void *)bytes_out : (void *)&sha);
+        wally_clear(&ctx, sizeof(ctx));
+    }
+#endif
 
     if (!aligned) {
         memcpy(bytes_out, &sha, sizeof(sha));

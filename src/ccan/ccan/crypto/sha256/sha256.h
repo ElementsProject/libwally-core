@@ -40,6 +40,19 @@ struct sha256 {
  */
 void sha256_optimize(void);
 
+#ifdef CCAN_CRYPTO_SHA256_USE_MBEDTLS
+/**
+ * sha256_sw_transform - run the portable SHA-256 compression function.
+ * @s: the 8 word running state to update.
+ * @chunk: @blocks 64-byte chunks of big-endian words, 4-byte aligned.
+ * @blocks: the number of chunks to process.
+ *
+ * Only available for backends whose running state may not be readable
+ * from the context; used to compute midstates.
+ */
+void sha256_sw_transform(uint32_t *s, const uint32_t *chunk, size_t blocks);
+#endif
+
 /**
  * sha256 - return sha256 of an object.
  * @sha256: the sha256 to fill in

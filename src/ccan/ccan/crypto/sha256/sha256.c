@@ -44,39 +44,9 @@ void sha256_done(struct sha256_ctx *ctx, struct sha256 *res)
 	SHA256_Final(res->u.u8, &ctx->c);
 	invalidate_sha256(ctx);
 }
-#elif defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS)
-inline void sha256_init(struct sha256_ctx *ctx)
-{
-	mbedtls_sha256_init(&ctx->c);
-	mbedtls_sha256_starts(&ctx->c, 0);
-}
-
-inline void sha256_update(struct sha256_ctx *ctx, const void *p, size_t size)
-{
-	mbedtls_sha256_update(&ctx->c, p, size);
-}
-
-inline void sha256_done(struct sha256_ctx *ctx, struct sha256* res)
-{
-	mbedtls_sha256_finish(&ctx->c, res->u.u8);
-	mbedtls_sha256_free(&ctx->c);
-}
-void sha256_optimize(void)
-{
-}
 #else
-static void invalidate_sha256(struct sha256_ctx *ctx)
-{
-	ctx->bytes = (size_t)-1;
-}
-
-static void check_sha256(struct sha256_ctx *ctx UNUSED)
-{
-#if 0
-	assert(ctx->bytes != (size_t)-1);
-#endif
-}
-
+/* The portable SHA-256 compression function. Used by the builtin backend,
+ * and by the mbedtls backend to compute midstates. */
 static uint32_t Ch(uint32_t x, uint32_t y, uint32_t z)
 {
 	return z ^ (x & (y ^ z));
@@ -198,6 +168,44 @@ static void TransformDefault(uint32_t *s, const uint32_t *chunk, size_t blocks)
 	}
 }
 
+#ifdef CCAN_CRYPTO_SHA256_USE_MBEDTLS
+void sha256_sw_transform(uint32_t *s, const uint32_t *chunk, size_t blocks)
+{
+	TransformDefault(s, chunk, blocks);
+}
+
+inline void sha256_init(struct sha256_ctx *ctx)
+{
+	mbedtls_sha256_init(&ctx->c);
+	mbedtls_sha256_starts(&ctx->c, 0);
+}
+
+inline void sha256_update(struct sha256_ctx *ctx, const void *p, size_t size)
+{
+	mbedtls_sha256_update(&ctx->c, p, size);
+}
+
+inline void sha256_done(struct sha256_ctx *ctx, struct sha256* res)
+{
+	mbedtls_sha256_finish(&ctx->c, res->u.u8);
+	mbedtls_sha256_free(&ctx->c);
+}
+void sha256_optimize(void)
+{
+}
+#else /* Builtin implementation */
+static void invalidate_sha256(struct sha256_ctx *ctx)
+{
+	ctx->bytes = (size_t)-1;
+}
+
+static void check_sha256(struct sha256_ctx *ctx UNUSED)
+{
+#if 0
+	assert(ctx->bytes != (size_t)-1);
+#endif
+}
+
 #if defined(HAVE_INLINE_ASM) && (defined(__x86_64__) || defined(__amd64__))
 #include <cpuid.h>
 
@@ -301,6 +309,7 @@ void sha256_done(struct sha256_ctx *ctx, struct sha256 *res)
 		res->u.u32[i] = cpu_to_be32(ctx->s[i]);
 	invalidate_sha256(ctx);
 }
+#endif /* CCAN_CRYPTO_SHA256_USE_MBEDTLS */
 #endif
 
 void sha256(struct sha256 *sha, const void *p, size_t size)
