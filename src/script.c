@@ -369,6 +369,23 @@ bool scriptpubkey_is_p2tr(const unsigned char *bytes, size_t bytes_len)
            bytes[1] == 32; /* X-ONLY-PUBKEY */
 }
 
+bool scriptpubkey_is_witness_program(const unsigned char *bytes, size_t bytes_len,
+                                     size_t *version)
+{
+    /* A version opcode followed by a single direct push of 2-40 bytes
+     * which is the remainder of the script (BIP-141).
+     * v0 programs must also be either 20 or 32 bytes (BIP-141/BIP-173) */
+    size_t ver;
+
+    if (!bytes || bytes_len < 4 || bytes_len > WALLY_WITNESSSCRIPT_MAX_LEN ||
+        !script_is_op_n(bytes[0], true, &ver) || bytes[1] != bytes_len - 2 ||
+        (!ver && bytes[1] != HASH160_LEN && bytes[1] != SHA256_LEN))
+        return false;
+    if (version)
+        *version = ver;
+    return true;
+}
+
 static bool scriptpubkey_is_multisig(const unsigned char *bytes, size_t bytes_len)
 {
     const size_t min_1of1_len = 1 + 1 + 33 + 1 + 1; /* OP_1 [pubkey] OP_1 OP_CHECKMULTISIG */
