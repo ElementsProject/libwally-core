@@ -109,6 +109,38 @@ class WIFTests(unittest.TestCase):
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(addr, exp_addr)
 
+    # A string long enough that decoding it requires a heap allocation
+    LONG_WIF = utf8('z' * 700)
+
+    def test_wif_to_bytes_malloc(self):
+
+        @malloc_fail([1])
+        def wif_to_bytes():
+            buf, buf_len = make_cbuffer('00' * 32)
+            ret = wally_wif_to_bytes(self.LONG_WIF, PREFIX, 0, buf, buf_len)
+            self.assertEqual(ret, WALLY_ENOMEM)
+
+        wif_to_bytes()
+
+    def test_wif_to_public_key_malloc(self):
+
+        @malloc_fail([1])
+        def wif_to_public_key():
+            pub, pub_len = make_cbuffer('00' * 65)
+            ret = wally_wif_to_public_key(self.LONG_WIF, PREFIX, pub, pub_len)
+            self.assertEqual(ret, (WALLY_ENOMEM, 0))
+
+        wif_to_public_key()
+
+    def test_wif_to_address_malloc(self):
+
+        @malloc_fail([1])
+        def wif_to_address():
+            ret = wally_wif_to_address(self.LONG_WIF, PREFIX, VERSION)
+            self.assertEqual(ret, (WALLY_ENOMEM, None))
+
+        wif_to_address()
+
     def private_to_public(self, prv, is_uncompressed):
         pub, pub_len = make_cbuffer('00' * 33)
         self.assertEqual(wally_ec_public_key_from_private_key(prv, 32, pub, pub_len), WALLY_OK)
