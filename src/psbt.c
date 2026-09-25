@@ -2288,19 +2288,19 @@ static int pull_taproot_derivation(const unsigned char **cursor, size_t *max,
     return ret;
 }
 
-static struct wally_psbt *pull_psbt(const unsigned char **cursor, size_t *max)
+static int pull_psbt(const unsigned char **cursor, size_t *max,
+                     struct wally_psbt **output)
 {
-    struct wally_psbt *psbt = NULL;
     const unsigned char *magic = pull_skip(cursor, max, sizeof(PSBT_MAGIC));
     int ret = WALLY_EINVAL;
 
     if (magic && !memcmp(magic, PSBT_MAGIC, sizeof(PSBT_MAGIC)))
-        ret = wally_psbt_init_alloc(0, 0, 0, 8, 0, &psbt);
+        ret = wally_psbt_init_alloc(0, 0, 0, 8, 0, output);
 #ifdef BUILD_ELEMENTS
     else if (magic && !memcmp(magic, PSET_MAGIC, sizeof(PSET_MAGIC)))
-        ret = wally_psbt_init_alloc(2, 0, 0, 8, WALLY_PSBT_INIT_PSET, &psbt);
+        ret = wally_psbt_init_alloc(2, 0, 0, 8, WALLY_PSBT_INIT_PSET, output);
 #endif /* BUILD_ELEMENTS */
-    return ret == WALLY_OK ? psbt : NULL;
+    return ret;
 }
 
 static int pull_psbt_input(const struct wally_psbt *psbt,
@@ -2480,7 +2480,7 @@ unknown:
         pre_key = *cursor;
     }
 
-    if (!(flags & WALLY_PSBT_PARSE_FLAG_LOOSE)) {
+    if (ret == WALLY_OK && !(flags & WALLY_PSBT_PARSE_FLAG_LOOSE)) {
         if (mandatory && (keyset & mandatory) != mandatory)
             ret = WALLY_EINVAL; /* Mandatory field is missing */
         else if (disallowed && (keyset & disallowed))
@@ -2634,7 +2634,7 @@ unknown:
     }
 #endif /* BUILD_ELEMENTS */
 
-    if (!(flags & WALLY_PSBT_PARSE_FLAG_LOOSE)) {
+    if (ret == WALLY_OK && !(flags & WALLY_PSBT_PARSE_FLAG_LOOSE)) {
         if (mandatory && (keyset & mandatory) != mandatory)
             ret = WALLY_EINVAL; /* Mandatory field is missing*/
         else if (disallowed && (keyset & disallowed))
@@ -2673,8 +2673,8 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
         (WALLY_PSBT_PARSE_FLAG_STRICT|WALLY_PSBT_PARSE_FLAG_LOOSE))
         return WALLY_EINVAL; /* Cannot use these flags together */
 
-    if (!(*output = pull_psbt(cursor, max)))
-        return WALLY_EINVAL;
+    if ((ret = pull_psbt(cursor, max, output)) != WALLY_OK)
+        return ret;
 
     if (memcmp((*output)->magic, PSBT_MAGIC, sizeof(PSBT_MAGIC))) {
         is_pset = true;
@@ -2801,7 +2801,7 @@ unknown:
         mandatory &= PSBT_FT_MASK;
         disallowed &= PSBT_FT_MASK;
     }
-    if (!(flags & WALLY_PSBT_PARSE_FLAG_LOOSE)) {
+    if (ret == WALLY_OK && !(flags & WALLY_PSBT_PARSE_FLAG_LOOSE)) {
         if (mandatory && (keyset & mandatory) != mandatory)
             ret = WALLY_EINVAL; /* Mandatory field is missing*/
         else if (disallowed && (keyset & disallowed))

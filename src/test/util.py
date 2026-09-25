@@ -1219,6 +1219,7 @@ def _failable_malloc(size):
 _new_ops.malloc_fn = _malloc_fn_t(_failable_malloc)
 
 def malloc_fail(failures):
+    """Decorator to repeatedly call a function failing every nth allocation in 'failures'"""
     def decorator(test_func):
         def wrapped(*args):
             counter = 0
@@ -1231,6 +1232,23 @@ def malloc_fail(failures):
             return counter
         return wrapped
     return decorator
+
+def malloc_fail_loop(fn):
+    """Repeatedly call a wally function failing every allocation in turn until it succeeds"""
+    global _fail_malloc_at, _fail_malloc_counter
+    fail_at = 0
+    while True:
+        # Fail each allocation made while parsing in turn
+        fail_at += 1
+        _fail_malloc_at, _fail_malloc_counter = fail_at, 0
+        try:
+            ret = fn()
+            did_fail = _fail_malloc_counter >= fail_at
+        finally:
+            _fail_malloc_at, _fail_malloc_counter = 0, 0
+        if not did_fail:
+            return ret
+        assert ret == WALLY_ENOMEM
 
 # Support for signing testing
 _fake_ec_nonce = None

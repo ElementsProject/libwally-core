@@ -477,5 +477,17 @@ class PSBTTests(unittest.TestCase):
         serialized = self.to_base64(psbt, None, SERIALIZE_FLAG_REDUNDANT)
         self.assertNotEqual(serialized, b64)
 
+    def test_parse_malloc_fail(self):
+        """Test that allocation failures when parsing return WALLY_ENOMEM"""
+        _, is_elements_build = wally_is_elements_build()
+        psbt = pointer(wally_psbt())
+
+        for case in JSON['valid']:
+            if case.get('is_pset', False) and not is_elements_build:
+                continue # No Elements support, skip this test case
+            ret = malloc_fail_loop(lambda: wally_psbt_from_base64(case['psbt'], 0, psbt))
+            self.assertEqual(ret, WALLY_OK) # Parsed without failing
+            wally_psbt_free(psbt)
+
 if __name__ == '__main__':
     unittest.main()
