@@ -192,6 +192,18 @@ class AddressTests(unittest.TestCase):
             # Output is set to NULL on failure
             self.assertEqual((ret, output.value), (WALLY_EINVAL, None))
 
+    def test_address_to_scriptpubkey_malloc(self):
+        # A string long enough that decoding it requires a heap allocation
+        out, out_len = make_cbuffer('00' * 100)
+
+        @malloc_fail([1])
+        def address_to_scriptpubkey():
+            ret = wally_address_to_scriptpubkey(utf8('z' * 700), NETWORK_BITCOIN_MAINNET,
+                                                out, out_len)
+            self.assertEqual(ret, (WALLY_ENOMEM, 0))
+
+        address_to_scriptpubkey()
+
 
 if __name__ == '__main__':
     unittest.main()

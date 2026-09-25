@@ -132,12 +132,15 @@ int wally_address_to_scriptpubkey(const char *addr, uint32_t network, unsigned c
     uint32_t version, addr_network;
     unsigned char decoded[1 + HASH160_LEN + BASE58_CHECKSUM_LEN];
     size_t decoded_len;
+    int ret;
 
     if (written)
         *written = 0;
 
-    if (wally_base58_to_bytes(addr, BASE58_FLAG_CHECKSUM, decoded, sizeof(decoded), &decoded_len) != WALLY_OK)
-        return WALLY_EINVAL;
+    ret = wally_base58_to_bytes(addr, BASE58_FLAG_CHECKSUM,
+                                decoded, sizeof(decoded), &decoded_len);
+    if (ret != WALLY_OK)
+        return ret;
 
     if (decoded_len != HASH160_LEN + 1)
         return WALLY_EINVAL;
