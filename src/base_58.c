@@ -92,6 +92,8 @@ static int base58_decode(const char *base58, size_t base58_len,
 
     /* Take 6 bits to store each 58 bit number, rounded up to the next byte,
      * then round that up to a uint32_t word boundary. */
+    if (base58_len > (SIZE_MAX - 7) / 6)
+        return WALLY_EINVAL; /* Too long: bn_words would overflow */
     bn_words = ((base58_len * 6 + 7) / 8 + 3) / 4;
 
     /* Allocate our bignum buffer if it won't fit on the stack */
@@ -201,6 +203,8 @@ int wally_base58_from_bytes(const unsigned char *bytes, size_t bytes_len,
         return WALLY_OK; /* All 0's */
     }
 
+    if (bytes_len - zeros > SIZE_MAX / 138)
+        goto cleanup; /* Too long: bn_bytes would overflow */
     bn_bytes = (bytes_len - zeros) * 138 / 100 + 1; /* log(256)/log(58) rounded up */
 
     /* Allocate our bignum buffer if it won't fit on the stack */
