@@ -900,8 +900,9 @@ WALLY_CORE_API int wally_tx_get_signature_hash(
  *|    Ignored for pre-segwit signing.
  * :param script_len: Length of ``script`` in bytes.
  * :param key_version: For taproot signing, the version of the pubkey
- *|    in ``script`` when signing with a script path. Currently must be ``1``
- *|    for this case. For non-taproot or keypath signing, it must be ``0``.
+ *|    in ``script`` when signing with a script path: ``0`` for BIP342
+ *|    tapscript keys, or ``1`` for BIP118 keys. For non-taproot or keypath
+ *|    signing, it must be ``0``.
  * :param codesep_position: BIP342 codeseparator position
  *|    or ``WALLY_NO_CODESEPARATOR`` if none. Only used for taproot signing.
  * :param annex: BIP341 annex, or NULL if none.

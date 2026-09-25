@@ -641,6 +641,50 @@ class TransactionTests(unittest.TestCase):
         ret = wally_tx_get_btc_taproot_signature_hash(*args)
         self.assertEqual(ret, WALLY_ENOMEM)
 
+    def test_taproot_signature_hash_cache(self):
+        """Test that caching doesn't change taproot signature hashes"""
+        keyspend_case = JSON['keyPathSpending'][0]
+        utxos = keyspend_case['given']['utxosSpent']
+        tx = self.tx_deserialize_hex(keyspend_case['given']['rawUnsignedTx'])
+
+        def make_map(n):
+            m = pointer(wally_map())
+            self.assertEqual(wally_map_init_alloc(n, None, m), WALLY_OK)
+            return m
+
+        scripts, values = make_map(len(utxos)), make_map(len(utxos))
+        for i, utxo in enumerate(utxos):
+            script, script_len = make_cbuffer(utxo['scriptPubKey'])
+            wally_map_add_integer(scripts, i, script, script_len)
+            value = int(utxo['amountSats']).to_bytes(8, 'little')
+            wally_map_add_integer(values, i, value, len(value))
+
+        def get_sighash(tapleaf_hex, annex_hex, cache):
+            tapleaf, tapleaf_len = make_cbuffer(tapleaf_hex) if tapleaf_hex else (None, 0)
+            annex, annex_len = make_cbuffer(annex_hex) if annex_hex else (None, 0)
+            bytes_out, out_len = make_cbuffer('00'*32)
+            ret = wally_tx_get_input_signature_hash(tx, 0, scripts, None, values,
+                                                    tapleaf, tapleaf_len, 0, 0xffffffff,
+                                                    annex, annex_len, None, 0,
+                                                    0, SIGTYPE_SW_V1, cache,
+                                                    bytes_out, out_len)
+            self.assertEqual(ret, WALLY_OK)
+            return h(bytes_out[:out_len])
+
+        # A tapleaf script can have the same bytes as an annex
+        colliding = '5051'
+        for calls in [
+            [(colliding, colliding)],
+            [(colliding, colliding), (colliding, colliding)],
+            [(None, colliding), (colliding, None), (colliding, colliding)],
+            [(colliding, None), (None, colliding), (colliding, colliding)],
+        ]:
+            cache = make_map(0)
+            for tapleaf_hex, annex_hex in calls:
+                expected = get_sighash(tapleaf_hex, annex_hex, None)
+                self.assertEqual(get_sighash(tapleaf_hex, annex_hex, cache), expected)
+            wally_map_free(cache)
+
     def test_get_elements_taproot_signature_hash(self):
         """Tests for computing the Elements taproot signature hash"""
         _, is_elements_build = wally_is_elements_build()
