@@ -74,6 +74,11 @@ class WIFTests(unittest.TestCase):
         for args in invalid_args:
             self.assertEqual(wally_wif_to_public_key(*args), (WALLY_EINVAL, 0))
 
+        # NULL written (call the C function directly, bypassing the wrapper)
+        ret = libwally.wally_wif_to_public_key(PRV_WIF_COMPRESS, PREFIX,
+                                               pub, pub_len, None)
+        self.assertEqual(ret, WALLY_EINVAL)
+
         # If the output length is incorrect, the correct one is returned
         invalid_len = [
             (PRV_WIF_COMPRESS, PREFIX, pub, 32),

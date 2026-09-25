@@ -116,7 +116,7 @@ int wally_wif_to_public_key(const char *wif,
     if (written)
         *written = 0;
 
-    if (!wif || (prefix & ~0xff) || !bytes_out)
+    if (!wif || (prefix & ~0xff) || !bytes_out || !written)
         return WALLY_EINVAL;
 
     ret = is_uncompressed(wif, buf, sizeof(buf), &uncompressed);
