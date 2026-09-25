@@ -651,6 +651,24 @@ class TransactionTests(unittest.TestCase):
         args[10] = fake_annex_len
         self.assertEqual(wally_tx_get_input_signature_hash(*args), WALLY_OK)
 
+        # Script path signing commits to the Elements tapscript leaf version
+        # 0xc4 (not 0xc0). Expected values are computed independently of wally
+        # following Elements' TaprootSignatureHash() (test_framework/script.py).
+        leaf_script, leaf_script_len = make_cbuffer(
+            '208bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac')
+        cache = make_map(0)
+        for sp_index, sp_sighash, sp_expected in [
+            (0, 0x00, '1389dc115dd1623be501bd1c4dc1558f66b767b4e48b91b0185ff3d315fbff15'),
+            (1, 0x83, '9b9afc640a736c82867ef0143d9adb93fd738bfa81ca342c06a2ef681ac0a4e4'),
+        ]:
+            for sp_cache in [None, cache, cache]:
+                sp_args = [tx, sp_index, scripts, assets, values,
+                           leaf_script, leaf_script_len, 0, 0xFFFFFFFF,
+                           None, 0, genesis, genesis_len,
+                           sp_sighash, SIGTYPE_SW_V1, sp_cache, bytes_out, out_len]
+                self.assertEqual(wally_tx_get_input_signature_hash(*sp_args), WALLY_OK)
+                self.assertEqual(utf8(sp_expected), h(bytes_out[:out_len]))
+
         # Invalid args
         invalid_cases = [
             [(0,  None)],            # NULL tx
