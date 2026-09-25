@@ -1294,6 +1294,22 @@ static const descriptor_test g_descriptor_cases[] = {
         "wpkh(mainnet_xpriv)",
         WALLY_NETWORK_LIQUID_REGTEST, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     },{
+        "descriptor errchk - wif - zero uncompressed wif",
+        "pkh(5HpHagT65TZzG1PH3CSu63k8DbpvD8s5ip4nEB3kEsreAbuatmU)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor errchk - wif - zero compressed wif",
+        "pkh(KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73Nd2Mcv1)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor errchk - wif - too-large uncompressed wif",
+        "pkh(5Km2kuu7vtFDPpxywn4u3NLpbr5jKpTB3jsuDU2KYEqetwr388P)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor errchk - wif - too-large compressed wif",
+        "pkh(L5oLkpV3aqBjhki6LmvChTCV6odsp4SXM6FfU2Gppt5kFqRzExJJ)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
         "descriptor errchk - addr - empty addr",
         "addr()",
         WALLY_NETWORK_LIQUID_REGTEST, 0, 0, 0, NULL, 0, NULL, "", VARS_STD

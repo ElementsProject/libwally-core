@@ -2824,21 +2824,23 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
                                       privkey, sizeof(privkey), &privkey_len);
     if (ret == WALLY_OK && privkey_len && privkey_len <= EC_PRIVATE_KEY_LEN + 2) {
         if (ctx->addr_ver && ctx->addr_ver->version_wif != privkey[0])
-            return WALLY_EINVAL;
-        if (privkey_len == EC_PRIVATE_KEY_LEN + 1) {
+            ret = WALLY_EINVAL;
+        else if (privkey_len == EC_PRIVATE_KEY_LEN + 1) {
             if (flags & WALLY_MINISCRIPT_TAPSCRIPT)
-                return WALLY_EINVAL; /* Tapscript only allows x-only keys */
+                ret = WALLY_EINVAL; /* Tapscript only allows x-only keys */
             node->flags |= WALLY_MS_IS_UNCOMPRESSED;
             ctx->features |= WALLY_MS_IS_UNCOMPRESSED;
         } else if (privkey_len != EC_PRIVATE_KEY_LEN + 2 ||
                    privkey[EC_PRIVATE_KEY_LEN + 1] != 1)
-            return WALLY_EINVAL; /* Unknown WIF format */
+            ret = WALLY_EINVAL; /* Unknown WIF format */
 
-        node->flags |= (flags & WALLY_MINISCRIPT_TAPSCRIPT) ? WALLY_MS_IS_X_ONLY : 0;
-        ret = wally_ec_private_key_verify(&privkey[1], EC_PRIVATE_KEY_LEN);
+        if (ret == WALLY_OK) {
+            node->flags |= (flags & WALLY_MINISCRIPT_TAPSCRIPT) ? WALLY_MS_IS_X_ONLY : 0;
+            ret = wally_ec_private_key_verify(&privkey[1], EC_PRIVATE_KEY_LEN);
+        }
         if (ret == WALLY_OK && !clone_bytes((unsigned char **)&node->data, &privkey[1], EC_PRIVATE_KEY_LEN))
-            ret = WALLY_EINVAL;
-        else {
+            ret = WALLY_ENOMEM;
+        else if (ret == WALLY_OK) {
             node->data_len = EC_PRIVATE_KEY_LEN;
             node->kind = KIND_PRIVATE_KEY;
             ctx->features |= (WALLY_MS_IS_PRIVATE | WALLY_MS_IS_RAW);
