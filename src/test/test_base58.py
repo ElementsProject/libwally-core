@@ -136,6 +136,15 @@ class Base58Tests(unittest.TestCase):
         ret, _ = wally_base58_n_to_bytes(utf8('16Ho7Hs'), 0, 0, buf, buf_len)
         self.assertEqual(ret, WALLY_EINVAL) # Invalid length
 
+        # Lengths whose bignum size would overflow size_t are rejected
+        too_long = (2 ** (8 * sizeof(c_size_t)) - 1 - 7) // 6 + 1
+        for s in ['2', '112']:
+            str_len = too_long + s.count('1')
+            ret, _ = wally_base58_n_get_length(utf8(s), str_len)
+            self.assertEqual(ret, WALLY_EINVAL)
+            ret, _ = wally_base58_n_to_bytes(utf8(s), str_len, 0, buf, buf_len)
+            self.assertEqual(ret, WALLY_EINVAL)
+
     def test_from_bytes(self):
 
         # Leading zeros become ones
@@ -153,6 +162,13 @@ class Base58Tests(unittest.TestCase):
 
         # O length buffer, append checksum -> NULL
         self.assertEqual(wally_base58_from_bytes(buf, 0, self.FLAG_CHECKSUM), FAIL_RET)
+
+        # Lengths whose bignum size would overflow size_t are rejected
+        too_long = (2 ** (8 * sizeof(c_size_t)) - 1) // 138 + 1
+        for hex_in in ['01', '000001']:
+            in_buf, in_len = make_cbuffer(hex_in)
+            ret = wally_base58_from_bytes(in_buf, too_long + in_len - 1, 0)
+            self.assertEqual(ret, FAIL_RET)
 
         # Vectors from https://github.com/bitcoinj/bitcoinj/
         self.assertEqual(self.encode('00CEF022FA', 0), '16Ho7Hs')
