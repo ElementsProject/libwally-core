@@ -99,6 +99,20 @@ class BIP38Tests(unittest.TestCase):
             ret, _ = self.from_priv(priv_key, passwd, K_MAIN + flags)
             self.assertEqual(ret, expected)
 
+    def test_bip38_decrypt_failure_wipes_output(self):
+        if os.getenv('WALLY_SKIP_EXPENSIVE_TESTS', None):
+            self.skipTest('Skipping expensive bip38 test')
+
+        for bip38, passwd, flags in [
+            # Correct password, wrong network: decrypts the real key
+            (cases[0][3], cases[0][1], K_TEST),
+            # Wrong password
+            (cases[0][3], 'wrong', K_MAIN),
+            (cases[5][3], 'wrong', K_MAIN + K_COMP + K_RAW)]:
+            ret, priv = self.to_priv(bip38, utf8(passwd), flags)
+            self.assertEqual(ret, WALLY_EINVAL)
+            self.assertEqual(h(priv), utf8('00' * 32))
+
     def test_bip38_flags(self):
         priv_key = "6PYTh1Jgj3caimSrFjsfR5wJ8zUgWNDiPoNVZapSy8BwkF4NaKa1R32CaN"
         ret, flags = bip38_get_flags(utf8(priv_key))

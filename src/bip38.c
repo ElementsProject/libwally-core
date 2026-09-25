@@ -312,6 +312,8 @@ static int to_private_key(const char *bip38,
             ret = WALLY_EINVAL;
         wally_free_string(addr58);
     }
+    if (ret != WALLY_OK)
+        wally_clear(bytes_out, len); /* Don't return an unverified key */
 
 finish:
     wally_clear_2(&derived, sizeof(derived), &buf, sizeof(buf));
