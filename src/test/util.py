@@ -22,8 +22,8 @@ wally_free_string.restype, wally_free_string.argtypes = None, [c_char_p]
 WALLY_OK, WALLY_ERROR, WALLY_EINVAL, WALLY_ENOMEM = 0, -1, -2, -3
 
 _malloc_fn_t = CFUNCTYPE(c_void_p, c_size_t)
-_free_fn_t = CFUNCTYPE(c_void_p)
-_bzero_fn_t = CFUNCTYPE(c_void_p, c_size_t)
+_free_fn_t = CFUNCTYPE(None, c_void_p)
+_bzero_fn_t = CFUNCTYPE(None, c_void_p, c_size_t)
 _ec_nonce_fn_t = CFUNCTYPE(c_int, c_void_p, c_void_p, c_void_p, c_void_p, c_void_p, c_uint)
 _secp_context_fn_t = CFUNCTYPE(c_void_p)
 
