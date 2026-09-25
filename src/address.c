@@ -166,6 +166,10 @@ int wally_scriptpubkey_to_address(const unsigned char *scriptpubkey, size_t scri
     int ret;
     size_t type;
     unsigned char bytes[1 + HASH160_LEN];
+
+    if (output)
+        *output = NULL;
+
     if ((ret = wally_scriptpubkey_get_type(scriptpubkey, scriptpubkey_len, &type)) != WALLY_OK) {
         return ret;
     }

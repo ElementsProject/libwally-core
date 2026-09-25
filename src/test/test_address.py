@@ -178,6 +178,20 @@ class AddressTests(unittest.TestCase):
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(utf8(new_addr), utf8(addr))
 
+    def test_scriptpubkey_to_address_invalid(self):
+        p2pkh, p2pkh_len = make_cbuffer('76a914' + '11' * 20 + '88ac')
+        p2wpkh, p2wpkh_len = make_cbuffer('0014' + '11' * 20)
+        for args in [
+            (None,   0,          NETWORK_BITCOIN_MAINNET),  # Missing script
+            (p2pkh,  p2pkh_len,  0x99),                     # Unknown network
+            (p2wpkh, p2wpkh_len, NETWORK_BITCOIN_MAINNET),  # Unsupported script type
+        ]:
+            # Call the C function directly with a non-NULL output
+            output = c_char_p(utf8('not NULL'))
+            ret = libwally.wally_scriptpubkey_to_address(*args, byref(output))
+            # Output is set to NULL on failure
+            self.assertEqual((ret, output.value), (WALLY_EINVAL, None))
+
 
 if __name__ == '__main__':
     unittest.main()
