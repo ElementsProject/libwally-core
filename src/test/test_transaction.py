@@ -865,6 +865,12 @@ class TransactionTests(unittest.TestCase):
             (1, 0x42, '442d3e2ba33f5a9aba423026996ae7eb958b4f11984fbaf4d3a313f3570b3610'),
             (1, 0xc1, 'cf1291ba1b27689770d525d95d2a9754a32e9b9b2060a8aa044e97eab17ddc70'),
             (1, 0xc2, '695985760a92832d5b4e5578f412eb80002ee5f0625ec0c7375f70108eee8ce1'),
+            # SIGHASH_SINGLE: the output before the index is an Elements
+            # null CTxOut(), which release_1.3.1 hashed incorrectly
+            (1, 0x03, '2a927100f235136a859502d86b8388fef8ecb2d9621bd6a57d99bf638e523470'),
+            (1, 0x43, '920c8f57793dcb56760b891f1fc8e5499d2958e894ee0080fd5e71176464dae6'),
+            (1, 0x83, '896563e9828bfb1443ab082e634cd7ce987c4fa8a76471d47a186d3c5e59d922'),
+            (1, 0xc3, 'd77344fcaa3bd87ebcc3becb04e11453d402bb53ab0d17d137607b80dd8b34bb'),
         ]:
             ret = wally_tx_get_elements_signature_hash(tx, index, script, script_len,
                                                        None, 0, sighash, 0,

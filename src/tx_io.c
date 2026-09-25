@@ -58,6 +58,12 @@ static const unsigned char zero_hash[SHA256_LEN];
 static const unsigned char EMPTY_PRE_SW_OUTPUT[9] = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00
 };
+#ifdef BUILD_ELEMENTS
+/* Null asset, value and nonce, empty script */
+static const unsigned char EMPTY_PRE_SW_OUTPUT_ELEMENTS[4] = {
+    0x00, 0x00, 0x00, 0x00
+};
+#endif
 
 /* SHA256(TapSighash) */
 static const unsigned char TAPSIGHASH_SHA256[SHA256_LEN] = {
@@ -743,10 +749,16 @@ static int legacy_signature_hash(
 
         for (size_t i = 0; i < num_outputs; ++i) {
             const struct wally_tx_output *txout = tx->outputs + i;
-            if (sh_single && i != index)
-                hash_bytes(&io.ctx,
-                           EMPTY_PRE_SW_OUTPUT, sizeof(EMPTY_PRE_SW_OUTPUT));
-            else {
+            if (sh_single && i != index) {
+#ifdef BUILD_ELEMENTS
+                if (is_elements)
+                    hash_bytes(&io.ctx, EMPTY_PRE_SW_OUTPUT_ELEMENTS,
+                               sizeof(EMPTY_PRE_SW_OUTPUT_ELEMENTS));
+                else
+#endif
+                    hash_bytes(&io.ctx,
+                               EMPTY_PRE_SW_OUTPUT, sizeof(EMPTY_PRE_SW_OUTPUT));
+            } else {
 #ifdef BUILD_ELEMENTS
                 if (is_elements) {
                     hash_output_elements(&io.ctx, txout);
