@@ -24,7 +24,10 @@
 #define WALLY_INTERNAL_API
 #endif
 
-#if defined(__clang__) || defined(__GNUC__)
+#if defined(__clang__)
+/* clang ignores optimize(); optnone also prevents inlining */
+#define WALLY_NO_OPTIMIZE __attribute__((optnone))
+#elif defined(__GNUC__)
 #define WALLY_NO_OPTIMIZE __attribute__((optimize("O0")))
 #else
 #define WALLY_NO_OPTIMIZE
