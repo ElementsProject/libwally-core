@@ -5,6 +5,7 @@
 #include <wally_psbt.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 /*
@@ -3304,6 +3305,43 @@ static bool check_taptree_depth_limit(void)
     return tests_ok;
 }
 
+/* Verify that substituted values that would overflow the length of the
+ * canonicalized descriptor are rejected. The value lengths given are larger
+ * than the actual value: they must be rejected before any value is read.
+ */
+static bool check_canonical_length_overflow(void)
+{
+    static const struct {
+        const char *descriptor;
+        size_t value_len;
+    } cases[] = {
+        /* Multiple substitutions overflow */
+        { "a,a", SIZE_MAX / 2 + 1 },
+        /* A single substitution leaves no room for the checksum */
+        { "a", SIZE_MAX - 5 },
+        /* Text following a substitution overflows */
+        { "a()", SIZE_MAX - 11 },
+    };
+    unsigned char key[1] = { 'a' }, value[1] = { '0' };
+    struct wally_map_item item = { key, sizeof(key), value, 0 };
+    struct wally_map vars = { &item, 1, 1, NULL };
+    bool tests_ok = true;
+    size_t i;
+
+    for (i = 0; i < NUM_ELEMS(cases); ++i) {
+        struct wally_descriptor *descriptor = NULL;
+        int ret;
+
+        item.value_len = cases[i].value_len;
+        ret = wally_descriptor_parse(cases[i].descriptor, &vars,
+                                     WALLY_NETWORK_NONE, 0, &descriptor);
+        if (!check_ret("canonical length overflow", ret, WALLY_EINVAL))
+            tests_ok = false;
+        wally_descriptor_free(descriptor);
+    }
+    return tests_ok;
+}
+
 int main(void)
 {
     bool tests_ok = true;
@@ -3332,6 +3370,11 @@ int main(void)
 
     if (!check_taptree_depth_limit()) {
         printf("taptree depth limit test failed!\n");
+        tests_ok = false;
+    }
+
+    if (!check_canonical_length_overflow()) {
+        printf("canonical length overflow test failed!\n");
         tests_ok = false;
     }
 

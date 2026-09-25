@@ -450,6 +450,19 @@ static bool is_policy_start_char(char c) { return c == '@'; }
 static bool is_policy_id_char(char c) { return c >= '0' && c <= '9'; }
 static bool is_elements_policy_id_char(char c) { return c == 'B' || is_policy_id_char(c); }
 
+/* Add n to the canonicalized descriptor length in *len, leaving room for
+ * the checksum separator, checksum and NUL terminator.
+ * Returns false if the resulting length would overflow.
+ */
+static bool canonical_len_add(size_t *len, size_t n)
+{
+    const size_t max_len = SIZE_MAX - (1 + DESCRIPTOR_CHECKSUM_LENGTH + 1);
+    if (n > max_len - *len)
+        return false;
+    *len += n;
+    return true;
+}
+
 static int canonicalize_impl(const char *descriptor,
                              const struct wally_map *vars_in, uint32_t flags,
                              char **output, size_t *num_substitutions)
@@ -482,10 +495,11 @@ static int canonicalize_impl(const char *descriptor,
 
     /* First, find the length of the canonicalized descriptor */
     while (*p && *p != '#') {
-        while (*p && *p != '#' && !is_id_start(*p)) {
-            ++required_len;
+        start = p;
+        while (*p && *p != '#' && !is_id_start(*p))
             ++p;
-        }
+        if (!canonical_len_add(&required_len, p - start))
+            return WALLY_EINVAL; /* Too long */
         if (!is_id_start(*p))
             break;
         start = p++;
@@ -495,16 +509,20 @@ static int canonicalize_impl(const char *descriptor,
             const bool starts_with_digit = *start >= '0' && *start <= '9';
             const size_t lookup_len = p - start;
             if (!vars_in || lookup_len > VAR_MAX_NAME_LEN || starts_with_digit) {
-                required_len += lookup_len; /* Too long/wrong format for an identifier */
+                /* Too long/wrong format for an identifier */
+                if (!canonical_len_add(&required_len, lookup_len))
+                    return WALLY_EINVAL; /* Too long */
             } else {
                 /* Lookup the potential identifier */
                 const struct wally_map_item *item;
                 item = wally_map_get(vars_in, (unsigned char*)start, lookup_len);
                 if (!item) {
-                    required_len += lookup_len;
+                    if (!canonical_len_add(&required_len, lookup_len))
+                        return WALLY_EINVAL; /* Too long */
                     continue;
                 }
-                required_len += item->value_len;
+                if (!canonical_len_add(&required_len, item->value_len))
+                    return WALLY_EINVAL; /* Too long */
                 ++*num_substitutions;
                 if (flags & WALLY_MINISCRIPT_POLICY_TEMPLATE) {
                     int key_index = (int)(item - vars_in->items);
@@ -525,7 +543,8 @@ static int canonicalize_impl(const char *descriptor,
                      */
                     if (*p++ != '/')
                         return WALLY_EINVAL;
-                    ++required_len;
+                    if (!canonical_len_add(&required_len, 1))
+                        return WALLY_EINVAL; /* Too long */
                     if (*p == '<') {
                         found_policy_multi = true;
                         continue;
@@ -535,10 +554,12 @@ static int canonicalize_impl(const char *descriptor,
                     if (*p == '*') {
                         found_policy_multi = true;
                         ++p;
-                        required_len += strlen("<0;1>/*");
+                        if (!canonical_len_add(&required_len, strlen("<0;1>/*")))
+                            return WALLY_EINVAL; /* Too long */
                     } else {
                         found_policy_single = true;
-                        required_len += 1;
+                        if (!canonical_len_add(&required_len, 1))
+                            return WALLY_EINVAL; /* Too long */
                     }
                 }
             }
