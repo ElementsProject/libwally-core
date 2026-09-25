@@ -18,6 +18,12 @@
 #include <string.h>
 #include <stdbool.h>
 
+/* Prevent the optimizer eliding/rearranging things */
+#if defined(__clang__)
+#pragma clang optimize off
+#elif defined(__GNUC__)
+#pragma GCC optimize ("O0")
+#endif
 
 /* From ASAN wiki, modified to not break gcc */
 #if defined(__has_feature)
