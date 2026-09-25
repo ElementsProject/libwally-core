@@ -368,6 +368,7 @@ WALLY_CORE_API int bip32_key_from_parent_path_str_n_alloc(
  * :param child_path: The path of child numbers to create.
  * :param child_path_len: The number of child numbers in ``child_path``.
  * :param flags: :ref:`bip32-flags` indicating the type of derivation wanted.
+ *|    Flag `BIP32_FLAG_KEY_TWEAK_SUM` is assumed if not present.
  * :param output: Destination for the resulting key.
  */
 WALLY_CORE_API int bip32_key_with_tweak_from_parent_path(
