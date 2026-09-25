@@ -894,8 +894,10 @@ WALLY_CORE_API int wally_tx_get_signature_hash(
  *|    uint64/host endiannes. For non-taproot signing, only the value
  *|    of ``index`` is required.
  * :param script: For segwit v0 signing, the scriptcode of the input to sign
- *|    for. For taproot, the leaf script to sign with if any. Ignored for
- *|    pre-segwit signing.
+ *|    for. For taproot, the leaf script to sign with if any. Its leaf version
+ *|    is taken to be ``WALLY_LEAF_VERSION_TAPSCRIPT``, or
+ *|    ``WALLY_LEAF_VERSION_TAPSCRIPT_ELEMENTS`` for Elements transactions.
+ *|    Ignored for pre-segwit signing.
  * :param script_len: Length of ``script`` in bytes.
  * :param key_version: For taproot signing, the version of the pubkey
  *|    in ``script`` when signing with a script path. Currently must be ``1``

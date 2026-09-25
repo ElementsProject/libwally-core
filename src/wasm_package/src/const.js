@@ -120,6 +120,7 @@ export const WALLY_ENOMEM = -3; /** malloc() failed */
 export const WALLY_ERROR = -1; /** General error */
 export const WALLY_HOST_COMMITMENT_LEN = 32;
 export const WALLY_LEAF_VERSION_TAPSCRIPT = 0xc0; /** BIP-342 tapscript leaf version */
+export const WALLY_LEAF_VERSION_TAPSCRIPT_ELEMENTS = 0xc4; /** Elements tapscript leaf version */
 export const WALLY_MAJOR_VER = 1;
 export const WALLY_MAX_OP_RETURN_LEN = 80; /* Maximum length of OP_RETURN data push */
 export const WALLY_MINISCRIPT_AS_ELEMENTS = 0x20; /** Treat non-elements expressions as elements, e.g. tr() as eltr() */
