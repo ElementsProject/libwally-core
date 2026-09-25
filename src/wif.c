@@ -95,6 +95,9 @@ int wally_wif_is_uncompressed(const char *wif,
     int ret;
     unsigned char buf[2 + EC_PRIVATE_KEY_LEN + BASE58_CHECKSUM_LEN];
 
+    if (written)
+        *written = 0;
+
     if (!wif || !written)
         return WALLY_EINVAL;
 

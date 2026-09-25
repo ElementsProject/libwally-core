@@ -62,6 +62,13 @@ class WIFTests(unittest.TestCase):
             ret, _ = wally_wif_is_uncompressed(utf8(wif))
             self.assertEqual(ret, WALLY_EINVAL)
 
+        # written is set to 0 on error (call the C function directly,
+        # bypassing the wrapper)
+        for wif in [None] + [utf8(wif) for wif in invalid_args]:
+            written = c_size_t(1)
+            ret = libwally.wally_wif_is_uncompressed(wif, byref(written))
+            self.assertEqual((ret, written.value), (WALLY_EINVAL, 0))
+
         # wif_to_public_key
         pub, pub_len = make_cbuffer('00' * 65)
 
