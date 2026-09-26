@@ -140,6 +140,45 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(self.to_base64(psbt, MOD_NONE), case['result'])
             wally_psbt_free(psbt)
 
+    def test_v0_preallocated_keypaths(self):
+        """Reserved v0 input/output maps accept key origins after setting the tx."""
+        tx = pointer(wally_tx())
+        self.assertEqual(wally_tx_init_alloc(2, 0, 1, 1, tx), WALLY_OK)
+        txid, txid_len = make_cbuffer('00' * 32)
+        script, script_len = make_cbuffer('51')
+        self.assertEqual(wally_tx_add_raw_input(tx, txid, txid_len, 0,
+                                                 0xffffffff, None, 0, None, 0), WALLY_OK)
+        self.assertEqual(wally_tx_add_raw_output(tx, 1000, script, script_len, 0), WALLY_OK)
+
+        pubkey, pubkey_len = make_cbuffer(
+            '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798')
+        fingerprint = b'\x12\x34\x56\x78'
+        path = (c_uint32 * 1)(0)
+        for creator, capacity in [('from_tx', 0), ('preallocated', 1), ('extra_capacity', 2)]:
+            with self.subTest(creator=creator):
+                psbt = pointer(wally_psbt())
+                if creator == 'from_tx':
+                    self.assertEqual(wally_psbt_from_tx(tx, 0, 0, psbt), WALLY_OK)
+                else:
+                    self.assertEqual(wally_psbt_init_alloc(0, capacity, capacity, 0, 0, psbt), WALLY_OK)
+                    self.assertEqual(wally_psbt_input_keypath_add(psbt.contents.inputs[0],
+                                     pubkey, pubkey_len, fingerprint, len(fingerprint), path, 1), WALLY_EINVAL)
+                    self.assertEqual(wally_psbt_output_keypath_add(psbt.contents.outputs[0],
+                                     pubkey, pubkey_len, fingerprint, len(fingerprint), path, 1), WALLY_EINVAL)
+                    self.assertEqual(wally_psbt_set_global_tx(psbt, tx), WALLY_OK)
+
+                self.assertEqual(wally_psbt_input_keypath_add(psbt.contents.inputs[0],
+                                 pubkey, pubkey_len, fingerprint, len(fingerprint), path, 1), WALLY_OK)
+                self.assertEqual(wally_psbt_output_keypath_add(psbt.contents.outputs[0],
+                                 pubkey, pubkey_len, fingerprint, len(fingerprint), path, 1), WALLY_OK)
+                if capacity == 2:
+                    self.assertEqual(wally_psbt_input_keypath_add(psbt.contents.inputs[1],
+                                     pubkey, pubkey_len, fingerprint, len(fingerprint), path, 1), WALLY_EINVAL)
+                    self.assertEqual(wally_psbt_output_keypath_add(psbt.contents.outputs[1],
+                                     pubkey, pubkey_len, fingerprint, len(fingerprint), path, 1), WALLY_EINVAL)
+                wally_psbt_free(psbt)
+        wally_tx_free(tx)
+
     def test_combiner_role(self):
         """Test the PSBT combiner role"""
         for case in JSON['combiner']:

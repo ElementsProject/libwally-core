@@ -826,21 +826,26 @@ MAP_INNER_FIELD_PSET(input, asset_surjectionproof, PSET_IN_ASSET_PROOF)
 MAP_INNER_FIELD_PSET(input, utxo_rangeproof, PSET_IN_UTXO_RANGEPROOF)
 #endif /* WALLY_ABI_NO_ELEMENTS */
 
+static void psbt_input_set_map_verifiers(struct wally_psbt_input *input)
+{
+    input->keypaths.verify_fn = wally_keypath_public_key_verify;
+    input->signatures.verify_fn = pubkey_sig_verify;
+    input->unknowns.verify_fn = NULL;
+    input->preimages.verify_fn = wally_map_hash_preimage_verify;
+    input->psbt_fields.verify_fn = psbt_map_input_field_verify;
+    input->taproot_leaf_signatures.verify_fn = NULL; /* FIXME */
+    input->taproot_leaf_scripts.verify_fn = NULL; /* FIXME */
+    input->taproot_leaf_hashes.verify_fn = map_leaf_hashes_verify;
+    input->taproot_leaf_paths.verify_fn = wally_keypath_xonly_public_key_verify;
+#ifdef BUILD_ELEMENTS
+    input->pset_fields.verify_fn = pset_map_input_field_verify;
+#endif /* BUILD_ELEMENTS */
+}
+
 static void psbt_input_init(struct wally_psbt_input *input)
 {
     wally_clear(input, sizeof(*input));
-    wally_map_init(0, wally_keypath_public_key_verify, &input->keypaths);
-    wally_map_init(0, pubkey_sig_verify, &input->signatures);
-    wally_map_init(0, NULL, &input->unknowns);
-    wally_map_init(0, wally_map_hash_preimage_verify, &input->preimages);
-    wally_map_init(0, psbt_map_input_field_verify, &input->psbt_fields);
-    wally_map_init(0, NULL /* FIXME */, &input->taproot_leaf_signatures);
-    wally_map_init(0, NULL /* FIXME */, &input->taproot_leaf_scripts);
-    wally_map_init(0, map_leaf_hashes_verify, &input->taproot_leaf_hashes);
-    wally_map_init(0, wally_keypath_xonly_public_key_verify, &input->taproot_leaf_paths);
-#ifdef BUILD_ELEMENTS
-    wally_map_init(0, pset_map_input_field_verify, &input->pset_fields);
-#endif /* BUILD_ELEMENTS */
+    psbt_input_set_map_verifiers(input);
 }
 
 static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
@@ -1125,18 +1130,23 @@ static bool pset_check_proof(const struct wally_psbt_input *in,
 #endif /* BUILD_ELEMENTS */
 #endif /* WALLY_ABI_NO_ELEMENTS */
 
+static void psbt_output_set_map_verifiers(struct wally_psbt_output *output)
+{
+    output->keypaths.verify_fn = wally_keypath_public_key_verify;
+    output->unknowns.verify_fn = NULL;
+    output->psbt_fields.verify_fn = psbt_map_output_field_verify;
+    output->taproot_tree.verify_fn = NULL;
+    output->taproot_leaf_hashes.verify_fn = map_leaf_hashes_verify;
+    output->taproot_leaf_paths.verify_fn = wally_keypath_xonly_public_key_verify;
+#ifdef BUILD_ELEMENTS
+    output->pset_fields.verify_fn = pset_map_output_field_verify;
+#endif /* BUILD_ELEMENTS */
+}
+
 static void psbt_output_init(struct wally_psbt_output *output)
 {
     wally_clear(output, sizeof(*output));
-    wally_map_init(0, wally_keypath_public_key_verify, &output->keypaths);
-    wally_map_init(0, NULL, &output->unknowns);
-    wally_map_init(0, psbt_map_output_field_verify, &output->psbt_fields);
-    wally_map_init(0, NULL, &output->taproot_tree);
-    wally_map_init(0, map_leaf_hashes_verify, &output->taproot_leaf_hashes);
-    wally_map_init(0, wally_keypath_xonly_public_key_verify, &output->taproot_leaf_paths);
-#ifdef BUILD_ELEMENTS
-    wally_map_init(0, pset_map_output_field_verify, &output->pset_fields);
-#endif /* BUILD_ELEMENTS */
+    psbt_output_set_map_verifiers(output);
 }
 
 static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
@@ -1627,11 +1637,18 @@ static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool
         psbt_inputs_free(psbt->inputs, psbt->num_inputs);
         psbt->inputs = new_inputs;
         psbt->inputs_allocation_len = tx->num_inputs;
+    } else {
+        /* Reused slots have not had their map validators set. */
+        for (i = 0; i < tx->num_inputs; ++i)
+            psbt_input_set_map_verifiers(&psbt->inputs[i]);
     }
     if (new_outputs) {
         psbt_outputs_free(psbt->outputs, psbt->num_outputs);
         psbt->outputs = new_outputs;
         psbt->outputs_allocation_len = tx->num_outputs;
+    } else {
+        for (i = 0; i < tx->num_outputs; ++i)
+            psbt_output_set_map_verifiers(&psbt->outputs[i]);
     }
     psbt->num_inputs = tx->num_inputs;
     psbt->num_outputs = tx->num_outputs;
