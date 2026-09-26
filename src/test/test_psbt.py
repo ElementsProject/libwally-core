@@ -312,15 +312,17 @@ class PSBTTests(unittest.TestCase):
     def test_psbt(self):
         """Test creating and modifying various PSBT fields"""
         tx = pointer(wally_tx())
-        self.assertEqual(WALLY_OK, wally_tx_init_alloc(2, 0, 2, 2, tx))
-
+        self.assertEqual(wally_tx_init_alloc(2, 0, 2, 2, tx), WALLY_OK)
+        txid, txid_len = make_cbuffer('11' * 32)
+        self.assertEqual(wally_tx_add_raw_input(tx, txid, txid_len, 0,
+                                                0xffffffff, None, 0, None, 0), WALLY_OK)
         psbt = pointer(wally_psbt())
         for ver, result in [
             (0, 'cHNidP8A'),
             (1, None),
             (2, 'cHNidP8BAgQCAAAAAQQBAAEFAQAB+wQCAAAAAA=='),
             (3, None) ]:
-            ret = wally_psbt_init_alloc(ver, 0, 0, 0, 0, psbt)
+            ret = wally_psbt_init_alloc(ver, 3, 3, 0, 0, psbt)
             self.assertEqual(ret, WALLY_OK if result else WALLY_EINVAL)
             if result:
                 self.assertEqual(self.to_base64(psbt, MOD_NONE), result)
@@ -328,6 +330,11 @@ class PSBTTests(unittest.TestCase):
                 # Global tx can only be set on a version 0 PSBT
                 ret = wally_psbt_set_global_tx(psbt, tx)
                 self.assertEqual(ret, WALLY_OK if ver == 0 else WALLY_EINVAL)
+
+                if ver == 0:
+                    # Ensure inputs from global tx have been initialized, by
+                    # ensuring the keypath maps validation fn is set
+                    self.assertIsNotNone(psbt.contents.inputs[0].keypaths.verify_fn)
 
         # Create a v2 PSBT
         wally_psbt_init_alloc(2, 0, 0, 0, 0, psbt)
