@@ -1627,11 +1627,17 @@ static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool
         psbt_inputs_free(psbt->inputs, psbt->num_inputs);
         psbt->inputs = new_inputs;
         psbt->inputs_allocation_len = tx->num_inputs;
+    } else {
+        for (i = 0; i < tx->num_inputs; ++i)
+            psbt_input_init(&psbt->inputs[i]);
     }
     if (new_outputs) {
         psbt_outputs_free(psbt->outputs, psbt->num_outputs);
         psbt->outputs = new_outputs;
         psbt->outputs_allocation_len = tx->num_outputs;
+    } else {
+        for (i = 0; i < tx->num_outputs; ++i)
+            psbt_output_init(&psbt->outputs[i]);
     }
     psbt->num_inputs = tx->num_inputs;
     psbt->num_outputs = tx->num_outputs;
