@@ -134,7 +134,7 @@ int wally_asset_final_vbf(const uint64_t *values, size_t num_values, size_t num_
     if (!ctx)
         return WALLY_ENOMEM;
 
-    if (!values || num_values < 2u ||
+    if (!values || num_values < 2u || num_values >= 256 ||
         num_inputs >= num_values ||
         !abf || abf_len != (num_values * BLINDING_FACTOR_LEN) ||
         !vbf || vbf_len != ((num_values - 1) * BLINDING_FACTOR_LEN) ||
