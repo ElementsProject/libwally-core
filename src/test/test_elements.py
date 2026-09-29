@@ -87,6 +87,35 @@ class ElementsTests(unittest.TestCase):
         self.assertEqual((ret, value_out, asset_out, abf_out, vbf_out),
                          (WALLY_OK, 80000000, UNBLINDED_ASSET, UNBLINDED_ABF, UNBLINDED_VBF))
 
+    def test_asset_final_vbf(self):
+        """Test computing the final value blinding factor"""
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Elements support not enabled')
+        values = (c_uint64 * 2)(20000, 20000)
+        abf, abf_len = make_cbuffer('11' * 32 + '22' * 32)
+        vbf, vbf_len = make_cbuffer('33' * 32)
+        out, out_len = make_cbuffer('00' * 32)
+        args = [values, 2, 1, abf, abf_len, vbf, vbf_len, out, out_len]
+        self.assertEqual(wally_asset_final_vbf(*args), WALLY_OK)
+
+        too_many = 256  # Max value count is 255
+        for i, arg in [
+            (0, None),     # NULL values
+            (1, 1),        # Too few values
+            (1, 3),        # Mismatched value count
+            (1, too_many), # Too many values
+            (2, 2),        # Too many inputs
+            (3, None),     # NULL abf
+            (4, 32),       # Invalid abf length
+            (5, None),     # NULL vbf
+            (6, 64),       # Invalid vbf length
+            (7, None),     # NULL output
+            (8, 31),       # Invalid output length
+            ]:
+            invalid_args = args[:]
+            invalid_args[i] = arg
+            self.assertEqual(wally_asset_final_vbf(*invalid_args), WALLY_EINVAL)
+
     def test_asset_generator_from_bytes(self):
         if not wally_is_elements_build()[1]:
             self.skipTest('Elements support not enabled')
