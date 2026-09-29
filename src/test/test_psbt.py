@@ -380,6 +380,50 @@ class PSBTTests(unittest.TestCase):
         self.assertEqual(WALLY_OK, ret)
         self.assertEqual('cHNidP8BAgR7AAAAAQQBAQEFAQEBBgEDAfsEAgAAAAABDiDn8lrdRWACHHfElE+Sc5Al/dv5mBbXnAbSGSaMqfS35wEPBAUAAAABEAQGAAAAARIE/2TNHQABAwjSBAAAAAAAAAEEAllZAA==', base64)
 
+    def test_global_tx_init(self):
+        """Test that PSBTs created from a tx have initialized in/outputs"""
+        tx = pointer(wally_tx())
+        self.assertEqual(WALLY_OK, wally_tx_init_alloc(2, 0, 1, 1, tx))
+        txhash, txhash_len = make_cbuffer('11' * 32)
+        tx_in = pointer(wally_tx_input())
+        ret = wally_tx_input_init_alloc(txhash, txhash_len, 0, 0xffffffff, None, 0, None, tx_in)
+        self.assertEqual(WALLY_OK, ret)
+        self.assertEqual(WALLY_OK, wally_tx_add_input(tx, tx_in))
+        tx_out = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK, wally_tx_output_init_alloc(1234, b'\x59\x59', 2, tx_out))
+        self.assertEqual(WALLY_OK, wally_tx_add_output(tx, tx_out))
+
+        pk, pk_len = make_cbuffer('038575eb35e18fb168a913d8b49af50204f4f73627f6f7884f1be11e354664de8b')
+        fpr, fpr_len = make_cbuffer('00' * 4)
+        path, path_len = (c_uint32 * 1)(), 1
+        bad_preimage, bad_preimage_len = make_cbuffer('ff' + '00' * 32)
+
+        psbt = pointer(wally_psbt())
+        for version, num_inputs, num_outputs in [(0, None, None), (2, None, None),
+                                                 (0, 0, 0), (0, 1, 1), (0, 2, 2)]:
+            if num_inputs is None:
+                # Create from the tx
+                ret = wally_psbt_from_tx(tx, version, 0, psbt)
+                self.assertEqual(WALLY_OK, ret)
+            else:
+                # Create with pre-allocated in/outputs, then set the tx
+                ret = wally_psbt_init_alloc(version, num_inputs, num_outputs, 0, 0, psbt)
+                self.assertEqual(WALLY_OK, ret)
+                self.assertEqual(WALLY_OK, wally_psbt_set_global_tx(psbt, tx))
+
+            inp = psbt.contents.inputs[0]
+            # Keypaths can be added
+            for fn in [wally_psbt_add_input_keypath, wally_psbt_add_output_keypath]:
+                ret = fn(psbt, 0, pk, pk_len, fpr, fpr_len, path, path_len)
+                self.assertEqual(WALLY_OK, ret)
+            # Invalid signatures and preimages are rejected
+            ret = wally_psbt_input_add_signature(inp, pk, pk_len, b'\x30\x01', 2)
+            self.assertEqual(WALLY_EINVAL, ret)
+            ret = wally_map_add(byref(inp.preimages), bad_preimage, bad_preimage_len,
+                                b'\x00', 1)
+            self.assertEqual(WALLY_EINVAL, ret)
+            wally_psbt_free(psbt)
+
     def test_invalid_args(self):
         """Test invalid arguments to various PSBT functions"""
         psbt = pointer(wally_psbt())
