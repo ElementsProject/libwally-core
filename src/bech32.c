@@ -177,7 +177,6 @@ static int segwit_addr_encode(char *output, const char *hrp, size_t hrp_len, uin
     ++datalen;
     return bech32_encode(output, hrp, hrp_len, data, datalen, 90, witver != 0);
 fail:
-    wally_clear_2(data, sizeof(data), (void *)witprog, witprog_len);
     return 0;
 }
 
@@ -209,24 +208,14 @@ int wally_addr_segwit_from_bytes(const unsigned char *bytes, size_t bytes_len,
                                  char **output)
 {
     char result[90 + 1]; /* Max encoded length plus NUL */
-    size_t push_size;
-    int ret;
     size_t witver;
     size_t addr_family_len = addr_family ? strlen(addr_family) : 0;
 
     if (output)
         *output = 0;
 
-    if (!addr_family || flags || !bytes || !bytes_len || !output)
-        return WALLY_EINVAL;
-
-    if (!script_is_op_n(bytes[0], true, &witver))
-        return WALLY_EINVAL;
-
-    ret = script_get_push_size_from_bytes(bytes + 1, bytes_len - 1, &push_size);
-    if (ret != WALLY_OK)
-        return WALLY_EINVAL;
-    else if (witver == 0 && push_size != HASH160_LEN && push_size != SHA256_LEN)
+    if (!scriptpubkey_is_witness_program(bytes, bytes_len, &witver) ||
+        !addr_family || flags || !output)
         return WALLY_EINVAL;
 
     result[0] = '\0';

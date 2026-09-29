@@ -1194,12 +1194,12 @@ static int psbt_init(uint32_t version, size_t num_inputs, size_t num_outputs,
     if (num_inputs) {
         if (num_inputs > max_num_inputs)
             num_inputs = max_num_inputs;
-        psbt_out->inputs = wally_calloc(num_inputs * sizeof(struct wally_psbt_input));
+        psbt_out->inputs = array_calloc(num_inputs, sizeof(struct wally_psbt_input));
     }
     if (num_outputs) {
         if (num_outputs > max_num_outputs)
             num_outputs = max_num_outputs;
-        psbt_out->outputs = wally_calloc(num_outputs * sizeof(struct wally_psbt_output));
+        psbt_out->outputs = array_calloc(num_outputs, sizeof(struct wally_psbt_output));
     }
 
     ret = wally_map_init(num_unknowns, NULL, &psbt_out->unknowns);
@@ -1604,13 +1604,13 @@ static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool
     }
 
     if (psbt->inputs_allocation_len < tx->num_inputs) {
-        new_inputs = wally_malloc(tx->num_inputs * sizeof(struct wally_psbt_input));
+        new_inputs = array_calloc(tx->num_inputs, sizeof(struct wally_psbt_input));
         for (i = 0; new_inputs && i < tx->num_inputs; ++i)
             psbt_input_init(&new_inputs[i]);
     }
 
     if (psbt->outputs_allocation_len < tx->num_outputs) {
-        new_outputs = wally_malloc(tx->num_outputs * sizeof(struct wally_psbt_output));
+        new_outputs = array_calloc(tx->num_outputs, sizeof(struct wally_psbt_output));
         for (i = 0; new_outputs && i < tx->num_outputs; ++i)
             psbt_output_init(&new_outputs[i]);
     }
@@ -1627,11 +1627,17 @@ static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool
         psbt_inputs_free(psbt->inputs, psbt->num_inputs);
         psbt->inputs = new_inputs;
         psbt->inputs_allocation_len = tx->num_inputs;
+    } else {
+        for (i = 0; i < tx->num_inputs; ++i)
+            psbt_input_init(&psbt->inputs[i]);
     }
     if (new_outputs) {
         psbt_outputs_free(psbt->outputs, psbt->num_outputs);
         psbt->outputs = new_outputs;
         psbt->outputs_allocation_len = tx->num_outputs;
+    } else {
+        for (i = 0; i < tx->num_outputs; ++i)
+            psbt_output_init(&psbt->outputs[i]);
     }
     psbt->num_inputs = tx->num_inputs;
     psbt->num_outputs = tx->num_outputs;

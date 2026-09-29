@@ -759,8 +759,8 @@ static int bip143_signature_hash(
     cursor_io io;
 
     /* Note that scriptcode can be empty, so we don't check it here */
-    if (!tx || !values || BYTES_INVALID(scriptcode, scriptcode_len) ||
-        sighash & 0xffffff00)
+    if (!tx || index >= tx->num_inputs || !values ||
+        BYTES_INVALID(scriptcode, scriptcode_len) || sighash & 0xffffff00)
         return WALLY_EINVAL;
 
     {
@@ -1015,7 +1015,7 @@ static int bip341_signature_hash(
     /* Tapscript Extensions */
     if (tapleaf_script) {
         if (!sh_anyprevout_anyscript)
-            txio_hash_tapleaf_hash(&io, WALLY_LEAF_VERSION_TAPSCRIPT,
+            txio_hash_tapleaf_hash(&io, TAPSCRIPT_LEAF_VERSION(is_elements),
                                    tapleaf_script, tapleaf_script_len, is_elements);
         hash_u8(&io.ctx, key_version & 0xff);
         hash_le32(&io.ctx, codesep_position);

@@ -1221,11 +1221,14 @@ _new_ops.malloc_fn = _malloc_fn_t(_failable_malloc)
 def malloc_fail(failures):
     def decorator(test_func):
         def wrapped(*args):
+            counter = 0
             global _fail_malloc_at, _fail_malloc_counter
             for fail_at in failures:
                 _fail_malloc_at, _fail_malloc_counter = fail_at, 0
                 test_func(*args)
+                counter = max(counter, _fail_malloc_counter)
                 _fail_malloc_at, _fail_malloc_counter = 0, 0
+            return counter
         return wrapped
     return decorator
 

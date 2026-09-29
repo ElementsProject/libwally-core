@@ -90,6 +90,25 @@ class TransactionTests(unittest.TestCase):
             self.assertEqual(utf8(self.tx_serialize_hex(tx_copy)),
                              utf8(self.tx_serialize_hex(tx_nf)))
 
+    def test_serialization_malloc_fail(self):
+        """Testing deserialization when allocations fail"""
+        # Failing any allocation, including the input, output and
+        # witness item arrays, must fail cleanly with WALLY_ENOMEM
+        results = set()
+        max_mallocs = 10
+
+        @malloc_fail(range(max_mallocs))
+        def check_from_hex():
+            tx = pointer(wally_tx())
+            ret = wally_tx_from_hex(TX_WITNESS_HEX, 0, tx)
+            if ret == WALLY_OK:
+                wally_tx_free(tx)
+            results.add(ret)
+
+        num_mallocs = check_from_hex()
+        self.assertEqual(num_mallocs, max_mallocs)
+        self.assertEqual(results, {WALLY_OK, WALLY_ENOMEM})
+
     def test_lengths(self):
         """Testing functions measuring different lengths for a tx"""
         for tx_hex, length in [
@@ -236,6 +255,16 @@ class TransactionTests(unittest.TestCase):
 
         for fn in [wally_tx_witness_stack_get_num_items, wally_tx_witness_stack_get_length]:
             self.assertEqual((WALLY_EINVAL, 0), fn(None)) # NULL stack
+
+        # Indices that would overflow the size of the witness array fail
+        w = pointer(wally_tx_witness_stack())
+        self.assertEqual(WALLY_OK, wally_tx_witness_stack_init_alloc(2, w))
+        size_max = 2 ** (8 * sizeof(c_size_t)) - 1
+        for index in [size_max // sizeof(wally_tx_witness_item), size_max]:
+            ret = wally_tx_witness_stack_set(w, index, item, item_len)
+            self.assertEqual(ret, WALLY_ENOMEM)
+        self.assertEqual((WALLY_OK, 0), wally_tx_witness_stack_get_num_items(w))
+        self.assertEqual(WALLY_OK, wally_tx_witness_stack_free(w))
         # An empty stack has no items and is serialized as a single 0x00 byte
         self.assertEqual((WALLY_OK, 0), wally_tx_witness_stack_get_num_items(witness))
         self.assertEqual((WALLY_OK, 1), wally_tx_witness_stack_get_length(witness))
@@ -319,6 +348,7 @@ class TransactionTests(unittest.TestCase):
             (tx, 0, script, script_len, 1, 1, 16, out, out_len), # Invalid flags
             (tx, 0, script, script_len, 1, 1, 0, None, out_len), # Empty bytes
             (tx, 0, script, script_len, 1, 1, 0, out, 31), # Short len
+            (tx, 1, script, script_len, 1, 1, 1, out, out_len), # Invalid index (only with segwit)
         ]:
             self.assertEqual(WALLY_EINVAL, wally_tx_get_btc_signature_hash(*args))
 
@@ -580,6 +610,13 @@ class TransactionTests(unittest.TestCase):
             ret = wally_tx_get_btc_taproot_signature_hash(*args)
             self.assertEqual(ret, WALLY_EINVAL)
 
+        # Too many values: the allocation size would overflow
+        args = [tx, index, scripts, values, num_values, tapleaf_script, tapleaf_script_len,
+                key_version, codesep_pos, annex, annex_len, sighash, flags, bytes_out, out_len]
+        args[4] = (2 ** (8 * sizeof(c_size_t)) - 1) // sizeof(wally_map_item) + 1
+        ret = wally_tx_get_btc_taproot_signature_hash(*args)
+        self.assertEqual(ret, WALLY_ENOMEM)
+
     def test_get_elements_taproot_signature_hash(self):
         """Tests for computing the Elements taproot signature hash"""
         _, is_elements_build = wally_is_elements_build()
@@ -621,6 +658,15 @@ class TransactionTests(unittest.TestCase):
         tx = self.tx_deserialize_hex(keyspend_case['given']['rawUnsignedTx'], True)
         bytes_out, out_len = make_cbuffer('00'*32)
 
+        # Segwit v0 signature hashes require a valid input index
+        ret, num_inputs = wally_tx_get_num_inputs(tx)
+        self.assertEqual(ret, WALLY_OK)
+        value, value_len = make_cbuffer('010000000000001388')
+        ret = wally_tx_get_elements_signature_hash(tx, num_inputs, fake_script, fake_script_len,
+                                                   value, value_len, 1, 1,
+                                                   bytes_out, out_len)
+        self.assertEqual(ret, WALLY_EINVAL)
+
         for input_index in range(len(input_spending)):
             sighash = input_spending[input_index]['given']['hashType']
             index = input_spending[input_index]['given']['txinIndex']
@@ -650,6 +696,24 @@ class TransactionTests(unittest.TestCase):
         args[9] = fake_annex
         args[10] = fake_annex_len
         self.assertEqual(wally_tx_get_input_signature_hash(*args), WALLY_OK)
+
+        # Script path signing commits to the Elements tapscript leaf version
+        # 0xc4 (not 0xc0). Expected values are computed independently of wally
+        # following Elements' TaprootSignatureHash() (test_framework/script.py).
+        leaf_script, leaf_script_len = make_cbuffer(
+            '208bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac')
+        cache = make_map(0)
+        for sp_index, sp_sighash, sp_expected in [
+            (0, 0x00, '1389dc115dd1623be501bd1c4dc1558f66b767b4e48b91b0185ff3d315fbff15'),
+            (1, 0x83, '9b9afc640a736c82867ef0143d9adb93fd738bfa81ca342c06a2ef681ac0a4e4'),
+        ]:
+            for sp_cache in [None, cache, cache]:
+                sp_args = [tx, sp_index, scripts, assets, values,
+                           leaf_script, leaf_script_len, 0, 0xFFFFFFFF,
+                           None, 0, genesis, genesis_len,
+                           sp_sighash, SIGTYPE_SW_V1, sp_cache, bytes_out, out_len]
+                self.assertEqual(wally_tx_get_input_signature_hash(*sp_args), WALLY_OK)
+                self.assertEqual(utf8(sp_expected), h(bytes_out[:out_len]))
 
         # Invalid args
         invalid_cases = [

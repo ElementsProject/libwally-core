@@ -72,6 +72,12 @@ class Base64Tests(unittest.TestCase):
             ret, b64_out = wally_base64_from_bytes(*args)
             self.assertEqual((ret, b64_out), (WALLY_EINVAL, None))
 
+        # Lengths whose encoded length would overflow are rejected.
+        # The length is checked before the input is read.
+        too_long = (2 ** (8 * sizeof(c_size_t)) - 2) // 4 * 3 + 1
+        ret, b64_out = wally_base64_from_bytes(valid_str, too_long, 0)
+        self.assertEqual((ret, b64_out), (WALLY_EINVAL, None))
+
     def test_base64_to_bytes(self):
         # Invalid args
         buf, buf_len = make_cbuffer('00' * 1024)

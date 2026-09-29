@@ -191,7 +191,7 @@ size_t scriptint_to_bytes(int64_t signed_v, unsigned char *bytes_out)
     return len;
 }
 
-int64_t scriptint_from_bytes(const unsigned char *bytes, size_t len, int64_t *value_out)
+int scriptint_from_bytes(const unsigned char *bytes, size_t len, int64_t *value_out)
 {
     int64_t mask = 0x80;
     size_t i;
@@ -203,10 +203,17 @@ int64_t scriptint_from_bytes(const unsigned char *bytes, size_t len, int64_t *va
      * This function is intended for parsing scripts, not evaluating them
      * (which can use intermediate 5 byte script int stack values).
      */
-    if (!bytes || len < 1 || len <= bytes[0] || bytes[0] > 4 || !value_out)
+    if (!bytes || !len || len <= bytes[0] || !bytes[0] || bytes[0] > 4 || !value_out)
         return WALLY_EINVAL;
 
-    for (i = 0; i < bytes[0]; ++i) {
+    len = bytes[0]; /* Set len to the length of the encoded number */
+    if ((bytes[len] & 0x7f) == 0) {
+        /* MSB of the value is non-zero */
+        if (len == 1 || (bytes[len - 1] & 0x80) == 0)
+            return WALLY_EINVAL; /* Non-minimal encoding */
+    }
+
+    for (i = 0; i < len; ++i) {
         *value_out |= (int64_t)(bytes[i + 1]) << (8 * i);
         mask <<= 8;
     }
@@ -216,6 +223,12 @@ int64_t scriptint_from_bytes(const unsigned char *bytes, size_t len, int64_t *va
         *value_out ^= (mask >> 8);
         *value_out = -*value_out;
     }
+    /* Reject non-minimal (OP_0->OP_16) and negative numbers.
+     * There are no meaningful uses for negative numbers in current script
+     * and they are unsupported in tapscript.
+     */
+    if (*value_out <= 16)
+        return WALLY_EINVAL; /* reject Non-minimal/negative (should be OP_0->OP_16) */
     return WALLY_OK;
 }
 
@@ -367,6 +380,23 @@ bool scriptpubkey_is_p2tr(const unsigned char *bytes, size_t bytes_len)
     return bytes && bytes_len == WALLY_SCRIPTPUBKEY_P2TR_LEN &&
            bytes[0] == OP_1 && /* Segwit v1 */
            bytes[1] == 32; /* X-ONLY-PUBKEY */
+}
+
+bool scriptpubkey_is_witness_program(const unsigned char *bytes, size_t bytes_len,
+                                     size_t *version)
+{
+    /* A version opcode followed by a single direct push of 2-40 bytes
+     * which is the remainder of the script (BIP-141).
+     * v0 programs must also be either 20 or 32 bytes (BIP-141/BIP-173) */
+    size_t ver;
+
+    if (!bytes || bytes_len < 4 || bytes_len > WALLY_WITNESSSCRIPT_MAX_LEN ||
+        !script_is_op_n(bytes[0], true, &ver) || bytes[1] != bytes_len - 2 ||
+        (!ver && bytes[1] != HASH160_LEN && bytes[1] != SHA256_LEN))
+        return false;
+    if (version)
+        *version = ver;
+    return true;
 }
 
 static bool scriptpubkey_is_multisig(const unsigned char *bytes, size_t bytes_len)

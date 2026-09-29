@@ -450,6 +450,19 @@ static bool is_policy_start_char(char c) { return c == '@'; }
 static bool is_policy_id_char(char c) { return c >= '0' && c <= '9'; }
 static bool is_elements_policy_id_char(char c) { return c == 'B' || is_policy_id_char(c); }
 
+/* Add n to the canonicalized descriptor length in *len, leaving room for
+ * the checksum separator, checksum and NUL terminator.
+ * Returns false if the resulting length would overflow.
+ */
+static bool canonical_len_add(size_t *len, size_t n)
+{
+    const size_t max_len = SIZE_MAX - (1 + DESCRIPTOR_CHECKSUM_LENGTH + 1);
+    if (n > max_len - *len)
+        return false;
+    *len += n;
+    return true;
+}
+
 static int canonicalize_impl(const char *descriptor,
                              const struct wally_map *vars_in, uint32_t flags,
                              char **output, size_t *num_substitutions)
@@ -482,10 +495,11 @@ static int canonicalize_impl(const char *descriptor,
 
     /* First, find the length of the canonicalized descriptor */
     while (*p && *p != '#') {
-        while (*p && *p != '#' && !is_id_start(*p)) {
-            ++required_len;
+        start = p;
+        while (*p && *p != '#' && !is_id_start(*p))
             ++p;
-        }
+        if (!canonical_len_add(&required_len, p - start))
+            return WALLY_EINVAL; /* Too long */
         if (!is_id_start(*p))
             break;
         start = p++;
@@ -495,16 +509,20 @@ static int canonicalize_impl(const char *descriptor,
             const bool starts_with_digit = *start >= '0' && *start <= '9';
             const size_t lookup_len = p - start;
             if (!vars_in || lookup_len > VAR_MAX_NAME_LEN || starts_with_digit) {
-                required_len += lookup_len; /* Too long/wrong format for an identifier */
+                /* Too long/wrong format for an identifier */
+                if (!canonical_len_add(&required_len, lookup_len))
+                    return WALLY_EINVAL; /* Too long */
             } else {
                 /* Lookup the potential identifier */
                 const struct wally_map_item *item;
                 item = wally_map_get(vars_in, (unsigned char*)start, lookup_len);
                 if (!item) {
-                    required_len += lookup_len;
+                    if (!canonical_len_add(&required_len, lookup_len))
+                        return WALLY_EINVAL; /* Too long */
                     continue;
                 }
-                required_len += item->value_len;
+                if (!canonical_len_add(&required_len, item->value_len))
+                    return WALLY_EINVAL; /* Too long */
                 ++*num_substitutions;
                 if (flags & WALLY_MINISCRIPT_POLICY_TEMPLATE) {
                     int key_index = (int)(item - vars_in->items);
@@ -525,7 +543,8 @@ static int canonicalize_impl(const char *descriptor,
                      */
                     if (*p++ != '/')
                         return WALLY_EINVAL;
-                    ++required_len;
+                    if (!canonical_len_add(&required_len, 1))
+                        return WALLY_EINVAL; /* Too long */
                     if (*p == '<') {
                         found_policy_multi = true;
                         continue;
@@ -535,10 +554,12 @@ static int canonicalize_impl(const char *descriptor,
                     if (*p == '*') {
                         found_policy_multi = true;
                         ++p;
-                        required_len += strlen("<0;1>/*");
+                        if (!canonical_len_add(&required_len, strlen("<0;1>/*")))
+                            return WALLY_EINVAL; /* Too long */
                     } else {
                         found_policy_single = true;
-                        required_len += 1;
+                        if (!canonical_len_add(&required_len, 1))
+                            return WALLY_EINVAL; /* Too long */
                     }
                 }
             }
@@ -1755,11 +1776,12 @@ static int leaf_tapleaf_hash(ms_ctx *ctx, ms_node *leaf,
     if (ret == WALLY_OK) {
         if (written > buf_len)
             ret = WALLY_ERROR; /* Should not happen! */
-        else
-            ret = bip341_tapleaf_hash(WALLY_LEAF_VERSION_TAPSCRIPT,
-                                      buf, written,
-                                      ms_ctx_is_elements(ctx),
+        else {
+            const bool is_elements = ms_ctx_is_elements(ctx);
+            ret = bip341_tapleaf_hash(TAPSCRIPT_LEAF_VERSION(is_elements),
+                                      buf, written, is_elements,
                                       hash_out, hash_out_len);
+        }
     }
     wally_free(buf);
     return ret;
@@ -2824,21 +2846,23 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
                                       privkey, sizeof(privkey), &privkey_len);
     if (ret == WALLY_OK && privkey_len && privkey_len <= EC_PRIVATE_KEY_LEN + 2) {
         if (ctx->addr_ver && ctx->addr_ver->version_wif != privkey[0])
-            return WALLY_EINVAL;
-        if (privkey_len == EC_PRIVATE_KEY_LEN + 1) {
+            ret = WALLY_EINVAL;
+        else if (privkey_len == EC_PRIVATE_KEY_LEN + 1) {
             if (flags & WALLY_MINISCRIPT_TAPSCRIPT)
-                return WALLY_EINVAL; /* Tapscript only allows x-only keys */
+                ret = WALLY_EINVAL; /* Tapscript only allows x-only keys */
             node->flags |= WALLY_MS_IS_UNCOMPRESSED;
             ctx->features |= WALLY_MS_IS_UNCOMPRESSED;
         } else if (privkey_len != EC_PRIVATE_KEY_LEN + 2 ||
                    privkey[EC_PRIVATE_KEY_LEN + 1] != 1)
-            return WALLY_EINVAL; /* Unknown WIF format */
+            ret = WALLY_EINVAL; /* Unknown WIF format */
 
-        node->flags |= (flags & WALLY_MINISCRIPT_TAPSCRIPT) ? WALLY_MS_IS_X_ONLY : 0;
-        ret = wally_ec_private_key_verify(&privkey[1], EC_PRIVATE_KEY_LEN);
+        if (ret == WALLY_OK) {
+            node->flags |= (flags & WALLY_MINISCRIPT_TAPSCRIPT) ? WALLY_MS_IS_X_ONLY : 0;
+            ret = wally_ec_private_key_verify(&privkey[1], EC_PRIVATE_KEY_LEN);
+        }
         if (ret == WALLY_OK && !clone_bytes((unsigned char **)&node->data, &privkey[1], EC_PRIVATE_KEY_LEN))
-            ret = WALLY_EINVAL;
-        else {
+            ret = WALLY_ENOMEM;
+        else if (ret == WALLY_OK) {
             node->data_len = EC_PRIVATE_KEY_LEN;
             node->kind = KIND_PRIVATE_KEY;
             ctx->features |= (WALLY_MS_IS_PRIVATE | WALLY_MS_IS_RAW);
@@ -3134,8 +3158,12 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
                     /* Not a pure descriptor */
                     ctx->features &= ~WALLY_MS_IS_DESCRIPTOR;
                 }
-                if (builtin_is_elements(str + offset, i - offset))
+                if (builtin_is_elements(str + offset, i - offset) ||
+                    node->kind == KIND_DESCRIPTOR_CT) {
+                    /* ct() is Elements-only: treat its descriptor as Elements
+                     * without an el prefix, e.g. wpkh() as elwpkh() */
                     ctx->features |= WALLY_MS_IS_ELEMENTS;
+                }
                 if (node->kind == KIND_DESCRIPTOR_TR)
                     ctx->features |= WALLY_MS_IS_TAPROOT;
                 offset = i + 1;
@@ -4298,7 +4326,8 @@ int wally_descriptor_get_taproot_control_block(
 
     if (ret == WALLY_OK) {
         /* Leaf version is ORed with the output key parity, per BIP-341 */
-        bytes_out[0] = WALLY_LEAF_VERSION_TAPSCRIPT | (tweaked[0] & 1);
+        bytes_out[0] = TAPSCRIPT_LEAF_VERSION(ms_ctx_is_elements(&ctx));
+        bytes_out[0] |= (tweaked[0] & 1);
         /* Followed by the (untweaked) x-only internal key */
         memcpy(bytes_out + 1, p2tr + 2, sizeof(p2tr) - 2);
         /* Followed by the path already written by tr_impl() above */

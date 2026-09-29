@@ -62,6 +62,12 @@ class HexTests(unittest.TestCase):
         ret, written = wally_hex_from_bytes(None, buf_len)
         self.assertEqual((ret, written), (WALLY_EINVAL, None))
 
+        # Lengths whose hex string size would overflow are rejected.
+        # The length is checked before the input is read.
+        too_long = (2 ** (8 * sizeof(c_size_t)) - 2) // 2 + 1
+        ret, written = wally_hex_from_bytes(buf, too_long)
+        self.assertEqual((ret, written), (WALLY_EINVAL, None))
+
         # Empty buffer
         ret, written = wally_hex_from_bytes(buf, 0)
         self.assertEqual((ret, written), (WALLY_OK, ''))

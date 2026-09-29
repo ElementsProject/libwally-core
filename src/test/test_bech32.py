@@ -64,6 +64,25 @@ invalid_cases = [
     ['bc', 'bc1pw508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5xw7k7grplx'] # V > 0 must be bech32m
 ]
 
+# Scripts that are not exactly a witness program and so have no segwit address
+invalid_programs = [
+    '5121' + '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798' + '51ae', # Bare 1-of-1 multisig
+    '0014' + '11' * 32,  # v0: Push shorter than the remaining script
+    '0020' + '11' * 20,  # v0: Push longer than the remaining script
+    '0012' + '11' * 18,  # v0: Invalid program length
+    '0000',              # v0: Empty program
+    '5100' + '11' * 32,  # v1: Empty push followed by a 32 byte "program"
+    '51014e73',          # v1: Push shorter than the remaining script
+    '51024e73ff',        # v1: Trailing data after the push
+    '5101ff',            # v1: Program too short
+    '5129' + '11' * 41,  # v1: Program too long
+    '5128' + '11' * 41,  # v1: Trailing data after a 40 byte push
+    '604c02abcd',        # v16: Non-direct push
+    '4f024e73',          # OP_1NEGATE is not a witness version
+    '5100',              # Too short
+    '51',                # Too short
+]
+
 class Bech32Tests(unittest.TestCase):
 
     def decode(self, addr, family):
@@ -104,6 +123,13 @@ class Bech32Tests(unittest.TestCase):
             ret, result_script_hex, result_ver = self.decode(addr, family)
             self.assertEqual(ret, WALLY_EINVAL)
             self.assertEqual(result_ver, 0)
+
+        # Invalid witness programs
+        for script_hex in invalid_programs:
+            script_buf, script_len = make_cbuffer(script_hex)
+            ret, retstr = wally_addr_segwit_from_bytes(script_buf, script_len, utf8('bc'), 0)
+            self.assertEqual((ret, retstr), (WALLY_EINVAL, None))
+            self.assertEqual(h(script_buf[:script_len]), utf8(script_hex)) # Unmodified
 
         out, out_len = make_cbuffer('00' * (32 + 2))
         bad = utf8('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefg')

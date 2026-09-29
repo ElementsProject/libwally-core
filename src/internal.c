@@ -640,12 +640,19 @@ int replace_bytes(const unsigned char *bytes, size_t bytes_len,
     return WALLY_OK;
 }
 
-
+void *array_calloc(size_t n, size_t size)
+{
+    if (size && n > SIZE_MAX / size)
+        return NULL; /* Overflow */
+    return wally_calloc(n * size);
+}
 
 void *array_realloc(const void *src, size_t old_n, size_t new_n, size_t size)
 {
-    unsigned char *p = wally_malloc(new_n * size);
-    if (!p)
+    unsigned char *p;
+    if (new_n <= old_n || new_n > SIZE_MAX / size)
+        return NULL; /* Not growing, or overflow */
+    if (!(p = wally_malloc(new_n * size)))
         return NULL;
     if (src)
         wally_memcpy(p, src, old_n * size);
