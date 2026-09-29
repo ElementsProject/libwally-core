@@ -1950,11 +1950,12 @@ int wally_get_hash_prevouts(const unsigned char *txhashes, size_t txhashes_len,
     size_t inputs_size, i;
 
     if (!txhashes || !txhashes_len || txhashes_len % WALLY_TXHASH_LEN ||
-        !utxo_indices || num_utxo_indices * WALLY_TXHASH_LEN != txhashes_len ||
+        !utxo_indices || txhashes_len / WALLY_TXHASH_LEN != num_utxo_indices ||
+        num_utxo_indices > SIZE_MAX / (WALLY_TXHASH_LEN + sizeof(uint32_t)) ||
         !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
-    inputs_size = txhashes_len + (num_utxo_indices * sizeof(uint32_t));
+    inputs_size = num_utxo_indices * (WALLY_TXHASH_LEN + sizeof(uint32_t));
     if (!(buff_p = wally_malloc(inputs_size)))
         return WALLY_ENOMEM;
 
@@ -1980,6 +1981,7 @@ int wally_tx_get_hash_prevouts(const struct wally_tx *tx,
     }
     if (!tx || index >= tx->num_inputs || !num_inputs ||
         num_inputs > tx->num_inputs || index + num_inputs > tx->num_inputs ||
+        num_inputs > SIZE_MAX / (SHA256_LEN + sizeof(uint32_t)) ||
         !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 

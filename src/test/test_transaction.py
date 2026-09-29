@@ -451,6 +451,8 @@ class TransactionTests(unittest.TestCase):
             (txhashes, len(txhashes), None,    len(indices), out,  out_len), # NULL indices
             (txhashes, len(txhashes), indices, 0,            out,  out_len), # Zero num indices
             (txhashes, len(txhashes), indices, 1,            out,  out_len), # Num indices != num hashes
+            (txhashes, len(txhashes), indices, len(indices) + 2**(8 * sizeof(c_size_t)) // 32,
+             out, out_len), # Num indices * hash len overflows to the hash len
             (txhashes, len(txhashes), indices, len(indices), None, out_len), # NULL output
             (txhashes, len(txhashes), indices, len(indices), out,  out_len - 1), # Invalid output length
         ]
