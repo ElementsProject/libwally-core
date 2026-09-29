@@ -2,6 +2,8 @@
 #define LIBWALLY_CORE_SCRIPT_INT_H 1
 
 #include "ccan/ccan/endian/endian.h"
+#include <string.h>
+#include "internal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,6 +84,8 @@ size_t varint_to_bytes(uint64_t v, unsigned char *bytes_out);
 
 /* Read a variant from bytes */
 size_t varint_from_bytes(const unsigned char *bytes, uint64_t *v);
+
+WALLY_INTERNAL_API int scriptint_from_bytes(const unsigned char *bytes, size_t len, int64_t *value_out);
 
 size_t scriptint_get_length(int64_t signed_v);
 
