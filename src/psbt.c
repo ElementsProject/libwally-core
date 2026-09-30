@@ -159,24 +159,41 @@ static const struct wally_tx_output *utxo_from_input(const struct wally_psbt *ps
     return NULL;
 }
 
+static int get_signing_script(const struct wally_psbt *psbt, size_t index,
+                              const unsigned char **script, size_t *script_len);
+
 struct wally_psbt_input *psbt_get_input_signature_type(const struct wally_psbt *psbt,
                                                        size_t index, uint32_t *value_out)
 {
     struct wally_psbt_input *inp = psbt_get_input(psbt, index);
     const struct wally_tx_output *utxo = utxo_from_input(psbt, inp);
+    const unsigned char *script;
+    size_t script_len;
 
     if (value_out)
         *value_out = 0;
     if (!utxo || !value_out)
         return NULL;
 
-    if (scriptpubkey_is_p2tr(utxo->script, utxo->script_len)) {
+    if (get_signing_script(psbt, index, &script, &script_len) != WALLY_OK)
+        return NULL;
+
+    if (scriptpubkey_is_p2tr(script, script_len)) {
         *value_out = WALLY_SIGTYPE_SW_V1;
+        return inp;
+    } else if (scriptpubkey_is_p2wpkh(script, script_len) ||
+               scriptpubkey_is_p2wsh(script, script_len)) {
+        *value_out = WALLY_SIGTYPE_SW_V0;
         return inp;
     }
 
     /* Otherwise, follow core and use whether a witness utxo is present */
-    *value_out = inp->witness_utxo ? WALLY_SIGTYPE_SW_V0 : WALLY_SIGTYPE_PRE_SW;
+    if (inp->witness_utxo)
+        *value_out = WALLY_SIGTYPE_SW_V0;
+    else if (inp->utxo)
+        *value_out = WALLY_SIGTYPE_PRE_SW;
+    else
+        return NULL;
     return inp;
 }
 
@@ -4470,6 +4487,7 @@ static int get_scriptcode(const struct wally_psbt *psbt, size_t index,
                           const unsigned char **script, size_t *script_len)
 {
     const struct wally_psbt_input *inp = psbt_get_input(psbt, index);
+    uint32_t sighash_type;
     int ret;
 
     if (script)
@@ -4480,7 +4498,21 @@ static int get_scriptcode(const struct wally_psbt *psbt, size_t index,
         !scriptcode || !scriptcode_len || !script || !script_len)
         return WALLY_EINVAL;
 
-    if (inp->witness_utxo) {
+    if (inp->utxo) {
+        unsigned char txid[WALLY_TXHASH_LEN];
+
+        ret = wally_psbt_get_input_previous_txid(psbt, index, txid, sizeof(txid));
+        if (ret == WALLY_OK)
+           ret = is_matching_txid(inp->utxo, txid, sizeof(txid));
+        if (ret != WALLY_OK)
+            return ret; /* Prevout doesn't match input */
+    }
+
+    if (!psbt_get_input_signature_type(psbt, index, &sighash_type))
+        return WALLY_EINVAL;
+
+    if (sighash_type == WALLY_SIGTYPE_SW_V0 ||
+        sighash_type == WALLY_SIGTYPE_SW_V1) {
         /* Segwit input */
         size_t script_type, written;
 
@@ -4528,24 +4560,13 @@ static int get_scriptcode(const struct wally_psbt *psbt, size_t index,
             *script_len = scriptcode_len;
             return WALLY_OK;
         }
-
         return WALLY_EINVAL; /* Unknown scriptPubKey type/not enough info */
-    }
-
-    if (inp->utxo) {
+    } else {
         /* Non-segwit input */
-        unsigned char txid[WALLY_TXHASH_LEN];
-
-        ret = wally_psbt_get_input_previous_txid(psbt, index, txid, sizeof(txid));
-        if (ret != WALLY_OK)
-            return WALLY_EINVAL;
-        if ((ret = is_matching_txid(inp->utxo, txid, sizeof(txid))) != WALLY_OK)
-            return ret; /* Prevout doesn't match input, or hashing failed */
         *script = scriptcode;
         *script_len = scriptcode_len;
         return WALLY_OK;
     }
-    return WALLY_EINVAL; /* Missing prevout data in input */
 }
 
 int wally_psbt_get_input_scriptcode_len(const struct wally_psbt *psbt, size_t index,
