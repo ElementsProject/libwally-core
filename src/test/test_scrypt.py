@@ -88,6 +88,31 @@ class ScryptTests(unittest.TestCase):
 
         do_wally_scrypt()
 
+    def test_scrypt_clear(self):
+        # The B, XY and V working buffers must be wiped before being freed
+        cleared = []
+        def _bzero(p, n):
+            cleared.append(n)
+            memset(p, 0, n)
+
+        saved, ops = wally_operations(), wally_operations()
+        for o in (saved, ops):
+            o.struct_size = sizeof(wally_operations)
+            self.assertEqual(wally_get_operations(byref(o)), WALLY_OK)
+        ops.bzero_fn = type(ops.bzero_fn)(_bzero)
+        self.assertEqual(wally_set_operations(byref(ops)), WALLY_OK)
+
+        pwd, salt, cost, block, p = utf8('password'), utf8('NaCl'), 32, 2, 3
+        out_buf, out_len = make_cbuffer('00' * 64)
+        try:
+            ret = wally_scrypt(pwd, len(pwd), salt, len(salt),
+                               cost, block, p, out_buf, out_len)
+        finally:
+            wally_set_operations(byref(saved))
+        self.assertEqual(ret, WALLY_OK)
+        for n in (128 * block * p, 256 * block + 64, 128 * block * cost):
+            self.assertIn(n, cleared)
+
 
 if __name__ == '__main__':
     unittest.main()
