@@ -38,9 +38,6 @@ class ScryptTests(unittest.TestCase):
 
     def test_scrypt(self):
 
-        if os.getenv('WALLY_SKIP_EXPENSIVE_TESTS', None):
-            self.skipTest('Skipping expensive scrypt test')
-
         # Invalid arguments
         pwd, salt, cost, block, p, l, _ = cases[0]
         pwd, salt = utf8(pwd), utf8(salt)
@@ -56,7 +53,7 @@ class ScryptTests(unittest.TestCase):
         ]
         for c in invalid:
             ret = wally_scrypt(*c)
-            self.assertEqual(wally_scrypt(*c), WALLY_EINVAL)
+            self.assertEqual(ret, WALLY_EINVAL)
 
         # Test vectors
         for c in cases:
@@ -71,6 +68,11 @@ class ScryptTests(unittest.TestCase):
                                cost, block, parallel, out_buf, out_len)
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(h(out_buf), utf8(expected))
+
+            if os.getenv('WALLY_SKIP_EXPENSIVE_TESTS', None):
+                # Skip the remainder of the test cases
+                self.skipTest('Skipping expensive scrypt tests')
+
 
     def test_scrypt_malloc(self):
         # Allocation failures in either internal PBKDF2 call must be reported
