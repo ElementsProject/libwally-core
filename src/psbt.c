@@ -157,6 +157,26 @@ static const struct wally_tx_output *utxo_from_input(const struct wally_psbt *ps
     return NULL;
 }
 
+static bool is_matching_redeem(const unsigned char *scriptpk, size_t scriptpk_len,
+                               const unsigned char *redeem, size_t redeem_len);
+
+static bool input_is_segwit_v0(const struct wally_psbt_input *inp,
+                               const struct wally_tx_output *utxo)
+{
+    const unsigned char *script = utxo->script;
+    size_t script_len = utxo->script_len, script_type;
+    const struct wally_map_item *redeem;
+
+    redeem = wally_map_get_integer(&inp->psbt_fields, PSBT_IN_REDEEM_SCRIPT);
+    if (redeem && is_matching_redeem(script, script_len,
+                                     redeem->value, redeem->value_len)) {
+        script = redeem->value;
+        script_len = redeem->value_len;
+    }
+    return wally_scriptpubkey_get_type(script, script_len, &script_type) == WALLY_OK &&
+           (script_type == WALLY_SCRIPT_TYPE_P2WPKH || script_type == WALLY_SCRIPT_TYPE_P2WSH);
+}
+
 struct wally_psbt_input *psbt_get_input_signature_type(const struct wally_psbt *psbt,
                                                        size_t index, uint32_t *value_out)
 {
@@ -173,8 +193,9 @@ struct wally_psbt_input *psbt_get_input_signature_type(const struct wally_psbt *
         return inp;
     }
 
-    /* Otherwise, follow core and use whether a witness utxo is present */
-    *value_out = inp->witness_utxo ? WALLY_SIGTYPE_SW_V0 : WALLY_SIGTYPE_PRE_SW;
+    /* A full previous transaction can also supply a SegWit v0 output. */
+    *value_out = inp->witness_utxo || input_is_segwit_v0(inp, utxo) ?
+                 WALLY_SIGTYPE_SW_V0 : WALLY_SIGTYPE_PRE_SW;
     return inp;
 }
 
@@ -4417,6 +4438,7 @@ static int get_scriptcode(const struct wally_psbt *psbt, size_t index,
                           const unsigned char **script, size_t *script_len)
 {
     const struct wally_psbt_input *inp = psbt_get_input(psbt, index);
+    uint32_t sighash_type;
     int ret;
 
     if (script)
@@ -4427,7 +4449,18 @@ static int get_scriptcode(const struct wally_psbt *psbt, size_t index,
         !scriptcode || !scriptcode_len || !script || !script_len)
         return WALLY_EINVAL;
 
-    if (inp->witness_utxo) {
+    if (!inp->witness_utxo && inp->utxo) {
+        unsigned char txid[WALLY_TXHASH_LEN];
+
+        ret = wally_psbt_get_input_previous_txid(psbt, index, txid, sizeof(txid));
+        if (ret != WALLY_OK || !is_matching_txid(inp->utxo, txid, sizeof(txid)))
+            return WALLY_EINVAL; /* Prevout doesn't match input */
+    }
+
+    if (!psbt_get_input_signature_type(psbt, index, &sighash_type))
+        return WALLY_EINVAL;
+
+    if (inp->witness_utxo || sighash_type == WALLY_SIGTYPE_SW_V0) {
         /* Segwit input */
         size_t script_type, written;
 
@@ -4479,11 +4512,6 @@ static int get_scriptcode(const struct wally_psbt *psbt, size_t index,
 
     if (inp->utxo) {
         /* Non-segwit input */
-        unsigned char txid[WALLY_TXHASH_LEN];
-
-        ret = wally_psbt_get_input_previous_txid(psbt, index, txid, sizeof(txid));
-        if (ret != WALLY_OK || !is_matching_txid(inp->utxo, txid, sizeof(txid)))
-            return WALLY_EINVAL; /* Prevout doesn't match input */
         *script = scriptcode;
         *script_len = scriptcode_len;
         return WALLY_OK;
