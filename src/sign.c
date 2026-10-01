@@ -551,7 +551,7 @@ int wally_ec_scalar_add(const unsigned char *scalar, size_t scalar_len,
     memcpy(tmp, operand, len);
     if (!seckey_negate(tmp))
         ret = WALLY_ERROR; /* Outside the group order */
-    else if (!memcmp(scalar, tmp, len))
+    else if (mem_is_equal(scalar, tmp, len))
         ret = WALLY_OK; /* X + -X = 0: bytes_out zeroed above */
     else {
         memcpy(bytes_out, scalar, len);
@@ -599,7 +599,7 @@ int wally_ec_scalar_subtract(const unsigned char *scalar, size_t scalar_len,
         return ret;
     }
 
-    if (!memcmp(scalar, operand, len)) {
+    if (mem_is_equal(scalar, operand, len)) {
         /* X - X = 0 */
         return WALLY_OK; /* bytes_out zeroed above */
     }

@@ -316,7 +316,7 @@ int wally_aes_cbc_with_ecdh_key(
                                 bytes, bytes_len - sizeof(hmac),
                                 hmac, sizeof(hmac));
         if (ret == WALLY_OK &&
-            memcmp(hmac, bytes + bytes_len - sizeof(hmac), sizeof(hmac)))
+            !mem_is_equal(hmac, bytes + bytes_len - sizeof(hmac), sizeof(hmac)))
             ret = WALLY_EINVAL; /* Invalid HMAC */
     }
 

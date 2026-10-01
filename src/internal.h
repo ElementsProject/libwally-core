@@ -89,7 +89,11 @@ WALLY_INTERNAL_API void wally_clear_4(void *p, size_t len,
 WALLY_INTERNAL_API void clear_and_free(void *p, size_t len);
 WALLY_INTERNAL_API void clear_and_free_bytes(unsigned char **p, size_t *len);
 
-WALLY_INTERNAL_API bool mem_is_zero(const void *mem, size_t len);
+/* Constant time proportional to len */
+WALLY_INTERNAL_API WALLY_NO_OPTIMIZE bool mem_is_zero(const void *mem, size_t len);
+
+/* Constant time proportional to len */
+WALLY_INTERNAL_API WALLY_NO_OPTIMIZE bool mem_is_equal(const void *a, const void *b, size_t len);
 
 /* Fetch our internal operations function pointers */
 WALLY_INTERNAL_API const struct wally_operations *wally_ops(void);

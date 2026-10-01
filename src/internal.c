@@ -602,11 +602,22 @@ void clear_and_free_bytes(unsigned char **p, size_t *len)
 
 bool mem_is_zero(const void *mem, size_t len)
 {
+    const volatile unsigned char *p = mem;
+    unsigned char bits = 0;
     size_t i;
     for (i = 0; i < len; ++i)
-        if (((const unsigned char *)mem)[i])
-            return false;
-    return true;
+        bits |= p[i];
+    return bits == 0;
+}
+
+bool mem_is_equal(const void *a, const void *b, size_t len)
+{
+    const volatile unsigned char *pa = a, *pb = b;
+    unsigned char diff = 0;
+    size_t i;
+    for (i = 0; i < len; ++i)
+        diff |= pa[i] ^ pb[i];
+    return diff == 0;
 }
 
 static bool wally_init_done = false;
