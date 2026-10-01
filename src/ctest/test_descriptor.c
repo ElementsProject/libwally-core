@@ -1695,6 +1695,22 @@ static const descriptor_test g_descriptor_cases[] = {
         "wsh(thresh(4,c:pk_k(key_1),sc:pk_k(key_2),sc:pk_k(key_3)))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     },{
+        "descriptor - unclosed after a trailing comma",
+        "sh(multi(2,key_1,key_2),",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - empty first argument",
+        "sh(,pkh(key_1))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - empty last argument",
+        "wsh(multi(1,key_1,))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - empty middle argument",
+        "wsh(multi(1,key_1,,key_2))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
         "descriptor - wsh-pk uncompressed",
         "wsh(pk(uncompressed))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD

@@ -3241,6 +3241,10 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
         }
 
         if (copy_child) {
+            if (!(i - child_offset) && (str[i] == ',' || prev_child)) {
+                ret = WALLY_EINVAL; /* Empty argument in a list */
+                break;
+            }
             if (i - child_offset) {
                 if (node->kind == KIND_DESCRIPTOR_TR && prev_child) {
                     /* Second argument of tr() is the taptree: parse_taptree
@@ -3271,6 +3275,8 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
      * level is delimited by its checksum instead. */
     if (ret == WALLY_OK && parent && node->builtin && offset != str_len)
         ret = WALLY_EINVAL;
+    if (ret == WALLY_OK && (indent || brace_depth))
+        ret = WALLY_EINVAL; /* Unclosed '(' or '{' */
 
     if (ret == WALLY_OK && !seen_indent) {
         /* A constant value. Parse it ignoring any already added wrappers */
