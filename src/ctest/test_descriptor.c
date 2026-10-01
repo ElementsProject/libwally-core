@@ -847,6 +847,30 @@ static const descriptor_test g_descriptor_cases[] = {
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
         "6300670400ca9a3bb16951686b6300670164b16951686c936b2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac6c935287",
         "", VARS_STD
+    }, {
+        "miniscript - thresh counts its arguments from its non-z children (positive case)",
+        "or_b(pk(key_remote),s:thresh(1,pk(key_local)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac7c21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac51879b",
+        "8kgch6zz", VARS_STD
+    }, {
+        "miniscript - n: is always u (1)",
+        "andor(n:or_i(pk(key_local),older(144)),pk(key_remote),pk(key_revocation))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "6321038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac67029000b26892642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac672103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac68",
+        "m9lvnzzs", VARS_STD
+    }, {
+        "miniscript - n: is always u (2)",
+        "thresh(1,n:or_i(pk(key_local),older(144)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "6321038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac67029000b268925187",
+        "r9fvwwwr", VARS_STD
+    }, {
+        "miniscript - n: is always u (3)",
+        "thresh(3,pk(key_local),s:pk(key_remote),s:pk(key_revocation),sln:older(12960))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac7c2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac937c2103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac937c63006702a032b29268935387",
+        "2sw64huw", VARS_STD
     },
     /*
      * Miniscript: Error cases
@@ -894,8 +918,44 @@ static const descriptor_test g_descriptor_cases[] = {
         NULL,
         "", VARS_STD
     }, {
+        "miniscript - thresh requires its children to be u",
+        "thresh(1,or_i(pk(key_local),older(144)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - thresh counts its arguments from its non-z children",
+        "dv:thresh(2,pk(key_local),s:pk(key_remote),s:pk(key_revocation))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
         "miniscript - Unknown wrapper type",
         "z:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - andor requires its first argument to be Bdu (1)",
+        "andor(after(10),pk(key_local),pk(key_remote))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - andor requires its first argument to be Bdu (2)",
+        "andor(or_i(pk(key_local),older(144)),pk(key_remote),pk(key_revocation))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - and_n requires its first argument to be Bdu (1)",
+        "and_n(after(10),pk(key_local))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - and_n requires its first argument to be Bdu (2)",
+        "and_n(or_i(pk(key_local),older(144)),pk(key_remote))",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
         NULL,
         "", VARS_STD

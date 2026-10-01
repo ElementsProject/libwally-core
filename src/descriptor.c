@@ -992,7 +992,7 @@ static uint32_t verify_andor_property(uint32_t x_prop, uint32_t y_prop, uint32_t
     uint32_t prop = PROP_X;
     uint32_t need_x = TYPE_B | PROP_D | PROP_U;
     uint32_t need_yz = TYPE_B | TYPE_K | TYPE_V;
-    if (!(x_prop & TYPE_B) || !(x_prop & need_x))
+    if ((x_prop & need_x) != need_x)
         return 0;
     if (!(y_prop & z_prop & need_yz))
         return 0;
@@ -1199,7 +1199,7 @@ static int verify_thresh(ms_ctx *ctx, ms_node *node)
     for (child = top->next; child; child = child->next) {
         const uint32_t expected_type = count ? TYPE_W : TYPE_B;
 
-        if (!child->builtin || (~child->type_properties & (expected_type | PROP_D)))
+        if (!child->builtin || (~child->type_properties & (expected_type | PROP_D | PROP_U)))
             return WALLY_EINVAL;
 
         if (~child->type_properties & PROP_E)
@@ -1208,8 +1208,8 @@ static int verify_thresh(ms_ctx *ctx, ms_node *node)
             all_m = false;
         if (child->type_properties & PROP_S)
             ++num_s;
-        if (child->type_properties & PROP_Z)
-            args += (~child->type_properties & PROP_O) ? 2 : 1;
+        if (!(child->type_properties & PROP_Z))
+            args += (child->type_properties & PROP_O) ? 1 : 2;
 
 
         tmp_acc_tl = ((acc_tl | child->type_properties) & (PROP_G | PROP_H | PROP_I | PROP_J));
@@ -1360,7 +1360,7 @@ static int node_verify_wrappers(ms_ctx *ctx, ms_node *node)
         case 'n':
             PROP_REQUIRE(TYPE_B);
             PROP_CHANGE(PROP_Z | PROP_O | PROP_N | PROP_D | PROP_F | PROP_E |
-                        PROP_M | PROP_S | PROP_N | PROP_D | PROP_X, PROP_X);
+                        PROP_M | PROP_S | PROP_N | PROP_D | PROP_X, PROP_U | PROP_X);
             break;
         case 'l':
             *properties = verify_or_i_property(PROP_OP_0, x_prop);
