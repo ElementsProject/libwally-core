@@ -120,8 +120,8 @@ static bool are_valid_aes_cbc_args(const unsigned char *key, size_t key_len,
         if (len % AES_BLOCK_LEN)
             return false; /* Output must be a block length multiple if given */
     } else {
-        if (bytes_len % AES_BLOCK_LEN)
-            return false; /* Input must be a block length multiple if given */
+        if (!bytes_len || bytes_len % AES_BLOCK_LEN)
+            return false; /* Input must be a non-empty block length multiple */
     }
     return true;
 }

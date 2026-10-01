@@ -141,6 +141,8 @@ class AESTests(unittest.TestCase):
             (key,  len(key), iv,   len(iv), None,   len(cypher), D, out_buf, out_len),
             # Empty cyphertext
             (key,  len(key), iv,   len(iv), cypher, 0,           D, out_buf, out_len),
+            # Missing cyphertext
+            (key,  len(key), iv,   len(iv), None,   0,           D, out_buf, out_len),
             # Invalid flags
             (key,  len(key), iv,   len(iv), cypher, len(cypher), 3, out_buf, out_len),
             # NULL out_buf
