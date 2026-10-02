@@ -954,6 +954,12 @@ static const descriptor_test g_descriptor_cases[] = {
         NULL,
         "", VARS_STD
     }, {
+        "miniscript - andor is o only with one o argument and the others z",
+        "or_b(pk(key_remote),s:and_n(sha256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2),sha256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
         "miniscript - and_n requires its first argument to be Bdu (1)",
         "and_n(after(10),pk(key_local))",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
@@ -965,6 +971,18 @@ static const descriptor_test g_descriptor_cases[] = {
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
         NULL,
         "", VARS_STD
+    }, {
+        "miniscript - multi_a() is not n, so j: cannot wrap it (following core)",
+        "tr(x_only,j:multi_a(1,key_local,key_remote))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - multi_a() is not n, (positive test case)",
+        "tr(x_only,multi_a(1,key_local,key_remote))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
+        "5120d7aca3c726329f6b1b27b7c776dcdf489704ad6dc0280444be78a56870f8c855",
+        "rr00se2w", VARS_STD
     },
     /*
      * Miniscript: BOLT examples

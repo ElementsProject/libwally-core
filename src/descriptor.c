@@ -999,13 +999,14 @@ static uint32_t verify_andor_property(uint32_t x_prop, uint32_t y_prop, uint32_t
 
     prop |= y_prop & z_prop & need_yz;
     prop |= x_prop & y_prop & z_prop & PROP_Z;
-    prop |= (x_prop | (y_prop & z_prop)) & PROP_O;
+    if ((x_prop | (y_prop & z_prop)) & PROP_Z)
+        prop |= (x_prop | (y_prop & z_prop)) & PROP_O;
     prop |= y_prop & z_prop & PROP_U;
     prop |= z_prop & PROP_D;
     prop |= (x_prop | y_prop | z_prop) & (PROP_G | PROP_H | PROP_I | PROP_J);
     if (x_prop & PROP_S || y_prop & PROP_F) {
         prop |= z_prop & PROP_F;
-        prop |= x_prop & z_prop & PROP_E;
+        prop |= z_prop & PROP_E;
     }
     if (x_prop & PROP_E &&
         (x_prop | y_prop | z_prop) & PROP_S) {
@@ -1143,8 +1144,8 @@ static int verify_or_d(ms_ctx *ctx, ms_node *node)
     const uint32_t y_prop = node->child->next->type_properties;
     (void)ctx;
     node->type_properties = PROP_X;
-    node->type_properties |= x_prop & y_prop & (PROP_Z | PROP_E | PROP_S);
-    node->type_properties |= y_prop & (PROP_U | PROP_F | PROP_D);
+    node->type_properties |= x_prop & y_prop & (PROP_Z | PROP_S);
+    node->type_properties |= y_prop & (PROP_U | PROP_F | PROP_D | PROP_E);
     node->type_properties |= (x_prop | y_prop) & (PROP_G | PROP_H | PROP_I | PROP_J);
     node->type_properties |= (x_prop & y_prop) & PROP_K;
     if (!(~x_prop & (TYPE_B | PROP_D | PROP_U)))
@@ -2532,12 +2533,12 @@ static const struct ms_builtin_t g_builtins[] = {
     }, {
         I_NAME("multi_a"),
         KIND_MINISCRIPT_MULTI_A,
-        TYPE_B | PROP_N | PROP_D | PROP_U | PROP_E | PROP_M | PROP_S | PROP_K,
+        TYPE_B | PROP_D | PROP_U | PROP_E | PROP_M | PROP_S | PROP_K,
         0xffffffff, verify_multi_a, generate_multi
     }, {
         I_NAME("sortedmulti_a"),
         KIND_MINISCRIPT_MULTI_A_S,
-        TYPE_B | PROP_N | PROP_D | PROP_U | PROP_E | PROP_M | PROP_S | PROP_K,
+        TYPE_B | PROP_D | PROP_U | PROP_E | PROP_M | PROP_S | PROP_K,
         0xffffffff, verify_multi_a, generate_multi
     }
     /* Elements confidential descriptors */
