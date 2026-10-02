@@ -339,16 +339,28 @@ class TransactionTests(unittest.TestCase):
         tx = self.tx_deserialize_hex(TX_FAKE_HEX)
         script, script_len = make_cbuffer('00')
         out, out_len = make_cbuffer('00'*32)
+        MAX_S = MAX_SATOSHI + 1
         for args in [
-            (None, 0, script, script_len, 1, 1, 0, out, out_len), # Empty tx
-            (tx, 0, None, script_len, 1, 1, 0, out, out_len), # Empty script
-            (tx, 0, script, 0, 1, 1, 0, out, out_len), # Invalid script length
-            (tx, 0, script, script_len, MAX_SATOSHI+1, 1, 1, out, out_len), # Invalid amount (only with segwit)
-            (tx, 0, script, script_len, 1, 0x100, 0, out, out_len), # Invalid sighash
-            (tx, 0, script, script_len, 1, 1, 16, out, out_len), # Invalid flags
-            (tx, 0, script, script_len, 1, 1, 0, None, out_len), # Empty bytes
-            (tx, 0, script, script_len, 1, 1, 0, out, 31), # Short len
-            (tx, 1, script, script_len, 1, 1, 1, out, out_len), # Invalid index (only with segwit)
+            # Empty tx
+            (None, 0, script, script_len, 1,     1,     0,  out,  out_len),
+            # Empty script
+            (tx,   0, None,   script_len, 1,     1,     0,  out,  out_len),
+            # Invalid script length
+            (tx,   0, script, 0,          1,     1,     0,  out,  out_len),
+            # Invalid amount (only with segwit)
+            (tx,   0, script, script_len, MAX_S, 1,     1,  out,  out_len),
+            # Invalid sighash
+            (tx,   0, script, script_len, 1,     0x100, 0,  out,  out_len),
+            # SIGHASH_FORKID (i.e SIGHASH_RANGEPROOF) is invalid for BTC
+            (tx,   0, script, script_len, 1,     0x41,  0,  out,  out_len),
+            # Invalid flags
+            (tx,   0, script, script_len, 1,     1,     16, out,  out_len),
+            # Empty bytes
+            (tx,   0, script, script_len, 1,     1,     0,  None, out_len),
+            # Short len
+            (tx,   0, script, script_len, 1,     1,     0,  out,  31),
+            # Invalid index (only with segwit)
+            (tx,   1, script, script_len, 1,     1,     1,  out,  out_len),
         ]:
             self.assertEqual(WALLY_EINVAL, wally_tx_get_btc_signature_hash(*args))
 
