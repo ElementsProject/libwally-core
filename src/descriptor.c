@@ -1329,8 +1329,8 @@ static int node_verify_wrappers(ms_ctx *ctx, ms_node *node)
         case 'd':
             PROP_REQUIRE(TYPE_V | PROP_Z);
             PROP_CHANGE_TYPE(TYPE_V | PROP_Z, TYPE_B);
-            PROP_CHANGE(PROP_M | PROP_S, PROP_N | PROP_D | PROP_X |
-                        PROP_G | PROP_H | PROP_I | PROP_J | PROP_K);
+            PROP_CHANGE(PROP_M | PROP_S | PROP_G | PROP_H | PROP_I | PROP_J |
+                        PROP_K, PROP_N | PROP_D | PROP_X);
             if (x_prop & PROP_Z)
                 *properties |= PROP_O;
             if (x_prop & PROP_F) {
@@ -1352,7 +1352,8 @@ static int node_verify_wrappers(ms_ctx *ctx, ms_node *node)
         case 'j':
             PROP_REQUIRE(TYPE_B | PROP_N);
             PROP_CHANGE(PROP_O | PROP_U | PROP_M | PROP_S | PROP_N | PROP_D |
-                        PROP_X, PROP_N | PROP_D | PROP_X);
+                        PROP_X | PROP_G | PROP_H | PROP_I | PROP_J | PROP_K,
+                        PROP_N | PROP_D | PROP_X);
             if (x_prop & PROP_F) {
                 PROP_CHANGE(~PROP_F, PROP_E);
             }
@@ -1360,7 +1361,8 @@ static int node_verify_wrappers(ms_ctx *ctx, ms_node *node)
         case 'n':
             PROP_REQUIRE(TYPE_B);
             PROP_CHANGE(PROP_Z | PROP_O | PROP_N | PROP_D | PROP_F | PROP_E |
-                        PROP_M | PROP_S | PROP_N | PROP_D | PROP_X, PROP_U | PROP_X);
+                        PROP_M | PROP_S | PROP_X | PROP_G | PROP_H | PROP_I |
+                        PROP_J | PROP_K, PROP_U | PROP_X);
             break;
         case 'l':
             *properties = verify_or_i_property(PROP_OP_0, x_prop);
@@ -3020,7 +3022,7 @@ static int analyze_miniscript_value(ms_ctx *ctx, const char *str, size_t str_len
     node->data_len = str_len;
 
     if (strtoll_n(node->data, node->data_len, &node->number)) {
-        node->type_properties = TYPE_B | PROP_Z | PROP_U | PROP_M | PROP_X;
+        node->type_properties = TYPE_B | PROP_Z | PROP_U | PROP_M | PROP_X | PROP_K;
         node->type_properties |= (node->number ? PROP_F : (PROP_D | PROP_E | PROP_S));
         node->kind = KIND_NUMBER;
         return WALLY_OK;
