@@ -73,9 +73,6 @@ $ brew install swig
 - `--enable-swig-python`. Enable the [SWIG](http://www.swig.org/) Python
    interface. The resulting shared library can be imported from Python using
    the generated interface file `src/swig_python/wallycore/__init__.py`. (default: no).
-- `--enable-python-manylinux`. Enable [manylinux](https://github.com/pypa/manylinux)
-   support for building [PyPI](https://pypi.org/) compatible python wheels. Using
-   the resulting library in non-python programs requires linking with `libpython.so`.
 - `--enable-swig-java`. Enable the [SWIG](http://www.swig.org/) Java (JNI)
    interface. After building, see `src/swig_java/src/com/blockstream/libwally/Wally.java`
    for the Java interface definition (default: no).
