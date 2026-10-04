@@ -8,14 +8,19 @@
 #include <include/wally_crypto.h>
 #include "bip32_int.h"
 
-#define BIP32_ALL_DEFINED_FLAGS (BIP32_FLAG_KEY_PRIVATE | \
+#define BIP32_BTC_DEFINED_FLAGS (BIP32_FLAG_KEY_PRIVATE | \
                                  BIP32_FLAG_KEY_PUBLIC | \
                                  BIP32_FLAG_SKIP_HASH | \
-                                 BIP32_FLAG_KEY_TWEAK_SUM | \
                                  BIP32_FLAG_STR_WILDCARD | \
                                  BIP32_FLAG_STR_BARE | \
                                  BIP32_FLAG_ALLOW_UPPER | \
                                  BIP32_FLAG_STR_MULTIPATH)
+
+#ifdef BUILD_ELEMENTS
+#define BIP32_ALL_DEFINED_FLAGS (BIP32_BTC_DEFINED_FLAGS | BIP32_FLAG_KEY_TWEAK_SUM)
+#else
+#define BIP32_ALL_DEFINED_FLAGS BIP32_BTC_DEFINED_FLAGS
+#endif
 
 static const unsigned char HMAC_KEY[] = {
     'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd'
