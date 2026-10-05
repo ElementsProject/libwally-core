@@ -4591,12 +4591,6 @@ static int get_signing_data(const struct wally_psbt *psbt,
             }
         }
     }
-    if (ret != WALLY_OK) {
-        wally_free(scripts->items); /* No need to clear the value pointers */
-        wally_free(values->items);
-        if (assets)
-            wally_free(assets->items);
-    }
     return ret;
 }
 

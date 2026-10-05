@@ -218,11 +218,21 @@ class PSBTTests(unittest.TestCase):
         expected = case.get('result', None)
         expected_ret = WALLY_OK if expected else WALLY_EINVAL
         priv_key, priv_key_len = make_cbuffer('00'*32)
-        psbt = self.parse_base64(case['psbt'])
-        wally_psbt_signing_cache_enable(psbt, 0) # Enable signing cache
+        # Sign with all private keys available, checking all allocations
+        psbt, signed = None, None
         for wif in case['privkeys']:
-            self.assertEqual(WALLY_OK, wally_wif_to_bytes(wif, 0xEF, 0, priv_key, priv_key_len))
-            self.assertEqual(expected_ret, wally_psbt_sign(psbt, priv_key, priv_key_len, FLAG_GRIND_R))
+            ret = wally_wif_to_bytes(wif, 0xEF, 0, priv_key, priv_key_len)
+            self.assertEqual(ret, WALLY_OK)
+            def do_sign():
+                with no_malloc_failures():
+                    nonlocal psbt
+                    psbt = signed if signed else self.parse_base64(case['psbt'])
+                    wally_psbt_signing_cache_enable(psbt, 0) # Enable signing cache
+                return wally_psbt_sign(psbt, priv_key, priv_key_len, FLAG_GRIND_R)
+            # OK is allowed because failure to encache an item is not fatal
+            ret = malloc_fail_loop(do_sign, allowed_rets=[WALLY_ENOMEM, WALLY_OK])
+            self.assertEqual(expected_ret, ret)
+            signed = psbt
         # Check that we can roundtrip the signed PSBT (some bugs only appear here)
         b64_out = self.roundtrip(psbt, expected)
         self.check_signature_only_psbt(case['psbt'], b64_out)

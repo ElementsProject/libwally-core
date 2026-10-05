@@ -1233,8 +1233,9 @@ def malloc_fail(failures):
         return wrapped
     return decorator
 
-def malloc_fail_loop(fn):
+def malloc_fail_loop(fn, allowed_rets=None):
     """Repeatedly call a wally function failing every allocation in turn until it succeeds"""
+    allowed_rets = allowed_rets or [WALLY_ENOMEM]
     global _fail_malloc_at, _fail_malloc_counter
     fail_at = 0
     while True:
@@ -1248,7 +1249,22 @@ def malloc_fail_loop(fn):
             _fail_malloc_at, _fail_malloc_counter = 0, 0
         if not did_fail:
             return ret
-        assert ret == WALLY_ENOMEM
+        assert ret in allowed_rets, f'unexpected return {ret}'
+
+class no_malloc_failures:
+    """Context manager to temporarily disable malloc failures"""
+    def __enter__(self):
+        global _fail_malloc_at, _fail_malloc_counter
+        self._fail_malloc_at = _fail_malloc_at
+        self._fail_malloc_counter = _fail_malloc_counter
+        _fail_malloc_at, _fail_malloc_counter = 0, 0
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        global _fail_malloc_at, _fail_malloc_counter
+        _fail_malloc_at = self._fail_malloc_at
+        _fail_malloc_counter = self._fail_malloc_counter
+        return False
 
 # Support for signing testing
 _fake_ec_nonce = None
