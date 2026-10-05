@@ -86,15 +86,19 @@ class PBKDF2Tests(unittest.TestCase):
         self.assertEqual(ret, WALLY_ENOMEM)
 
 
-    @malloc_fail([1])
-    def test_pbkdf2_hmac_sha256_malloc(self):
-        self._pbkdf2_hmac_sha_malloc_fail(wally_pbkdf2_hmac_sha256, PBKDF2_HMAC_SHA256_LEN)
+    def test_pbkdf2_hmac_sha_malloc(self):
+        @malloc_fail([1])
+        def test_pbkdf2_hmac_sha256_malloc():
+            self._pbkdf2_hmac_sha_malloc_fail(wally_pbkdf2_hmac_sha256,
+                                              PBKDF2_HMAC_SHA256_LEN)
 
+        @malloc_fail([1])
+        def test_pbkdf2_hmac_sha512_malloc():
+            self._pbkdf2_hmac_sha_malloc_fail(wally_pbkdf2_hmac_sha512,
+                                              PBKDF2_HMAC_SHA512_LEN)
 
-    @malloc_fail([1])
-    def test_pbkdf2_hmac_sha512_malloc(self):
-        self._pbkdf2_hmac_sha_malloc_fail(wally_pbkdf2_hmac_sha512, PBKDF2_HMAC_SHA512_LEN)
-
+        test_pbkdf2_hmac_sha256_malloc()
+        test_pbkdf2_hmac_sha512_malloc()
 
 if __name__ == '__main__':
     unittest.main()
