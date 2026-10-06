@@ -332,6 +332,36 @@ class PSBTTests(unittest.TestCase):
         ret = wally_psbt_input_keypath_add(inp, pub, pub_len, fp, fp_len, path, 1)
         self.assertEqual(ret, WALLY_OK)
 
+    def test_finalize_taproot(self):
+        """Finalizing a taproot input clears its key and script path fields"""
+        # A key path signed tr(A,pk(B)) input, with all BIP-371 input fields
+        b64 = (
+            'cHNidP8BAgQCAAAAAQQBAQEFAQEBBgEDAfsEAgAAAAABASughgEAAAAAACJRIM1d4GeBjJtxV0v0Qpnr'
+            'mU5yeu0KABAOscoL5hLo+q8dAQ4gq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6sBDwQAAAAA'
+            'ARAEAAAAAAETQBUCOuY3LxiO3HdmmmnOCUcfNmlPXgGsXePFnJUU4PiScSVYzi3sswUjjhnK8hZMZF+6'
+            '/BSVqbTZ+Wix1jQO3WFBFLpBq3Hp6LwfYFKPFETLhtwPs+94LM022gHjD+y0Dedk3NVFPtu524iPPDG4'
+            'fBUM+JRlXZVlgiw42fB1OUt3nhpAqvAC/X4LFnvmtlfTsBUw9LhqaA5wXh5hffC6dNMuaqp9Wv/UFKn7'
+            'vKm92wNyZJ7tKadzBN5+KsMOYLbY/avV/iIVwb8Q4+5f9eAeVvocytyYuufygsor7bLH7TC83hUqOYjY'
+            'IyC6Qatx6ei8H2BSjxREy4bcD7PveCzNNtoB4w/stA3nZKzAIRa/EOPuX/XgHlb6HMrcmLrn8oLKK+2y'
+            'x+0wvN4VKjmI2AUAgkt2ByEWukGrcenovB9gUo8URMuG3A+z73gszTbaAeMP7LQN52QlAdzVRT7buduI'
+            'jzwxuHwVDPiUZV2VZYIsONnwdTlLd54awDryRgEXIL8Q4+5f9eAeVvocytyYuufygsor7bLH7TC83hUq'
+            'OYjYARgg3NVFPtu524iPPDG4fBUM+JRlXZVlgiw42fB1OUt3nhoAAQMI6AMAAAAAAAABBBYAFKurq6ur'
+            'q6urq6urq6urq6urq6urAA==')
+        psbt = self.parse_base64(b64)
+        inp = psbt.contents.inputs[0]
+        self.assertEqual(inp.taproot_leaf_scripts.num_items, 1)
+        self.assertEqual(inp.taproot_leaf_signatures.num_items, 1)
+        self.assertEqual(wally_psbt_finalize(psbt, 0), WALLY_OK)
+        ret, is_finalized = wally_psbt_is_finalized(psbt)
+        self.assertEqual((ret, is_finalized), (WALLY_OK, 1))
+        for m in [inp.taproot_leaf_scripts, inp.taproot_leaf_signatures,
+                  inp.taproot_leaf_hashes, inp.taproot_leaf_paths]:
+            self.assertEqual(m.num_items, 0)
+        for field_type in [0x13, 0x17, 0x18]: # TAP_KEY_SIG/INTERNAL_KEY/MERKLE_ROOT
+            ret, idx = wally_map_find_integer(byref(inp.psbt_fields), field_type)
+            self.assertEqual((ret, idx), (WALLY_OK, 0))
+        wally_psbt_free(psbt)
+
     def test_psbt(self):
         """Test creating and modifying various PSBT fields"""
         tx = pointer(wally_tx())
