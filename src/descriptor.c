@@ -3256,6 +3256,15 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
                     /* Not a pure descriptor */
                     ctx->features &= ~WALLY_MS_IS_DESCRIPTOR;
                 }
+                if (builtin_is_elements(str + offset, i - offset) &&
+                    ((parent && parent->kind != KIND_DESCRIPTOR_CT) ||
+                     node->kind == KIND_DESCRIPTOR_CT ||
+                     node->kind == KIND_DESCRIPTOR_SLIP77 ||
+                     node->wrapper_str[0] || !(kind & KIND_DESCRIPTOR))) {
+                    /* Only the outermost script expression can be prefixed */
+                    ret = WALLY_EINVAL;
+                    break;
+                }
                 if (builtin_is_elements(str + offset, i - offset) ||
                     node->kind == KIND_DESCRIPTOR_CT) {
                     /* ct() is Elements-only: treat its descriptor as Elements
