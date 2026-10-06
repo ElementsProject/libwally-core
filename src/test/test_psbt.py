@@ -319,6 +319,19 @@ class PSBTTests(unittest.TestCase):
         expected = 'cHNidP8BAJoCAAAAAvezqpNxOIDkwNFhfZVLYvuhQxqmqNPJwlyXbhc8cuLPAQAAAAD9////krlOMdd9VVzPWn5+oadTb4C3NnUFWA3tF6cb1RiI4JAAAAAAAP3///8CESYAAAAAAAAWABQn/PFABd2EW5RsCUvJitAYNshf9BAnAAAAAAAAFgAUFpodxCngMIyYnbJ1mhpDwQykN4cAAAAAAAEAiQIAAAABfRJscM0GWu793LYoAX15Mnj+dVr0G7yvRMBeWSmvPpQAAAAAFxYAFESkW2FnrJlkwmQZjTXL1IVM95lW/f///wK76QAAAAAAABYAFB33sq8WtoOlpvUpCvoWbxJJl5rhECcAAAAAAAAXqRTFhAlcZBMRkG4iAustDT6iSw6wkIcAAAAAAQEgECcAAAAAAAAXqRTFhAlcZBMRkG4iAustDT6iSw6wkIcBBxcWABSLInl3egAHj/E1xymd9vWdJ7knmQEIawJHMEQCIAkPXe9sdpRjSDTjJ0gIrpwGGIWJby9xSd1rS9hPe1f0AiAJgqR7PL3G/MXyUu4KZdS1Z2O14fjxstF43k634u+4GAEhA/2o8s1fdIIUPtMyDtplUnd3xmIb8GI2pBgmOFjWMaHmAAEAcgIAAAAB97Oqk3E4gOTA0WF9lUti+6FDGqao08nCXJduFzxy4s8AAAAAAP3///8CECcAAAAAAAAXqRRcl9Sf+c1s0P5r5CGoefIJLL2g+YcdwgAAAAAAABYAFJQPdrykhhpou8p1nGgQ8V+jy+UPAAAAAAEBIBAnAAAAAAAAF6kUXJfUn/nNbND+a+QhqHnyCSy9oPmHAQcXFgAUyRIBhZwlI4RLT6NDHluovlrN3iABCGsCRzBEAiAOzRsNZ+2Et+VGCY/nXWO7WxGI3u39kpi025cUaJXQJgIgL6KtMqPfAwXGktQFWr9SNnOrHF2xjvKQI2VdeuQbxt0BIQIs+YA2N8B5O6nF4SgVEG765xfHZFKrLiKbjZuo8/9vPAAiAgKvIfgAREwuU3M7rbN8YQrVwMyBFBzOYjLoL8BTK7QnOBAStOnGAAAAgAEAAIDDAACAAAA='
         self.assertEqual(self.to_base64(psbt), expected)
 
+        # Finalizing clears keypaths and signatures.
+        # Ensure later added values continue to be validated.
+        inp = psbt.contents.inputs[0]
+        bad_pub, bad_pub_len = make_cbuffer('00' * 33)
+        sig, sig_len = make_cbuffer('30' * 8)
+        ret = wally_psbt_input_add_signature(inp, bad_pub, bad_pub_len, sig, sig_len)
+        self.assertEqual(ret, WALLY_EINVAL)
+        pub, pub_len = make_cbuffer('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798')
+        fp, fp_len = make_cbuffer('00' * 4)
+        path = (c_uint * 1)(0)
+        ret = wally_psbt_input_keypath_add(inp, pub, pub_len, fp, fp_len, path, 1)
+        self.assertEqual(ret, WALLY_OK)
+
     def test_psbt(self):
         """Test creating and modifying various PSBT fields"""
         tx = pointer(wally_tx())

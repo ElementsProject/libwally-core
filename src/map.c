@@ -51,7 +51,10 @@ int wally_map_clear(struct wally_map *map_in)
         clear_and_free(map_in->items[i].value, map_in->items[i].value_len);
     }
     clear_and_free(map_in->items, map_in->num_items * sizeof(*map_in->items));
+    /* Clear the map, leaving its verification function intact */
+    const wally_map_verify_fn_t verify_fn = map_in->verify_fn;
     wally_clear(map_in, sizeof(*map_in));
+    map_in->verify_fn = verify_fn;
     return WALLY_OK;
 }
 
