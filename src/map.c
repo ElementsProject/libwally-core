@@ -329,7 +329,10 @@ static int map_replace(struct wally_map *map_in,
     if (ret == WALLY_OK) {
         if (index) {
             struct wally_map_item *to_replace = map_in->items + index - 1;
-            ret = replace_bytes(value, value_len, &to_replace->value, &to_replace->value_len);
+            if (map_in->verify_fn)
+                ret = map_in->verify_fn(key, key_len, value, value_len);
+            if (ret == WALLY_OK)
+                ret = replace_bytes(value, value_len, &to_replace->value, &to_replace->value_len);
         } else
             ret = map_add(map_in, key, key_len, value, value_len, false, true);
     }

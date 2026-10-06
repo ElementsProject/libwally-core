@@ -257,6 +257,11 @@ class MapTests(unittest.TestCase):
 
         # Valid path
         self.assertEqual(wally_map_add(m, bip32, bip32_len, kp_path, len(kp_path)), WALLY_OK)
+        # Replacing an existing item's value is also validated
+        ret = wally_map_replace(m, bip32, bip32_len, kp_path, len(kp_path)-1)
+        self.assertEqual(ret, WALLY_EINVAL)
+        ret = wally_map_replace(m, bip32, bip32_len, kp_path, len(kp_path))
+        self.assertEqual(ret, WALLY_OK)
 
         # Fingerprint/Path
         out = (c_ubyte * (FP_LEN + 5 * 4))()
