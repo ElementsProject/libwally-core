@@ -1,5 +1,6 @@
 #include "internal.h"
 
+#include <include/wally_descriptor.h>
 #include <include/wally_elements.h>
 #include <include/wally_script.h>
 #include <include/wally_psbt.h>
@@ -535,6 +536,47 @@ static int map_leaf_hashes_verify(const unsigned char *key, size_t key_len,
     return ret;
 }
 
+/* BIP-371 PSBT_OUT_TAP_TREE value: a depth-first sequence of
+ * <8-bit depth> <8-bit leaf version> <compact-size scriptlen> <script>. */
+static int taproot_tree_value_verify(const unsigned char *val, size_t val_len)
+{
+    if (!val || !val_len)
+        return WALLY_EINVAL;
+    while (val_len) {
+        uint64_t script_len;
+        size_t vlen;
+        if (val_len < 3)
+            return WALLY_EINVAL; /* depth(1) + leaf version(1) + >=1 script-len byte */
+        if (val[0] > WALLY_DESCRIPTOR_TAPTREE_MAX_DEPTH)
+            return WALLY_EINVAL; /* depth exceeds the BIP-341 maximum */
+        if ((val[1] & 1u) || val[1] == 0x50u)
+            return WALLY_EINVAL; /* leaf version parity bit set, or annex tag */
+        val += 2;
+        val_len -= 2;
+        vlen = varint_length_from_bytes(val); /* safe: val_len >= 1 here */
+        if (val_len < vlen)
+            return WALLY_EINVAL;
+        varint_from_bytes(val, &script_len);
+        val += vlen;
+        val_len -= vlen;
+        if (script_len > val_len)
+            return WALLY_EINVAL; /* script overruns the buffer */
+        val += script_len;
+        val_len -= script_len;
+    }
+    return WALLY_OK;
+}
+
+/* Integer-keyed map of PSBT_OUT_TAP_TREE values (key is NULL). */
+static int taproot_tree_verify(const unsigned char *key, size_t key_len,
+                               const unsigned char *val, size_t val_len)
+{
+    (void)key_len;
+    if (key)
+        return WALLY_EINVAL;
+    return taproot_tree_value_verify(val, val_len);
+}
+
 static int psbt_input_field_verify(uint32_t field_type,
                                    const unsigned char *val, size_t val_len)
 {
@@ -578,8 +620,7 @@ static int psbt_output_field_verify(uint32_t field_type,
         /* 32 byte x-only pubkey */
         return val && val_len == SHA256_LEN ? WALLY_OK : WALLY_EINVAL;
     case PSBT_OUT_TAP_TREE:
-        /* FIXME: validate the tree is in the expected encoded format */
-        return val && val_len >= 4 ? WALLY_OK : WALLY_EINVAL;
+        return taproot_tree_value_verify(val, val_len);
     default:
         break;
     }
@@ -1135,7 +1176,7 @@ static void psbt_output_init(struct wally_psbt_output *output)
     wally_map_init(0, wally_keypath_public_key_verify, &output->keypaths);
     wally_map_init(0, NULL, &output->unknowns);
     wally_map_init(0, psbt_map_output_field_verify, &output->psbt_fields);
-    wally_map_init(0, NULL, &output->taproot_tree);
+    wally_map_init(0, taproot_tree_verify, &output->taproot_tree);
     wally_map_init(0, map_leaf_hashes_verify, &output->taproot_leaf_hashes);
     wally_map_init(0, wally_keypath_xonly_public_key_verify, &output->taproot_leaf_paths);
 #ifdef BUILD_ELEMENTS

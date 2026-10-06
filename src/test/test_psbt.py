@@ -362,6 +362,48 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual((ret, idx), (WALLY_OK, 0))
         wally_psbt_free(psbt)
 
+    def test_taproot_tree(self):
+        """Test output taproot tree validation"""
+        psbt = pointer(wally_psbt())
+        self.assertEqual(WALLY_OK, wally_psbt_init_alloc(2, 0, 1, 0, 0, psbt))
+        tx_out = pointer(wally_tx_output())
+        ret = wally_tx_output_init_alloc(1000, b'\x51', 1, tx_out)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_output_at(psbt, 0, 0, tx_out))
+        tree = byref(psbt.contents.outputs[0].taproot_tree)
+
+        leaf = lambda depth, ver, script: bytes([depth, ver, len(script)]) + script
+        for value in [
+            b'',                                   # Empty
+            bytes([0, 0xc0]),                      # Truncated leaf
+            leaf(129, 0xc0, b'\x51'),              # Too deep
+            leaf(0, 0xc1, b'\x51'),                # Odd leaf version
+            leaf(0, 0x50, b'\x51'),                # Annex tag as leaf version
+            leaf(0, 0xc0, b'\x51')[:-1],           # Truncated script
+            leaf(0, 0xc0, b'\x51') + b'\x00',      # Trailing truncated leaf
+            bytes([0, 0xc0, 0xfd, 0x01]),          # Truncated script length
+            ]:
+            ret = wally_map_add_integer(tree, 1, value, len(value))
+            self.assertEqual(ret, WALLY_EINVAL)
+
+        value = leaf(1, 0xc0, b'\x51') + leaf(2, 0xc0, b'') + leaf(128, 0xc0, b'\x52')
+        ret = wally_map_add_integer(tree, 1, value, len(value))
+        self.assertEqual(ret, WALLY_OK)
+
+        # Valid trees round-trip, invalid trees fail to parse
+        b64 = self.to_base64(psbt)
+        psbt2 = self.parse_base64(b64)
+        self.assertEqual(self.to_base64(psbt2), b64)
+        wally_psbt_free(psbt2)
+        ret, length = wally_psbt_get_length(psbt, 0)
+        self.assertEqual(ret, WALLY_OK)
+        buf, buf_len = make_cbuffer('00' * length)
+        self.assertEqual(wally_psbt_to_bytes(psbt, 0, buf, buf_len), (WALLY_OK, length))
+        invalid = bytes(buf).replace(value, leaf(1, 0xc1, b'\x51') + value[4:])
+        ret = wally_psbt_from_bytes(invalid, len(invalid), 0, pointer(wally_psbt()))
+        self.assertEqual(ret, WALLY_EINVAL)
+        wally_psbt_free(psbt)
+
     def test_psbt(self):
         """Test creating and modifying various PSBT fields"""
         tx = pointer(wally_tx())
