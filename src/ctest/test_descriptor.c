@@ -2490,6 +2490,27 @@ static const descriptor_test g_descriptor_cases[] = {
         "descriptor errchk - uncompressed binding key",
         "ct(uncompressed,elwpkh(key_4))",
         WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        /* Only the outermost expression (or ct() script) has the el prefix */
+        "descriptor errchk - el prefix on a nested descriptor",
+        "elsh(elwpkh(key_1))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        "descriptor errchk - el prefix on a nested miniscript",
+        "wsh(elpk(key_1))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        "descriptor errchk - el prefix on both expressions",
+        "elwsh(elpk(key_1))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        "descriptor errchk - el prefix on a tapscript leaf",
+        "eltr(key_1,elpk(key_1))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        "descriptor errchk - el prefix on a nested ct() descriptor",
+        "ct(slip77(slip77_key),elsh(elwpkh(key_1)))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     }
     /* Elements/Confidential wallet policy error cases */
     , {
