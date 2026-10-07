@@ -160,6 +160,7 @@ libwallycore_la_SOURCES = \
     internal.c \
     map.c \
     miniscript_decode.c \
+    miniscript_satisfy.c \
     mnemonic.c \
     pbkdf2.c \
     psbt.c \
@@ -311,6 +312,14 @@ test_miniscript_decode_CFLAGS = $(TESTS_CFLAGS)
 test_miniscript_decode_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if PYTHON_MANYLINUX
 test_miniscript_decode_LDADD += $(PYTHON_LIBS)
+endif
+TESTS += test_miniscript_satisfy
+noinst_PROGRAMS += test_miniscript_satisfy
+test_miniscript_satisfy_SOURCES = ctest/test_miniscript_satisfy.c miniscript_satisfy.c miniscript_decode.c script_iter.c
+test_miniscript_satisfy_CFLAGS = $(TESTS_CFLAGS)
+test_miniscript_satisfy_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+if PYTHON_MANYLINUX
+test_miniscript_satisfy_LDADD += $(PYTHON_LIBS)
 endif
 if BUILD_ELEMENTS
 TESTS += test_elements_tx
