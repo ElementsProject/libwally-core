@@ -69,6 +69,7 @@
 #include "src/hmac.c"
 #include "src/map.c"
 #include "src/miniscript_decode.c"
+#include "src/miniscript_satisfy.c"
 #include "src/mnemonic.c"
 #include "src/pbkdf2.c"
 #include "src/pullpush.c"
