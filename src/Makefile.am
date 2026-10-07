@@ -159,6 +159,7 @@ libwallycore_la_SOURCES = \
     hmac.c \
     internal.c \
     map.c \
+    miniscript_decode.c \
     mnemonic.c \
     pbkdf2.c \
     psbt.c \
@@ -302,6 +303,14 @@ test_descriptor_CFLAGS = $(TESTS_CFLAGS)
 test_descriptor_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if PYTHON_MANYLINUX
 test_descriptor_LDADD += $(PYTHON_LIBS)
+endif
+TESTS += test_miniscript_decode
+noinst_PROGRAMS += test_miniscript_decode
+test_miniscript_decode_SOURCES = ctest/test_miniscript_decode.c miniscript_decode.c script_iter.c
+test_miniscript_decode_CFLAGS = $(TESTS_CFLAGS)
+test_miniscript_decode_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+if PYTHON_MANYLINUX
+test_miniscript_decode_LDADD += $(PYTHON_LIBS)
 endif
 if BUILD_ELEMENTS
 TESTS += test_elements_tx
