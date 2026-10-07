@@ -361,7 +361,7 @@ static int is_valid_policy_map(const struct wally_map *map_in, bool *is_elements
 static bool is_elements_policy_map(const struct wally_map *map_in)
 {
     /* Elements policy maps must have the blinding key @B first */
-    return map_in->num_items && map_in->items[0].key_len == 2 &&
+    return map_in && map_in->num_items && map_in->items[0].key_len == 2 &&
         map_in->items[0].key[0] == '@' && map_in->items[0].key[1] == 'B';
 }
 
