@@ -1765,10 +1765,18 @@ static inline ms_node *tr_get_tr(const struct wally_descriptor *descriptor)
     return node;
 }
 
+/* Whether a descriptor is a tr() with a taptree. Note that a tapscript
+ * miniscript expression is WALLY_MS_IS_TAPSCRIPT but has no taptree */
+static inline bool tr_has_tree(const struct wally_descriptor *descriptor)
+{
+    const uint32_t tree_features = WALLY_MS_IS_TAPROOT | WALLY_MS_IS_TAPSCRIPT;
+    return (descriptor->features & tree_features) == tree_features;
+}
+
 /* Return the taptree for a tr() descriptor, or NULL if non-tr() or no tree */
 static inline ms_node *tr_get_tree(const struct wally_descriptor *descriptor)
 {
-    if (descriptor->features & WALLY_MS_IS_TAPSCRIPT)
+    if (tr_has_tree(descriptor))
         return tr_get_tr(descriptor)->child->next;
     return NULL;
 }
@@ -3665,6 +3673,8 @@ int wally_descriptor_parse(const char *miniscript,
     if (ret == WALLY_OK) {
         ctx->src_len = strlen(ctx->src);
         ctx->features = WALLY_MS_IS_DESCRIPTOR; /* Un-set if miniscript found */
+        if ((flags & WALLY_MINISCRIPT_ONLY) && (flags & WALLY_MINISCRIPT_TAPSCRIPT))
+            ctx->features |= WALLY_MS_IS_TAPSCRIPT; /* Apply tapscript rules */
         if (flags & WALLY_MINISCRIPT_AS_ELEMENTS) {
             ctx->features |= WALLY_MS_IS_ELEMENTS; /* Treat as an elements descriptor */
         }
@@ -4283,7 +4293,7 @@ static int ensure_unique_keys(const ms_ctx *ctx)
     struct wally_map m;
     bool have_overlap = have_overlapped_keys(ctx, &ctx->keys);
 
-    if (have_overlap && (ctx->features & WALLY_MS_IS_TAPSCRIPT)) {
+    if (have_overlap && tr_has_tree(ctx)) {
         /* Tapscript with overlapping keys.
          * Iterate each leaf script, and check for overlapping keys. */
         ms_node *taptree = tr_get_tree(ctx);
@@ -4324,7 +4334,7 @@ static int tr_get_leaf(const struct wally_descriptor *descriptor,
                        uint32_t leaf_index, ms_node **leaf)
 {
     *leaf = NULL;
-    if (descriptor && descriptor->features & WALLY_MS_IS_TAPSCRIPT) {
+    if (descriptor && tr_has_tree(descriptor)) {
         ms_node *taptree = tr_get_tree(descriptor);
         if (taptree)
             *leaf = find_taptree_leaf(taptree, leaf_index, NULL);
@@ -4469,7 +4479,7 @@ int wally_descriptor_get_taproot_control_block_len(
     if (written)
         *written = 0;
     if (!index_args_valid(descriptor, 0, multi_index, child_num) ||
-        flags || !written || !(descriptor->features & WALLY_MS_IS_TAPSCRIPT))
+        flags || !written || !tr_has_tree(descriptor))
         return WALLY_EINVAL;
 
     if (!find_taptree_leaf(tr_get_tree(descriptor), leaf_index, &leaf_depth))
@@ -4535,8 +4545,7 @@ int wally_descriptor_get_taproot_merkle_root(
     int ret;
 
     if (!index_args_valid(descriptor, 0, multi_index, child_num) ||
-        flags || !bytes_out || len != SHA256_LEN ||
-        !(descriptor->features & WALLY_MS_IS_TAPSCRIPT))
+        flags || !bytes_out || len != SHA256_LEN || !tr_has_tree(descriptor))
         return WALLY_EINVAL;
 
     ret = ctx_clone(descriptor, 0, multi_index, child_num, &ctx);

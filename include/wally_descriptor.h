@@ -37,7 +37,7 @@ struct wally_descriptor;
 #define WALLY_MS_IS_ELIP150       0x0400 /** A confidential ct() descriptor with ELIP-150 blinding */
 #define WALLY_MS_IS_ELIP151       0x0800 /** A confidential ct() descriptor with ELIP-151 blinding */
 #define WALLY_MS_IS_TAPROOT       0x1000 /** Contains a tr() taproot expression */
-#define WALLY_MS_IS_TAPSCRIPT     0x2000 /** Contains a tr(key,{...}) tapscript tree expression */
+#define WALLY_MS_IS_TAPSCRIPT     0x2000 /** Contains a tr(key,{...}) tapscript tree, or is a tapscript miniscript expression */
 #define WALLY_MS_ANY_BLINDING_KEY 0x0E00 /** SLIP-77, ELIP-150 or ELIP-151 blinding key present */
 
 /*** ms-canonicalization-flags Miniscript/Descriptor canonicalization flags */

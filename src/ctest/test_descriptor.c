@@ -1289,6 +1289,42 @@ static const descriptor_test g_descriptor_cases[] = {
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY | WALLY_MINISCRIPT_TAPSCRIPT,
         "20ff7e7b1d3c4ba385cb1f2e6423bf30c96fb5007e7917b09ec1b6c965ef644d13ac",
         "", VARS_STD
+    }, {
+        /* Tapscript rules apply to tapscript miniscript expressions */
+        "miniscript - multi_a tapscript",
+        "multi_a(1,key_local,key_remote)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY | WALLY_MINISCRIPT_TAPSCRIPT,
+        "208bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac20a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ba519c",
+        "", VARS_STD
+    }, {
+        "miniscript errchk - multi_a non-tapscript",
+        "multi_a(1,key_local,key_remote)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY, NULL, "", VARS_STD
+    }, {
+        "miniscript errchk - multi tapscript",
+        "multi(1,key_local,key_remote)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY | WALLY_MINISCRIPT_TAPSCRIPT, NULL, "", VARS_STD
+    }, {
+        "miniscript - pkh x-only tapscript",
+        "pkh(x_only)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY | WALLY_MINISCRIPT_TAPSCRIPT,
+        "76a914c4347771e9f9e5ce8e492f0b3f71e71276763c5288ac",
+        "", VARS_STD
+    }, {
+        "miniscript errchk - pkh x-only non-tapscript",
+        "pkh(x_only)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY, NULL, "", VARS_STD
+    }, {
+        /* d: is u in tapscript (MINIMALIF), so may be a thresh() argument */
+        "miniscript - d: wrapper tapscript",
+        "thresh(1,dv:older(1))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY | WALLY_MINISCRIPT_TAPSCRIPT,
+        "766351b269685187", /* DUP IF 1 CSV VERIFY ENDIF 1 EQUAL */
+        "", VARS_STD
+    }, {
+        "miniscript errchk - d: wrapper non-tapscript",
+        "thresh(1,dv:older(1))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY, NULL, "", VARS_STD
     },
     /*
      * Ledger 'a' wrapper vulnerability:
@@ -3327,6 +3363,25 @@ static bool check_descriptor_to_script(const descriptor_test* test)
         goto end;
     }
 
+    if (!(features & WALLY_MS_IS_TAPROOT)) {
+        /* Taptree functions fail for non-tr() expressions, including
+         * tapscript miniscript expressions */
+        unsigned char merkle_root[SHA256_LEN];
+        size_t control_block_len;
+        ret = wally_descriptor_get_taproot_merkle_root(descriptor, 0, 0, 0,
+                                                       merkle_root, sizeof(merkle_root));
+        if (!check_ret("get_taproot_merkle_root", ret, WALLY_EINVAL)) {
+            ret = false;
+            goto end;
+        }
+        ret = wally_descriptor_get_taproot_control_block_len(descriptor, 0, 0, 0, 0,
+                                                             &control_block_len);
+        if (!check_ret("get_taproot_control_block_len", ret, WALLY_EINVAL)) {
+            ret = false;
+            goto end;
+        }
+    }
+
     len_ret = wally_descriptor_to_script_get_maximum_length(descriptor,
                                                             0, 0, 0, 0, 0, 0,
                                                             &max_written);
@@ -3704,6 +3759,8 @@ static bool check_sanity(void)
         { "tr(key_local,pk(key_local))", 0, true },
         { "tr(x_only,{pk(key_local),and_v(v:pk(key_remote),pk(key_remote))})", 0, false },
         { "tr(x_only,{pk(key_local),older(144)})", 0, false },
+        { "and_v(v:pk(key_local),pk(key_remote))", WALLY_MINISCRIPT_ONLY | WALLY_MINISCRIPT_TAPSCRIPT, true },
+        { "and_v(v:pk(key_local),pk(key_local))", WALLY_MINISCRIPT_ONLY | WALLY_MINISCRIPT_TAPSCRIPT, false },
         /* A constant is checked when it is a whole script */
         { "tr(x_only,1)", 0, false },
         { "n:1", WALLY_MINISCRIPT_ONLY, false },
