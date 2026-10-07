@@ -164,6 +164,7 @@ libwallycore_la_SOURCES = \
     psbt.c \
     pullpush.c \
     script.c \
+    script_iter.c \
     scrypt.c \
     sign.c \
     symmetric.c \
@@ -277,6 +278,14 @@ test_script_CFLAGS = $(TESTS_CFLAGS)
 test_script_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if PYTHON_MANYLINUX
 test_script_LDADD += $(PYTHON_LIBS)
+endif
+TESTS += test_script_iter
+noinst_PROGRAMS += test_script_iter
+test_script_iter_SOURCES = ctest/test_script_iter.c script_iter.c
+test_script_iter_CFLAGS = $(TESTS_CFLAGS)
+test_script_iter_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+if PYTHON_MANYLINUX
+test_script_iter_LDADD += $(PYTHON_LIBS)
 endif
 TESTS += test_tx
 noinst_PROGRAMS += test_tx
