@@ -3163,7 +3163,9 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
 
     for (i = 0; i < str_len; ++i) {
         if (!node->builtin && str[i] == ':') {
-            if (i - offset > sizeof(node->wrapper_str) - 1) {
+            if (node->wrapper_str[0] || i == offset ||
+                i - offset > sizeof(node->wrapper_str) - 1) {
+                /* Wrappers must be a single group, e.g. dv:X not d:v:X */
                 ret = WALLY_EINVAL;
                 break;
             }

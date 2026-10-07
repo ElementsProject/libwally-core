@@ -888,6 +888,42 @@ static const descriptor_test g_descriptor_cases[] = {
         NULL,
         "", VARS_STD
     }, {
+        "miniscript - Multiple wrapper groups",
+        "d:v:older(144)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - Multiple wrapper groups (argument)",
+        "or_d(pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798),d:v:older(144))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - Multiple wrapper groups (constant)",
+        "n:n:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - Empty wrapper group",
+        ":pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - Empty second wrapper group",
+        "and_b(pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798),s::pk(03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "descriptor - Multiple wrapper groups",
+        "wsh(and_v(v:pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798),j:n:pk(03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a)))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        NULL,
+        "", VARS_STD
+    }, {
         "miniscript - Number too small to parse",
         "older(-9223372036854775808)",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
