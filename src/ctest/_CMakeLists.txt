@@ -43,6 +43,11 @@ add_test(test_psbt_limits test_psbt_limits)
 #target_link_libraries(test_script PRIVATE wallycore)
 #add_test(test_script test_script)
 
+add_executable(test_script_iter test_script_iter.c ../script_iter.c)
+target_include_directories(test_script_iter PRIVATE ${CMAKE_BINARY_DIR} $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>)
+target_link_libraries(test_script_iter PRIVATE wallycore)
+add_test(test_script_iter test_script_iter)
+
 add_executable(test_tx test_tx.c)
 target_include_directories(test_tx PRIVATE ${CMAKE_BINARY_DIR})
 target_link_libraries(test_tx PRIVATE wallycore)
