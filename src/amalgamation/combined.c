@@ -73,6 +73,7 @@
 #include "src/pullpush.c"
 #include "src/psbt.c"
 #include "src/script.c"
+#include "src/script_iter.c"
 #include "src/scrypt.c"
 #include "src/sign.c"
 #include "src/symmetric.c"
