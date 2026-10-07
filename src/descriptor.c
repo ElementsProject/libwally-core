@@ -1201,7 +1201,7 @@ static int verify_thresh(ms_ctx *ctx, ms_node *node)
     for (child = top->next; child; child = child->next) {
         const uint32_t expected_type = count ? TYPE_W : TYPE_B;
 
-        if (!child->builtin || (~child->type_properties & (expected_type | PROP_D | PROP_U)))
+        if (~child->type_properties & (expected_type | PROP_D | PROP_U))
             return WALLY_EINVAL;
 
         if (~child->type_properties & PROP_E)
@@ -3030,8 +3030,11 @@ static int analyze_miniscript_value(ms_ctx *ctx, const char *str, size_t str_len
     node->data_len = str_len;
 
     if (strtoll_n(node->data, node->data_len, &node->number)) {
-        node->type_properties = TYPE_B | PROP_Z | PROP_U | PROP_M | PROP_X | PROP_K;
-        node->type_properties |= (node->number ? PROP_F : (PROP_D | PROP_E | PROP_S));
+        if (str_len == 1 && (node->number == 0 || node->number == 1)) {
+            /* The constants 0 and 1 are also miniscript expressions */
+            node->type_properties = TYPE_B | PROP_Z | PROP_U | PROP_M | PROP_X | PROP_K;
+            node->type_properties |= (node->number ? PROP_F : (PROP_D | PROP_E | PROP_S));
+        }
         node->kind = KIND_NUMBER;
         return WALLY_OK;
     }
@@ -3238,8 +3241,7 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
             seen_indent = true;
         } else if (str[i] == '#') {
             if (i - offset != 0) {
-                if (!node->builtin && node->wrapper_str[0] &&
-                    i - offset == strlen(node->wrapper_str)) {
+                if (!node->builtin && node->wrapper_str[0]) {
                     /* wrapper:value followed by checksum */
                     str_len -= (DESCRIPTOR_CHECKSUM_LENGTH + 1);
                     break;

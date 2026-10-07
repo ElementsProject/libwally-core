@@ -955,12 +955,6 @@ static const descriptor_test g_descriptor_cases[] = {
         NULL,
         "", VARS_STD
     }, {
-        "miniscript - Rust-miniscript issue 63",
-        "nl:0",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
-        NULL,
-        "", VARS_STD
-    }, {
         "miniscript - Rust-miniscript context test",
         "or_i(pk(uncompressed),pk(uncompressed))",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
@@ -1254,6 +1248,60 @@ static const descriptor_test g_descriptor_cases[] = {
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
         "6b516c", /* OP_TOALTSTACK 1 OP_FROMALTSTACK */
         "7yjru3ju", VARS_STD
+    },
+    {
+        "miniscript - multiple wrappers on a constant",
+        "nn:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "519292", /* 1 OP_0NOTEQUAL OP_0NOTEQUAL */
+        "r3hnpd8l", VARS_STD
+    },
+    {
+        "miniscript - multiple wrappers on a constant (t: v:)",
+        "tv:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "516951", /* 1 OP_VERIFY 1 */
+        "a99hx0fw", VARS_STD
+    },
+    {
+        "miniscript - Rust-miniscript issue 63",
+        /* l:0 is or_i(0,0), which is B, so n: can be applied to it */
+        "nl:0",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "630067006892", /* OP_IF 0 OP_ELSE 0 OP_ENDIF OP_0NOTEQUAL */
+        "7av6f6pz", VARS_STD
+    },
+    {
+        "miniscript - constant thresh sub-expression",
+        "thresh(1,0)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "005187", /* 0 1 OP_EQUAL */
+        "49d8q8gh", VARS_STD
+    },
+    {
+        "miniscript - wrapped constant thresh sub-expression",
+        "thresh(1,l:0)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "63006700685187", /* OP_IF 0 OP_ELSE 0 OP_ENDIF 1 OP_EQUAL */
+        "pt68qf2u", VARS_STD
+    },
+    {
+        "miniscript - only 0 and 1 are constants",
+        "and_v(v:pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798),2)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL, "", VARS_STD
+    },
+    {
+        "miniscript - only 0 and 1 are constants (negative)",
+        "or_i(pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798),-1)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL, "", VARS_STD
+    },
+    {
+        "miniscript - only 0 and 1 are constants (leading zero)",
+        "and_v(v:pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798),01)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL, "", VARS_STD
     },
     {
         "miniscript - Ledger 'a' wrapper bug (interior arg of a built-in)",
