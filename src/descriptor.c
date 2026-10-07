@@ -2114,7 +2114,7 @@ static int generate_concat(ms_ctx *ctx, ms_node *node, size_t target_num,
             memcpy(script + offset, insert[i], insert_len[i]);
         offset += insert_len[i];
         if (offset < script_len)
-            remaining_len = script_len - offset - 1;
+            remaining_len = script_len - offset;
         ret = generate_script(ctx, children[indices[i]],
                               script + offset, remaining_len, &output_len);
         if (ret != WALLY_OK)
@@ -2244,7 +2244,7 @@ static int generate_thresh(ms_ctx *ctx, ms_node *node,
         return WALLY_EINVAL;
 
     for (child = child->next; child && ret == WALLY_OK; child = child->next) {
-        remaining_len = offset >= script_len ? 0 : script_len - offset - 1;
+        remaining_len = offset >= script_len ? 0 : script_len - offset;
         ret = generate_script(ctx, child,
                               script + offset, remaining_len, &output_len);
         if (ret == WALLY_OK) {
@@ -2256,7 +2256,7 @@ static int generate_thresh(ms_ctx *ctx, ms_node *node,
         }
     }
     if (ret == WALLY_OK) {
-        remaining_len = offset >= script_len ? 0 : script_len - offset - 1;
+        remaining_len = offset >= script_len ? 0 : script_len - offset;
         ret = generate_script(ctx, node->child,
                               script + offset, remaining_len, &output_len);
     }

@@ -473,6 +473,12 @@ static const descriptor_test g_descriptor_cases[] = {
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
         "51207b56ea61956475f5751c4da934cd2ac20d3088f327c60ffe249bc7a66b9952b0",
         "", VARS_STD
+    },{
+        "descriptor - tr - mixed and_v and multi_a",
+        "tr(x_only,and_v(v:older(52560),pk(key_1)))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "51200eef017155c84dc3c63290fc70f72148d7db8498f5b4b3c8091b99ca32529208",
+        "d5l45drf", VARS_STD
     },
 #ifdef BUILD_ELEMENTS
     /* Elements/Confidential descriptors */
