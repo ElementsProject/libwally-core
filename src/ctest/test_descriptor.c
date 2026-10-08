@@ -3110,10 +3110,12 @@ static bool check_descriptor_to_script(const descriptor_test* test)
     const bool is_policy = test->flags & WALLY_MINISCRIPT_POLICY_TEMPLATE;
     const struct wally_map *keys = &g_vars[test->policy_map_index];
 
-    /* Parse the descriptor. */
+    /* Parse the descriptor. We allow insane scripts so that the tests
+     * fail for their own specific reason rather than sanity checks */
     expected_ret = test->script ? WALLY_OK : WALLY_EINVAL;
     ret = wally_descriptor_parse(test->descriptor, keys, test->network,
-                                 test->flags, &descriptor);
+                                 test->flags | WALLY_MINISCRIPT_ALLOW_NON_SANE,
+                                 &descriptor);
     if (is_policy && expected_ret == WALLY_OK) {
         /* Re-parse with strict key checking */
         wally_descriptor_free(descriptor);
@@ -3541,6 +3543,91 @@ static bool check_canonical_length_overflow(void)
     return tests_ok;
 }
 
+/* Verify that insane scripts are rejected unless allowed. The wsh() results
+ * match Bitcoin Core's sanity checks for the same miniscript, leaving out
+ * its resource limits, which are not checked here.
+ */
+#define SANITY_XPUB "xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB"
+static bool check_sanity(void)
+{
+    static const struct {
+        const char *descriptor;
+        uint32_t flags;
+        bool is_sane;
+    } cases[] = {
+        /* Spendable without a signature after the timelock */
+        { "wsh(or_d(pk(key_local),older(144)))", 0, false },
+        /* A repeated key */
+        { "wsh(multi(2,key_local,key_remote,key_remote))", 0, false },
+        { "wsh(and_v(v:pk(key_local),pk(key_local)))", 0, false },
+        { "wsh(sortedmulti(1,key_local,key_local))", 0, false },
+        { "sh(multi(1,key_local,key_local))", 0, false },
+        /* Keys are compared as derived, ignoring their origin */
+        { "wsh(multi(1," SANITY_XPUB "/0/*," SANITY_XPUB "/1/*))", 0, true },
+        { "wsh(multi(1," SANITY_XPUB "/0/*," SANITY_XPUB "/0/*))", 0, false },
+        { "wsh(multi(1,[d34db33f/0]" SANITY_XPUB "/0/*," SANITY_XPUB "/0/*))", 0, false },
+        /* Malleable */
+        { "wsh(and_v(v:pk(key_local),or_i(older(1),older(2))))", 0, false },
+        /* Mixes a height and a time timelock */
+        { "wsh(and_v(v:pk(key_local),and_v(v:older(144),older(4194305))))", 0, false },
+        { "wsh(and_v(v:pk(key_local),and_b(after(100),adv:after(500000001))))", 0, false },
+        /* Sane, including timelocks under d:, n: and j:, and constants */
+        { "wsh(multi(2,key_local,key_remote,key_revocation))", 0, true },
+        { "wsh(and_v(v:pk(key_local),older(144)))", 0, true },
+        { "wsh(and_v(v:pk(key_local),and_b(after(100),adv:after(200))))", 0, true },
+        { "wsh(and_v(v:pk(key_local),n:after(100)))", 0, true },
+        { "wsh(and_v(v:pk(key_local),j:multi(1,key_remote)))", 0, true },
+        { "wsh(and_b(pk(key_local),a:1))", 0, true },
+        /* Each tapscript is checked on its own */
+        { "tr(x_only,{pk(key_local),pk(key_local)})", 0, true },
+        { "tr(key_local,pk(key_local))", 0, true },
+        { "tr(x_only,{pk(key_local),and_v(v:pk(key_remote),pk(key_remote))})", 0, false },
+        { "tr(x_only,{pk(key_local),older(144)})", 0, false },
+        /* A constant is checked when it is a whole script */
+        { "tr(x_only,1)", 0, false },
+        { "n:1", WALLY_MINISCRIPT_ONLY, false },
+        { "wsh(and_v(v:pk(key_local),1))", 0, true },
+#ifdef BUILD_ELEMENTS
+        { "eltr(x_only,1)", 0, false },
+        { "ct(slip77(slip77_key),eltr(x_only,1))", 0, false },
+#endif
+        /* Each multi-path alternative is checked */
+        { "wsh(multi(2," SANITY_XPUB "/<0;1>/*," SANITY_XPUB "/<2;3>/*))", 0, true },
+        { "wsh(multi(2," SANITY_XPUB "/<0;1>/*," SANITY_XPUB "/<2;1>/*))", 0, false },
+        { "tr(x_only,multi_a(2," SANITY_XPUB "/<0;1>/*," SANITY_XPUB "/<2;1>/*))", 0, false },
+    };
+    const struct wally_map *keys = &g_vars[VARS_STD];
+    bool tests_ok = true;
+    size_t i;
+
+    for (i = 0; i < NUM_ELEMS(cases); ++i) {
+        struct wally_descriptor *descriptor = NULL;
+        int ret;
+
+        ret = wally_descriptor_parse(cases[i].descriptor, keys,
+                                     WALLY_NETWORK_NONE, cases[i].flags,
+                                     &descriptor);
+        if (!check_ret("sanity", ret, cases[i].is_sane ? WALLY_OK : WALLY_EINVAL)) {
+            printf("[%s] sanity check failed!\n", cases[i].descriptor);
+            tests_ok = false;
+        }
+        wally_descriptor_free(descriptor);
+        descriptor = NULL;
+
+        /* Every case parses when insane scripts are allowed */
+        ret = wally_descriptor_parse(cases[i].descriptor, keys,
+                                     WALLY_NETWORK_NONE,
+                                     cases[i].flags | WALLY_MINISCRIPT_ALLOW_NON_SANE,
+                                     &descriptor);
+        if (!check_ret("allow insane", ret, WALLY_OK)) {
+            printf("[%s] allow insane failed!\n", cases[i].descriptor);
+            tests_ok = false;
+        }
+        wally_descriptor_free(descriptor);
+    }
+    return tests_ok;
+}
+
 int main(void)
 {
     bool tests_ok = true;
@@ -3574,6 +3661,11 @@ int main(void)
 
     if (!check_canonical_length_overflow()) {
         printf("canonical length overflow test failed!\n");
+        tests_ok = false;
+    }
+
+    if (!check_sanity()) {
+        printf("sanity test failed!\n");
         tests_ok = false;
     }
 

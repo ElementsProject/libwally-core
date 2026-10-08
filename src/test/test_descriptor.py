@@ -17,6 +17,7 @@ REQUIRE_CHECKSUM = 0x4  # WALLY_MINISCRIPT_REQUIRE_CHECKSUM
 POLICY           = 0x08 # WALLY_MINISCRIPT_POLICY_TEMPLATE
 UNIQUE_KEYPATHS  = 0x10 # WALLY_MINISCRIPT_UNIQUE_KEYPATHS
 AS_ELEMENTS      = 0x20 # WALLY_MINISCRIPT_AS_ELEMENTS
+ALLOW_NON_SANE   = 0x40 # WALLY_MINISCRIPT_ALLOW_NON_SANE
 
 MS_IS_RANGED       = 0x1
 MS_IS_MULTIPATH    = 0x2
@@ -71,7 +72,9 @@ class DescriptorTests(unittest.TestCase):
         ]
         for miniscript, child_num, expected in args:
             d = c_void_p()
-            ret = wally_descriptor_parse(miniscript, self.keys, NETWORK_NONE, MS_ONLY, d)
+            # The first case can be spent without a signature
+            ret = wally_descriptor_parse(miniscript, self.keys, NETWORK_NONE,
+                                         MS_ONLY | ALLOW_NON_SANE, d)
             self.assertEqual(ret, WALLY_OK)
             ret, written = wally_descriptor_to_script(d, 0, 0, 0, 0, child_num,
                                                       0, script, script_len)
@@ -101,13 +104,13 @@ class DescriptorTests(unittest.TestCase):
 
         # hash fragment tests: (miniscript, flags, expected_hex)
         hash_args = [
-            ('sha256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2)', MS_ONLY,
+            ('sha256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2)', MS_ONLY | ALLOW_NON_SANE,
              '82012088a8209267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed287'),
-            ('hash256(131772552c01444cd81360818376a040b7c3b2b7b0a53550ee3edde216cec61b)', MS_ONLY,
+            ('hash256(131772552c01444cd81360818376a040b7c3b2b7b0a53550ee3edde216cec61b)', MS_ONLY | ALLOW_NON_SANE,
              '82012088aa20131772552c01444cd81360818376a040b7c3b2b7b0a53550ee3edde216cec61b87'),
-            ('ripemd160(6ad07d21fd5dfc646f0b30577045ce201616b9ba)', MS_ONLY,
+            ('ripemd160(6ad07d21fd5dfc646f0b30577045ce201616b9ba)', MS_ONLY | ALLOW_NON_SANE,
              '82012088a6146ad07d21fd5dfc646f0b30577045ce201616b9ba87'),
-            ('hash160(20195b5a3d650c17f0f29f91c33f8f6335193d07)', MS_ONLY,
+            ('hash160(20195b5a3d650c17f0f29f91c33f8f6335193d07)', MS_ONLY | ALLOW_NON_SANE,
              '82012088a91420195b5a3d650c17f0f29f91c33f8f6335193d0787'),
         ]
         for hash_ms, flags, expected in hash_args:
@@ -367,7 +370,7 @@ class DescriptorTests(unittest.TestCase):
              0, MS_IS_UNCOMPRESSED|MS_IS_RAW|MS_IS_DESCRIPTOR, 2, 1),
             # Miniscript
             ('j:and_v(vdv:after(1567547623),older(2016))',
-             MS_ONLY, 0, 3, 0),
+             MS_ONLY | ALLOW_NON_SANE, 0, 3, 0),
             # pk() is both descriptor and miniscript valid and should parse as each
             (f'or_d(thresh(1,pk({k1})),and_v(v:thresh(1,pk({k2}/)),older(30)))',
              0, MS_IS_PRIVATE, 5, 2),
@@ -710,7 +713,9 @@ class DescriptorTests(unittest.TestCase):
 
         for miniscript, expected in wrapper_cases:
             d = c_void_p()
-            ret = wally_descriptor_parse(miniscript, self.keys, NETWORK_NONE, MS_ONLY, d)
+            # Several wrapped fragments need no signature on their own
+            ret = wally_descriptor_parse(miniscript, self.keys, NETWORK_NONE,
+                                         MS_ONLY | ALLOW_NON_SANE, d)
             self.assertEqual(ret, WALLY_OK, f'parse failed for: {miniscript}')
             ret, written = wally_descriptor_to_script(d, 0, 0, 0, 0, 0, 0, script, script_len)
             self.assertEqual(ret, WALLY_OK, f'to_script failed for: {miniscript}')

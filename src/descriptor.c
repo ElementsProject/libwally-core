@@ -23,7 +23,8 @@
         WALLY_MINISCRIPT_REQUIRE_CHECKSUM | \
         WALLY_MINISCRIPT_POLICY_TEMPLATE | \
         WALLY_MINISCRIPT_UNIQUE_KEYPATHS | \
-        WALLY_MINISCRIPT_AS_ELEMENTS)
+        WALLY_MINISCRIPT_AS_ELEMENTS | \
+        WALLY_MINISCRIPT_ALLOW_NON_SANE)
 #define MS_FLAGS_CANONICALIZE (WALLY_MINISCRIPT_REQUIRE_CHECKSUM | \
         WALLY_MINISCRIPT_POLICY_TEMPLATE)
 
@@ -267,7 +268,7 @@ static bool index_args_valid(const struct wally_descriptor *descriptor,
            multi_index < descriptor->num_multipaths;
 }
 
-static int ensure_unique_policy_keys(const ms_ctx *ctx);
+static int ensure_unique_keys(const ms_ctx *ctx);
 
 /* Built-in miniscript expressions */
 typedef int (*node_verify_fn_t)(ms_ctx *ctx, ms_node *node);
@@ -3597,6 +3598,30 @@ fail_nomem:
     return ret;
 }
 
+static int ensure_sane(const ms_node *node)
+{
+    if (node->kind == KIND_DESCRIPTOR_SH || node->kind == KIND_DESCRIPTOR_WSH ||
+        node->kind == KIND_DESCRIPTOR_TR || node->kind == KIND_DESCRIPTOR_CT ||
+        node->kind == KIND_BRANCH) {
+        /* Check each script held by this expression */
+        ms_node *child;
+        for (child = node->child; child != NULL; child = child->next) {
+            if (child->builtin || child->kind == KIND_BRANCH ||
+                child->kind == KIND_NUMBER) {
+                if (ensure_sane(child) != WALLY_OK)
+                    return WALLY_EINVAL;
+            }
+        }
+    } else if (node->builtin || node->kind == KIND_NUMBER) {
+        /* Fragment (or numeric constant acting as a full script) */
+        const uint32_t SANE = PROP_S | PROP_M | PROP_K;
+        if ((node->kind & (KIND_MINISCRIPT | KIND_NUMBER)) &&
+            (node->type_properties & SANE) != SANE)
+            return WALLY_EINVAL; /* Signature-free, malleable or mixed timelocks */
+    }
+    return WALLY_OK;
+}
+
 int wally_descriptor_parse(const char *miniscript,
                            const struct wally_map *vars_in,
                            uint32_t network, uint32_t flags,
@@ -3664,8 +3689,13 @@ int wally_descriptor_parse(const char *miniscript,
             else if ((ctx->features & (WALLY_MS_IS_SLIP77 | WALLY_MS_IS_ELIP150)) &&
                     !have_blinding_key)
                 ret = WALLY_EINVAL; /* this ct policy requires a blinding key var */
-            else if (flags & WALLY_MINISCRIPT_UNIQUE_KEYPATHS)
-                ret = ensure_unique_policy_keys(ctx);
+        }
+        if (ret == WALLY_OK) {
+            if (!(flags & WALLY_MINISCRIPT_ALLOW_NON_SANE)) {
+                ret = ensure_sane(ctx->top_node);
+                if (ret == WALLY_OK)
+                    ret = ensure_unique_keys(ctx);
+            }
         }
     }
     if (ret != WALLY_OK) {
@@ -4215,7 +4245,8 @@ static int are_keys_overlapped(const ms_ctx *ctx,
         memcmp(lhs->data, rhs->data, lhs->data_len))
         return WALLY_OK; /* Different root keys */
     if (lhs->child_path_len == rhs->child_path_len &&
-        !memcmp(lhs->child_path, rhs->child_path, lhs->child_path_len))
+        (!lhs->child_path_len ||
+         !memcmp(lhs->child_path, rhs->child_path, lhs->child_path_len)))
         return WALLY_EINVAL; /* Identical paths */
     if (!(lhs->flags & WALLY_MS_IS_MULTIPATH))
         return WALLY_OK; /* Non-identical ranged, non-multipath keys */
@@ -4232,19 +4263,59 @@ static int are_keys_overlapped(const ms_ctx *ctx,
     return WALLY_OK;
 }
 
-static int ensure_unique_policy_keys(const ms_ctx *ctx)
+static bool have_overlapped_keys(const ms_ctx *ctx, const struct wally_map *m)
 {
-    size_t i, j;
-
-    for (i = 0; i < ctx->keys.num_items; ++i) {
-        const ms_node *node = descriptor_get_key(ctx, i);
-        for (j = i + 1; j < ctx->keys.num_items; ++j) {
-            int ret = are_keys_overlapped(ctx, node, descriptor_get_key(ctx, j));
-            if (ret != WALLY_OK)
-                return ret;
+    /* Check all pairs of keys in the map */
+    for (size_t i = 0; i < m->num_items; ++i) {
+        const ms_node *lhs = (ms_node *)m->items[i].value;
+        for (size_t j = i + 1; j < m->num_items; ++j) {
+            const ms_node *rhs = (ms_node *)m->items[j].value;
+            if (are_keys_overlapped(ctx, lhs, rhs) != WALLY_OK)
+                return true;
         }
     }
-    return WALLY_OK;
+    return false;
+}
+
+static int ensure_unique_keys(const ms_ctx *ctx)
+{
+    struct wally_map m;
+    bool have_overlap = have_overlapped_keys(ctx, &ctx->keys);
+
+    if (have_overlap && (ctx->features & WALLY_MS_IS_TAPSCRIPT)) {
+        /* Tapscript with overlapping keys.
+         * Iterate each leaf script, and check for overlapping keys. */
+        ms_node *taptree = tr_get_tree(ctx);
+        uint32_t num_leaves;
+        if (!taptree)
+            return WALLY_EINVAL;
+
+        if (wally_map_init(ctx->keys.num_items, NULL, &m) != WALLY_OK)
+            return WALLY_ENOMEM;
+
+        have_overlap = false;
+        num_leaves = count_taptree_leaves(taptree);
+
+        for (size_t i = 0; !have_overlap && i < num_leaves; ++i) {
+            ms_node *leaf = find_taptree_leaf(taptree, i, NULL);
+            /* Collect the keys used by this script */
+            m.num_items = 0;
+            for (size_t key_index = 0; ; ++key_index) {
+                 ms_node * key_node = find_nth_key_in_subtree(leaf, key_index);
+                 if (!key_node)
+                     break;
+                 m.items[m.num_items].key_len = m.num_items;
+                 m.items[m.num_items].value = (unsigned char *)key_node;
+                 m.items[m.num_items].value_len = 1;
+                 ++m.num_items;
+            }
+            /* Check for overlapping keys */
+            have_overlap = have_overlapped_keys(ctx, &m);
+        }
+        m.num_items = 0; /* Dont free value pointers */
+        wally_map_clear(&m);
+    }
+    return have_overlap ? WALLY_EINVAL : WALLY_OK;
 }
 
 /* Fetch the leaf_index'th leaf (DFS order) of a tr() descriptor's taptree */
