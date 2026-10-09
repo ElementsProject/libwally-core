@@ -360,16 +360,18 @@ static bool scriptpubkey_is_p2sh(const unsigned char *bytes, size_t bytes_len)
            bytes[22] == OP_EQUAL;
 }
 
-static bool scriptpubkey_is_p2wpkh(const unsigned char *bytes, size_t bytes_len)
+bool scriptpubkey_is_p2wpkh(const unsigned char *bytes, size_t bytes_len)
 {
-    return bytes_len == WALLY_SCRIPTPUBKEY_P2WPKH_LEN &&
+    /* Note this is called from elsewhere hence we check 'bytes' for NULL */
+    return bytes && bytes_len == WALLY_SCRIPTPUBKEY_P2WPKH_LEN &&
            bytes[0] == OP_0 && /* Segwit v0 */
            bytes[1] == 20; /* HASH160 */
 }
 
-static bool scriptpubkey_is_p2wsh(const unsigned char *bytes, size_t bytes_len)
+bool scriptpubkey_is_p2wsh(const unsigned char *bytes, size_t bytes_len)
 {
-    return bytes_len == WALLY_SCRIPTPUBKEY_P2WSH_LEN &&
+    /* Note this is called from elsewhere hence we check 'bytes' for NULL */
+    return bytes && bytes_len == WALLY_SCRIPTPUBKEY_P2WSH_LEN &&
            bytes[0] == OP_0 && /* Segwit v0 */
            bytes[1] == 32; /* SHA256 */
 }

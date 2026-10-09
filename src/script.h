@@ -20,6 +20,8 @@ int script_get_push_opcode_size_from_bytes(
 /* Get OP_N */
 bool script_is_op_n(unsigned char op, bool allow_zero, size_t *n);
 
+bool scriptpubkey_is_p2wpkh(const unsigned char *bytes, size_t bytes_len);
+bool scriptpubkey_is_p2wsh(const unsigned char *bytes, size_t bytes_len);
 bool scriptpubkey_is_p2tr(const unsigned char *bytes, size_t bytes_len);
 
 /* Return true if bytes is exactly a witness program that can be encoded as
