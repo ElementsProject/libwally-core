@@ -2902,6 +2902,7 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
     }
 
     /* Check for a bip32 key */
+    bool is_hardened_path = false;
     if ((node->child_path = memchr(node->data, '/', node->data_len))) {
         node->child_path_len = node->data_len - (node->child_path - node->data);
         node->data_len = node->child_path - node->data; /* Trim to bip32 key */
@@ -2937,6 +2938,8 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
                 ctx->features |= WALLY_MS_IS_RANGED;
                 node->flags |= WALLY_MS_IS_RANGED;
             }
+            if (features & BIP32_PATH_IS_HARDENED)
+                is_hardened_path = true;
             if (num_elems > ctx->max_path_elems)
                 ctx->max_path_elems = num_elems;
         } else {
@@ -2955,8 +2958,11 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
             /* MS_IS_PRIVATE refers only to signing keys - not blinding keys */
             ctx->features |= WALLY_MS_IS_PRIVATE;
         }
-    } else
+    } else {
         node->kind = KIND_BIP32_PUBLIC_KEY;
+        if (is_hardened_path)
+            return WALLY_EINVAL; /* Path not derivable from a public parent */
+    }
 
     if (ctx->addr_ver) {
         const bool main_key = extkey.version == BIP32_VER_MAIN_PUBLIC ||
