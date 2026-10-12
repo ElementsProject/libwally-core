@@ -717,9 +717,11 @@ static const descriptor_test g_descriptor_cases[] = {
         "", VARS_STD
     }, {
         "miniscript - random 16",
-        "or_d(d:and_v(v:older(4252898),v:older(4252898)),sha256(38df1c1f64a24a77b23393bca50dff872e31edc4f3b5aa3b90ad0b82f4f089b6))",
+        /* or_d requires a Bdu first argument; d: only has u in tapscript, so
+         * the n: wrapper is needed here (as in rust-miniscript's corpus) */
+        "or_d(nd:and_v(v:older(4252898),v:older(4252898)),sha256(38df1c1f64a24a77b23393bca50dff872e31edc4f3b5aa3b90ad0b82f4f089b6))",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
-        "766303e2e440b26903e2e440b26968736482012088a82038df1c1f64a24a77b23393bca50dff872e31edc4f3b5aa3b90ad0b82f4f089b68768",
+        "766303e2e440b26903e2e440b2696892736482012088a82038df1c1f64a24a77b23393bca50dff872e31edc4f3b5aa3b90ad0b82f4f089b68768",
         "", VARS_STD
     }, {
         "miniscript - random 17",
@@ -853,6 +855,23 @@ static const descriptor_test g_descriptor_cases[] = {
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
         "6300670400ca9a3bb16951686b6300670164b16951686c936b2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac6c935287",
         "", VARS_STD
+    }, {
+        /* Ill-typed and_b/or_b/or_c/or_d arguments (from rust-miniscript) */
+        "miniscript errchk - and_b second argument not W",
+        "and_b(after(1),after(2))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY, NULL, "", VARS_STD
+    }, {
+        "miniscript errchk - or_b second argument not W",
+        "or_b(or_i(0,sha256(926a54995ca48600920a19bf7bc502ca5f2f7d07e6f804c4f00ebf0325084dbc)),after(1))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY, NULL, "", VARS_STD
+    }, {
+        "miniscript errchk - or_c second argument not V",
+        "or_d(sha256(926a54995ca48600920a19bf7bc502ca5f2f7d07e6f804c4f00ebf0325084dbc),or_c(after(500000001),sha256(926a54995ca48600920a19bf7bc502ca5f2f7d07e6f804c4f00ebf0325084dbc)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY, NULL, "", VARS_STD
+    }, {
+        "miniscript errchk - or_d first argument not u",
+        "or_d(j:and_v(vdv:after(1567547623),older(16)),pk(key_local))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY, NULL, "", VARS_STD
     }, {
         "miniscript - thresh counts its arguments from its non-z children (positive case)",
         "or_b(pk(key_remote),s:thresh(1,pk(key_local)))",
@@ -1238,10 +1257,12 @@ static const descriptor_test g_descriptor_cases[] = {
     },
     {
         "miniscript - Ledger 'a' wrapper bug (interior arg of a built-in)",
-        "and_b(a:1,pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798))",
+        /* thresh() is the only fragment taking a W-typed argument in an
+         * interior position (and_b/or_b take theirs last) */
+        "thresh(1,pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798),a:pk(03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a),s:pk(025601570cb47f238d2b0286db4a990fa0f3ba28d1a319f5e7cf55c2a2444da7cc))",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
-        "6b516c210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac9a",
-        "c27u392r", VARS_STD
+        "210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac6b2103d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85aac6c937c21025601570cb47f238d2b0286db4a990fa0f3ba28d1a319f5e7cf55c2a2444da7ccac935187",
+        "ucszrt3x", VARS_STD
     },
     {
         "miniscript - Ledger 'a' wrapper bug (final arg of built-in)",
