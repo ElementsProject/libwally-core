@@ -2311,6 +2311,11 @@ static const descriptor_test g_descriptor_cases[] = {
         "ct(@0/**,elpkh(@1/**))",
         WALLY_NETWORK_LIQUID, 0, 0, 0, NULL,
         WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, "", VARS_P_2
+    }, {
+        "ct policy errchk - multipath after comma",
+        "ct(@B,**@0/**)",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, "", VARS_PKB
     },
 #endif /* BUILD_ELEMENTS */
 };

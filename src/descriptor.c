@@ -615,7 +615,7 @@ static int canonicalize_impl(const char *descriptor,
                 lookup_len = item ? item->value_len : lookup_len;
                 memcpy(out, item ? (char *)item->value : start, lookup_len);
                 if (item && flags & WALLY_MINISCRIPT_POLICY_TEMPLATE) {
-                    if (p[1] == '*' && p[2] == '*') {
+                    if (p[0] == '/' && p[1] == '*' && p[2] == '*') {
                         out += lookup_len;
                         lookup_len = strlen("/<0;1>/*");
                         memcpy(out, "/<0;1>/*", lookup_len);
@@ -626,6 +626,10 @@ static int canonicalize_impl(const char *descriptor,
             out += lookup_len;
         }
     }
+
+    if ((size_t)(out - *output) != required_len)
+        return WALLY_ERROR; /* Should not happen! */
+
     *out++ = '#';
     out[DESCRIPTOR_CHECKSUM_LENGTH] = '\0';
     if (generate_checksum(*output, required_len, out) != WALLY_OK ||
