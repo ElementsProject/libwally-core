@@ -141,6 +141,12 @@ static const descriptor_test g_descriptor_cases[] = {
         "210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac",
         "gn28ywm7", VARS_STD
     },{
+        "descriptor - p2pk via c:pk_k",
+        "c:pk_k(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
+        "210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac",
+        "03nezk76", VARS_STD
+    },{
         "descriptor - p2pk uncompressed",
         "pk(uncompressed)",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
@@ -152,6 +158,12 @@ static const descriptor_test g_descriptor_cases[] = {
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "76a91406afd46bcdfd22ef94ac122aa11f241244a37ecc88ac",
         "8fhd9pwu", VARS_STD
+    },{
+        "descriptor - p2pkh via c:pk_h",
+        "c:pk_h(02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
+        "76a91406afd46bcdfd22ef94ac122aa11f241244a37ecc88ac",
+        "gt4r02yt", VARS_STD
     },{
         "descriptor - p2pkh uncompressed",
         "pkh(uncompressed)",
@@ -503,6 +515,30 @@ static const descriptor_test g_descriptor_cases[] = {
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "76a9145a61ff8eb7aaca3010db97ebda76121610b7809688ac",
         "hw2glz99", VARS_STD
+    }, {
+        "descriptor - ct with pk expression",
+        "ct(slip77(slip77_key),pk(key_4))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0,
+        "2102fc9e5af0ac8d9b3cecfe2a888e2117ba3d089d8585886c9c826b6b22a98d12eaac",
+        "pydhtt2d", VARS_STD
+    }, {
+        "descriptor - ct with pk_k expression requires c: wrapper to become type B",
+        "ct(slip77(slip77_key),c:pk_k(key_4))", /* Logically the same as the case above */
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0,
+        "2102fc9e5af0ac8d9b3cecfe2a888e2117ba3d089d8585886c9c826b6b22a98d12eaac",
+        "xz2h0xwf", VARS_STD
+    }, {
+        "descriptor - ct with pkh expression",
+        "ct(slip77(slip77_key),pkh(key_4))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0,
+        "76a9145a61ff8eb7aaca3010db97ebda76121610b7809688ac",
+        "nggzwpd2", VARS_STD
+    }, {
+        "descriptor - ct with pk_h expression requires c: wrapper to become type B",
+        "ct(slip77(slip77_key),c:pk_h(key_4))", /* Logically the same as the case above */
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0,
+        "76a9145a61ff8eb7aaca3010db97ebda76121610b7809688ac",
+        "3zsqyvxh", VARS_STD
     },
 #endif
     {
@@ -2239,6 +2275,26 @@ static const descriptor_test g_descriptor_cases[] = {
         "ct(slip77(slip77_key),elpkh(key_4),elpkh(mainnet_xpub))",
         WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     }, {
+        "descriptor errchk - ct pk_k expression must be top level or type B",
+        "ct(slip77(slip77_key),pk_k(key_4))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        "descriptor errchk - ct pk_h expression must be top level or type B",
+        "ct(slip77(slip77_key),pk_h(key_4))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        "descriptor errchk - ct pk expression must be type B",
+        "ct(slip77(slip77_key),v:pk(key_4))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        "descriptor errchk - ct pkh expression must be type B",
+        "ct(slip77(slip77_key),a:pkh(key_4))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        "descriptor errchk - ct multi expression must be type B",
+        "ct(slip77(slip77_key),v:multi(1,key_1,key_2))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
         "descriptor errchk - no args to slip77()",
         "ct(slip77,elpkh(key_4))",
         WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
@@ -3738,6 +3794,16 @@ static bool check_sanity(void)
     } cases[] = {
         /* Spendable without a signature after the timelock */
         { "wsh(or_d(pk(key_local),older(144)))", 0, false },
+        /* base pk_k/pk_h are spendable without a signature at any time */
+        { "pk_k(key_local)", 0, false },
+        { "pk_h(key_local)", 0, false },
+        /* c: wrapper converts to a base expression by appending CHECKSIG */
+        { "c:pk_k(key_local)", 0, true },
+        { "c:pk_h(key_local)", 0, true },
+        { "v:pk(key_local)", 0, false },
+        { "a:pkh(key_local)", 0, false },
+        { "v:multi(1,key_local,key_remote)", 0, false },
+        { "and_v(v:pk(key_local),v:pk(key_remote))", 0, false },
         /* A repeated key */
         { "wsh(multi(2,key_local,key_remote,key_remote))", 0, false },
         { "wsh(and_v(v:pk(key_local),pk(key_local)))", 0, false },
