@@ -470,7 +470,7 @@ class DescriptorTests(unittest.TestCase):
             keys = {f'@{i}': xpub for i,xpub in enumerate(xpubs)}
             return wally_map_from_dict(keys)
 
-        P, K = POLICY, UNIQUE_KEYPATHS
+        P = POLICY
         bad_args = [
             # Raw pubkey
             [P, 'pkh(@0/*)', ['038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048']],
@@ -489,11 +489,14 @@ class DescriptorTests(unittest.TestCase):
             # Keys must be unique in the substitution list (always)
             [P, 'sh(multi(1, @0/*,@1/*))', [xpub1, xpub1]],
             # Keys must be unique in the final expression (with flag)
-            [P|K, 'sh(multi(1,@0/*,@0/*))', [xpub1]],
-            [P|K, 'sh(multi(1,@0/**,@0/**))', [xpub1]],
-            # Key multi-paths must be disjoint sets
-            [P|K, 'sh(multi(1,@0/<0;1>/*,@0/<1;2>/*))', [xpub1]],
-            [P|K, 'sh(multi(1,@0/<1;0>/*,@0/<2;1>/*))', [xpub1]],
+            [P, 'sh(multi(1,@0/*,@0/*))', [xpub1]],
+            [P, 'sh(multi(1,@0/**,@0/**))', [xpub1]],
+            # Key multi-paths must be disjoint sets at each derivation step
+            [P, 'sh(multi(1,@0/<0;1>/*,@0/<2;1>/*))', [xpub1]],
+            [P, 'sh(multi(1,@0/<1;0>/*,@0/<1;2>/*))', [xpub1]],
+            # Key multi-paths must be disjoint sets (BIP-388)
+            [P, 'sh(multi(1,@0/<0;1>/*,@0/<1;2>/*))', [xpub1]],
+            [P, 'sh(multi(1,@0/<1;0>/*,@0/<2;1>/*))', [xpub1]],
             # Keys must not be negative
             [P, 'pkh(@-1/*)', {'@-1': xpub1}],
             # Keys must not have leading space
