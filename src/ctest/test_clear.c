@@ -126,7 +126,7 @@ static bool in_stack(const char *caller, volatile const void *search, size_t len
         if (!wally_memcmp(gstack + i, (const void *)search, len)) {
             if (caller) {
                 printf("Found %s secret at stack position %ld and base %p\n", caller, (long)i, (void *)gstack);
-                printf("raw pointer: %p\n", gstack + i);
+                printf("raw pointer: %p\n", (void *)(gstack + i));
                 dump_mem(gstack + i - 64, len + 128);
             }
             return true; /* Found */
