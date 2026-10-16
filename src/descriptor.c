@@ -3673,6 +3673,10 @@ int wally_descriptor_parse(const char *miniscript,
         return WALLY_EINVAL;
     }
 #endif
+    if ((flags & WALLY_MINISCRIPT_POLICY_TEMPLATE) &&
+        (flags & WALLY_MINISCRIPT_ALLOW_NON_SANE))
+        return WALLY_EINVAL; /* Disallow insane policies */
+
     /* Allocate a context to hold the canonicalized/parsed expression */
     if (!(*output = wally_calloc(sizeof(ms_ctx))))
         return WALLY_ENOMEM;

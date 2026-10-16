@@ -3342,21 +3342,15 @@ static bool check_descriptor_to_script(const descriptor_test* test)
     const struct wally_map *keys = &g_vars[test->policy_map_index];
 
     /* Parse the descriptor. We allow insane scripts so that the tests
-     * fail for their own specific reason rather than sanity checks */
+     * fail for their own specific reason rather than sanity checks.
+     * Policies cannot opt out of sanity checks, so are parsed as is */
     expected_ret = test->script ? WALLY_OK : WALLY_EINVAL;
     ret = wally_descriptor_parse(test->descriptor, keys, test->network,
-                                 test->flags | WALLY_MINISCRIPT_ALLOW_NON_SANE,
+                                 test->flags | (is_policy ? 0 : WALLY_MINISCRIPT_ALLOW_NON_SANE),
                                  &descriptor);
-    if (is_policy && expected_ret == WALLY_OK) {
-        /* Re-parse with strict key checking */
-        wally_descriptor_free(descriptor);
-        ret = wally_descriptor_parse(test->descriptor, keys, test->network,
-                                     test->flags | WALLY_MINISCRIPT_UNIQUE_KEYPATHS,
-                                     &descriptor);
-    }
-    if (expected_ret == WALLY_OK || ret == expected_ret) {
-        /* For failure cases, we may fail when generating instead of parsing,
-         * we catch those cases below */
+    if (expected_ret == WALLY_OK || ret != WALLY_OK) {
+        /* Parsing must fail with the expected error. Failure cases
+         * may instead fail when generating, we catch those cases below */
         if (!check_ret("descriptor_parse", ret, expected_ret))
             return false;
 

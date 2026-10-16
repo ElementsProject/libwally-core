@@ -470,7 +470,7 @@ class DescriptorTests(unittest.TestCase):
             keys = {f'@{i}': xpub for i,xpub in enumerate(xpubs)}
             return wally_map_from_dict(keys)
 
-        P = POLICY
+        P, I = POLICY, ALLOW_NON_SANE
         bad_args = [
             # Raw pubkey
             [P, 'pkh(@0/*)', ['038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048']],
@@ -504,6 +504,8 @@ class DescriptorTests(unittest.TestCase):
             # Keys must not have leading zeros
             [P, 'pkh(@00/*)', {'@00': xpub1}],
             [P, 'sh(multi(1,@0/*,@01/*))', {'@0': xpub1, '@01': xpub2}],
+            # Policies cannot opt out of sanity parsing
+            [P|I, 'pkh(@0/*)', {'@0': xpub1}],
         ]
         d = c_void_p()
         for flags, policy, key_items in bad_args:
