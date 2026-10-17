@@ -135,11 +135,13 @@ static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, 
 /* Get the witness or non-witness utxo from an input.
  * If psbt is NULL then the PSBT must be version 2.
  */
-static const struct wally_tx_output *utxo_from_input(const struct wally_psbt *psbt,
-                                                     const struct wally_psbt_input *input)
+static const struct wally_tx_output *utxo_from_input(
+    const struct wally_psbt *psbt,
+    const struct wally_psbt_input *input,
+    bool use_non_witness_only)
 {
     if (input) {
-        if (input->witness_utxo)
+        if (input->witness_utxo && !use_non_witness_only)
             return input->witness_utxo;
         if (input->utxo) {
             if (psbt && psbt->tx && psbt->num_inputs == psbt->tx->num_inputs) {
@@ -166,7 +168,7 @@ struct wally_psbt_input *psbt_get_input_signature_type(const struct wally_psbt *
                                                        size_t index, uint32_t *value_out)
 {
     struct wally_psbt_input *inp = psbt_get_input(psbt, index);
-    const struct wally_tx_output *utxo = utxo_from_input(psbt, inp);
+    const struct wally_tx_output *utxo = utxo_from_input(psbt, inp, false);
     const unsigned char *script;
     size_t script_len;
 
@@ -769,7 +771,7 @@ int wally_psbt_input_generate_explicit_proofs(
 #ifndef BUILD_ELEMENTS
     return WALLY_ERROR;
 #else
-    const struct wally_tx_output *utxo = utxo_from_input(NULL, input);
+    const struct wally_tx_output *utxo = utxo_from_input(NULL, input, false);
     unsigned char proof[ASSET_SURJECTIONPROOF_MAX_LEN]; /* > ASSET_EXPLICIT_RANGEPROOF_MAX_LEN */
     size_t proof_len;
     int ret;
@@ -2559,7 +2561,7 @@ unknown:
         /* Commitment key isn't used for PSET_IN_EXPLICIT_VALUE/ASSET */
         const uint64_t unused_key = 0xffffffff;
         /* This works here only for v2+, which is fine since PSET is v2+ */
-        const struct wally_tx_output *utxo = utxo_from_input(psbt, result);
+        const struct wally_tx_output *utxo = utxo_from_input(psbt, result, false);
 
         if (!pset_check_proof(result, utxo, NULL, PSET_FT(PSET_IN_ISSUANCE_VALUE),
                               PSET_IN_ISSUANCE_VALUE_COMMITMENT,
@@ -4429,7 +4431,7 @@ static int get_signing_script(const struct wally_psbt *psbt, size_t index,
                               const unsigned char **script, size_t *script_len)
 {
     const struct wally_psbt_input *inp = psbt_get_input(psbt, index);
-    const struct wally_tx_output *utxo = utxo_from_input(psbt, inp);
+    const struct wally_tx_output *utxo = utxo_from_input(psbt, inp, false);
     const struct wally_map_item *item;
     int ret;
 
@@ -4506,6 +4508,30 @@ static int get_scriptcode(const struct wally_psbt *psbt, size_t index,
            ret = is_matching_txid(inp->utxo, txid, sizeof(txid));
         if (ret != WALLY_OK)
             return ret; /* Prevout doesn't match input */
+
+        if (inp->witness_utxo) {
+            /* Have witness + non-witness utxos: verify they are consistent */
+            const struct wally_tx_output *utxo;
+            utxo = utxo_from_input(psbt, inp, /*non_witness_only=*/ true);
+            if (!utxo ||
+                utxo->script_len != inp->witness_utxo->script_len ||
+                memcmp(utxo->script, inp->witness_utxo->script, utxo->script_len))
+                return WALLY_EINVAL; /* Inconsistent utxos */
+#ifdef BUILD_ELEMENTS
+            size_t is_pset;
+            if (wally_psbt_is_elements(psbt, &is_pset) != WALLY_OK)
+                return WALLY_EINVAL; /* Invalid PSET */
+            if (is_pset) {
+                if (utxo->asset_len != inp->witness_utxo->asset_len ||
+                    memcmp(utxo->asset, inp->witness_utxo->asset, utxo->asset_len) ||
+                    utxo->value_len != inp->witness_utxo->value_len ||
+                    memcmp(utxo->value, inp->witness_utxo->value, utxo->value_len))
+                    return WALLY_EINVAL; /* Inconsistent utxos */
+            } else /* Fall through */
+#endif
+            if (utxo->satoshi != inp->witness_utxo->satoshi)
+                return WALLY_EINVAL; /* Inconsistent utxos */
+        }
     }
 
     if (!psbt_get_input_signature_type(psbt, index, &sighash_type))
@@ -4637,7 +4663,7 @@ static int get_signing_data(const struct wally_psbt *psbt,
      */
     for (size_t i = 0; i < psbt->num_inputs && ret == WALLY_OK; ++i) {
         const struct wally_psbt_input *p = psbt->inputs + i;
-        const struct wally_tx_output *utxo = utxo_from_input(psbt, p);
+        const struct wally_tx_output *utxo = utxo_from_input(psbt, p, false);
         if (utxo) {
             /* Add items to maps without allocating/copying */
             append_signing_data(scripts, i, utxo->script, utxo->script_len);
@@ -5387,7 +5413,7 @@ int wally_psbt_blind(struct wally_psbt *psbt,
     for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i) {
         /* TODO: Handle issuance */
         const struct wally_psbt_input *in = psbt->inputs + i;
-        const struct wally_tx_output *utxo = utxo_from_input(psbt, in);
+        const struct wally_tx_output *utxo = utxo_from_input(psbt, in, false);
         unsigned char *ephemeral_input_tag = ephemeral_input_tags + i * ASSET_GENERATOR_LEN;
         const struct wally_map_item *value;
 
@@ -5853,7 +5879,7 @@ int wally_psbt_get_input_best_utxo(const struct wally_psbt *psbt, size_t index,
                                    const struct wally_tx_output **output)
 {
     const struct wally_psbt_input *p = psbt_get_input(psbt, index);
-    const struct wally_tx_output *utxo = p ? utxo_from_input(psbt, p) : NULL;
+    const struct wally_tx_output *utxo = p ? utxo_from_input(psbt, p, false) : NULL;
     if (output) *output = NULL;
     if (!p || !output)
         return WALLY_EINVAL;
