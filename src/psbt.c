@@ -4378,37 +4378,64 @@ int wally_psbt_clone_alloc(const struct wally_psbt *psbt, uint32_t flags,
     return ret;
 }
 
+/* Find a key derived from hdkey to sign an input with, if one exists */
+static int psbt_get_input_bip32_key_from(const struct wally_psbt *psbt,
+                                         size_t index, size_t subindex,
+                                         const struct ext_key *hdkey,
+                                         struct ext_key *output, bool *found)
+{
+    const struct wally_psbt_input *inp = psbt_get_input(psbt, index);
+    size_t written = 0, sig_idx = 0;
+    int ret;
+
+    *found = false;
+    wally_clear(output, sizeof(*output));
+    if (!inp || !hdkey)
+        return WALLY_EINVAL;
+
+    /* Find any matching key in the inputs keypaths */
+    ret = wally_map_keypath_get_bip32_key_from(&inp->keypaths, subindex,
+                                               hdkey, output, &written);
+    if (ret == WALLY_OK && written) {
+        /* Found: Make sure we don't have a signature already */
+        ret = wally_map_find_bip32_public_key_from(&inp->signatures, 0,
+                                                   output, &sig_idx);
+        *found = ret == WALLY_OK && !sig_idx;
+    } else if (ret == WALLY_OK &&
+               !wally_map_get_integer(&inp->psbt_fields, PSBT_IN_TAP_KEY_SIG)) {
+        /* We don't have a taproot signature, so try matching the taproot key */
+        ret = wally_map_keypath_get_bip32_key_from(&inp->taproot_leaf_paths,
+                                                   subindex, hdkey, output, &written);
+        *found = ret == WALLY_OK && written;
+    }
+    if (!*found)
+        wally_clear(output, sizeof(*output));
+    return ret;
+}
+
 int wally_psbt_get_input_bip32_key_from_alloc(const struct wally_psbt *psbt,
                                               size_t index, size_t subindex,
                                               uint32_t flags,
                                               const struct ext_key *hdkey,
                                               struct ext_key **output)
 {
-    const struct wally_psbt_input *inp = psbt_get_input(psbt, index);
-    size_t sig_idx = 0;
+    struct ext_key key;
     int ret;
+    bool found;
+
     if (output)
         *output = NULL;
-    if (!inp || flags || !hdkey || !output)
+    if (!psbt_get_input(psbt, index) || flags || !hdkey || !output)
         return WALLY_EINVAL;
 
-    /* Find any matching key in the inputs keypaths */
-    ret = wally_map_keypath_get_bip32_key_from_alloc(&inp->keypaths, subindex,
-                                                     hdkey, output);
-    if (ret == WALLY_OK && *output) {
-        /* Found: Make sure we don't have a signature already */
-        ret = wally_map_find_bip32_public_key_from(&inp->signatures, 0,
-                                                   *output, &sig_idx);
-        if (ret == WALLY_OK && sig_idx) {
-            bip32_key_free(*output);
-            *output = NULL;
-        }
-    } else if (ret == WALLY_OK &&
-               !wally_map_get_integer(&inp->psbt_fields, PSBT_IN_TAP_KEY_SIG)) {
-        /* We don't have a taproot signature, so try matching the taproot key */
-        ret = wally_map_keypath_get_bip32_key_from_alloc(&inp->taproot_leaf_paths,
-                                                         subindex, hdkey, output);
+    ret = psbt_get_input_bip32_key_from(psbt, index, subindex, hdkey, &key, &found);
+    if (ret == WALLY_OK && found) {
+        if (!(*output = wally_calloc(sizeof(**output))))
+            ret = WALLY_ENOMEM;
+        else
+            memcpy(*output, &key, sizeof(key));
     }
+    wally_clear(&key, sizeof(key));
     return ret;
 }
 
@@ -4852,15 +4879,16 @@ int wally_psbt_sign_bip32(struct wally_psbt *psbt,
         unsigned char txhash[WALLY_TXHASH_LEN];
         const unsigned char *script, *scriptcode;
         size_t script_len, scriptcode_len, subindex = 0;
-        struct ext_key *derived = NULL;
+        struct ext_key derived;
+        bool found;
 
         /* Get or derive a key for signing this input.
          * Note that we do not iterate subindex in this loop, so we will not
          * sign more than one signature that derives from the same parent key.
          */
-        ret = wally_psbt_get_input_bip32_key_from_alloc(psbt, i, subindex,
-                                                        0, hdkey, &derived);
-        if (!derived)
+        ret = psbt_get_input_bip32_key_from(psbt, i, subindex, hdkey,
+                                            &derived, &found);
+        if (ret == WALLY_OK && !found)
             continue; /* No key to sign with */
 
         /* Get the scriptpubkey or redeemscript */
@@ -4882,8 +4910,8 @@ int wally_psbt_sign_bip32(struct wally_psbt *psbt,
         if (ret == WALLY_OK)
             ret = wally_psbt_sign_input_bip32(psbt, i, subindex,
                                               txhash, sizeof(txhash),
-                                              derived, flags);
-        bip32_key_free(derived);
+                                              &derived, flags);
+        wally_clear(&derived, sizeof(derived));
     }
 
     wally_tx_free(tx);
