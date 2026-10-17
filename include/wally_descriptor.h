@@ -53,8 +53,9 @@ struct wally_descriptor;
  * :param descriptor: Output descriptor or miniscript expression to parse.
  * :param vars_in: Map of variable names to values, or NULL.
  * :param network: Network the descriptor belongs to. Pass `WALLY_NETWORK_NONE`
- *|    for miniscript-only expressions or to infer the network. Must
- *|    be one of the :ref:`address-networks`. Taproot expressions for
+ *|    for miniscript-only expressions, or to set the network later with
+ *|    `wally_descriptor_set_network`. The network is not inferred from the
+ *|    keys in the expression. Must be one of the :ref:`address-networks`. Taproot expressions for
  *|    Elements networks must use ``eltr()`` or `WALLY_MINISCRIPT_AS_ELEMENTS`.
  *|    Elements expressions cannot be used with Bitcoin networks.
  * :param flags: :ref:`miniscript-flags`. The maximum depth of the descriptor
@@ -117,12 +118,11 @@ WALLY_CORE_API int wally_descriptor_get_checksum(
  * :param value_out: Destination for the resulting network, returned as one
  *|    of the :ref:`address-networks`.
  *
- * A descriptor parsed with `WALLY_NETWORK_NONE` will infer its network from
- * the contained key expressions. If the descriptor does not contain network
- * information (e.g. its keys are raw keys), then this function will
- * return `WALLY_NETWORK_NONE`, and `wally_descriptor_set_network` must be
- * called to set a network for the descriptor before addresses can be
- * generated from it.
+ * This is the network the descriptor was parsed with, or was later given with
+ * `wally_descriptor_set_network`. It is not inferred from the descriptor's
+ * keys: a descriptor parsed with `WALLY_NETWORK_NONE` returns
+ * `WALLY_NETWORK_NONE`, and `wally_descriptor_set_network` must be called
+ * before addresses can be generated from it.
  */
 WALLY_CORE_API int wally_descriptor_get_network(
     const struct wally_descriptor *descriptor,
