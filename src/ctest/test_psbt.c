@@ -1,5 +1,7 @@
 #include "config.h"
 
+#include <wally_address.h>
+#include <wally_crypto.h>
 #include <wally_psbt.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -31,6 +33,95 @@ static void change_version(struct wally_psbt* psbt, uint32_t version, const char
     int ret = wally_psbt_set_version(psbt, 0, version);
     if (ret != WALLY_OK)
         fail("psbt set version to %u returned %d for %s", version, ret, base64_in);
+}
+
+/* A v0 PSBT spending a p2wpkh input that SIGNER_WIF can sign */
+static const char *SIGNER_PSBT =
+    "cHNidP8BAHECAAAAAQ1uGqyWuXswoO+9JP28P/bNV3rmmdNMmCHmpQZOgnLlAAAAAAD9////"
+    "AmDqAAAAAAAAFgAUERERERERERERERERERERERERERFYmAAAAAAAABYAFD40mF3Kb93J+zaZ"
+    "QOTH2OKHP1KcAAAAAAABAR+ghgEAAAAAABYAFMDOvNbD08qMddxexi6+VTMO+RDiIgYDMNVP"
+    "0N1CCm5fjTYk9fNILK41D3nV8HU79b7vnC2RrzwYc8XaClQAAIAAAACAAAAAgAAAAAAAAAAA"
+    "AAAA";
+#define SIGNER_WIF "cPvoq8Ke6vqL63LD5ibmb2cB7L2ekWVCTHHRC35p6FNfwR9nfRAm"
+
+static struct wally_psbt *signer_psbt(uint32_t version, uint32_t sighash)
+{
+    struct wally_psbt *psbt;
+    if (wally_psbt_from_base64(SIGNER_PSBT, 0, &psbt) != WALLY_OK)
+        fail("Failed to parse signer psbt");
+    if (version != WALLY_PSBT_VERSION_0)
+        change_version(psbt, version, SIGNER_PSBT);
+    if (sighash && wally_psbt_input_set_sighash(&psbt->inputs[0], sighash) != WALLY_OK)
+        fail("Failed to set sighash 0x%x", sighash);
+    return psbt;
+}
+
+/* Signing a v2 PSBT must update its modifiable flags (BIP-370), including
+ * when the signatures are combined into another copy of the PSBT */
+static void check_signer_modifiable_flags(void)
+{
+    static const struct {
+        uint32_t sighash;
+        uint32_t flags;
+    } cases[] = {
+        { WALLY_SIGHASH_ALL, 0 },
+        { WALLY_SIGHASH_ALL | WALLY_SIGHASH_ANYONECANPAY, WALLY_PSBT_TXMOD_INPUTS },
+        { WALLY_SIGHASH_NONE, WALLY_PSBT_TXMOD_OUTPUTS },
+        { WALLY_SIGHASH_SINGLE, WALLY_PSBT_TXMOD_SINGLE },
+        { WALLY_SIGHASH_SINGLE | WALLY_SIGHASH_ANYONECANPAY,
+          WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_SINGLE },
+    };
+    const uint32_t modifiable = WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_OUTPUTS;
+    unsigned char priv_key[EC_PRIVATE_KEY_LEN], other_key[EC_PRIVATE_KEY_LEN];
+    struct wally_psbt *psbt, *sigs_only, *combined;
+    char *sigs_base64;
+    size_t i;
+
+    if (wally_wif_to_bytes(SIGNER_WIF, WALLY_ADDRESS_VERSION_WIF_TESTNET, 0,
+                           priv_key, sizeof(priv_key)) != WALLY_OK)
+        fail("Failed to decode signer WIF");
+    memset(other_key, 0x11, sizeof(other_key)); /* Not a key in the PSBT */
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+        psbt = signer_psbt(WALLY_PSBT_VERSION_2, cases[i].sighash);
+        if (psbt->tx_modifiable_flags != modifiable)
+            fail("Unexpected initial modifiable flags");
+        if (wally_psbt_sign(psbt, priv_key, sizeof(priv_key), 0) != WALLY_OK ||
+            psbt->inputs[0].signatures.num_items != 1)
+            fail("Failed to sign with sighash 0x%x", cases[i].sighash);
+        if (psbt->tx_modifiable_flags != cases[i].flags)
+            fail("sighash 0x%x: modifiable flags 0x%x, expected 0x%x", cases[i].sighash,
+                 psbt->tx_modifiable_flags, cases[i].flags);
+
+        /* Combining just the signatures into the unsigned PSBT gives the same flags */
+        combined = signer_psbt(WALLY_PSBT_VERSION_2, cases[i].sighash);
+        if (wally_psbt_to_base64(psbt, WALLY_PSBT_SERIALIZE_SIGS_ONLY, &sigs_base64) != WALLY_OK ||
+            wally_psbt_from_base64(sigs_base64, WALLY_PSBT_PARSE_FLAG_LOOSE, &sigs_only) != WALLY_OK ||
+            wally_psbt_combine_ex(combined, WALLY_PSBT_COMBINE_SIGS, sigs_only) != WALLY_OK)
+            fail("Failed to combine signatures for sighash 0x%x", cases[i].sighash);
+        if (combined->tx_modifiable_flags != cases[i].flags)
+            fail("sighash 0x%x: combined modifiable flags 0x%x, expected 0x%x", cases[i].sighash,
+                 combined->tx_modifiable_flags, cases[i].flags);
+        wally_free_string(sigs_base64);
+        wally_psbt_free(sigs_only);
+        wally_psbt_free(combined);
+        wally_psbt_free(psbt);
+    }
+
+    /* Adding no signature leaves the flags unchanged */
+    psbt = signer_psbt(WALLY_PSBT_VERSION_2, 0);
+    if (wally_psbt_sign(psbt, other_key, sizeof(other_key), 0) != WALLY_OK ||
+        psbt->inputs[0].signatures.num_items || psbt->tx_modifiable_flags != modifiable)
+        fail("Signing with an unrelated key changed the PSBT");
+    wally_psbt_free(psbt);
+
+    /* v0 PSBTs have no modifiable flags */
+    psbt = signer_psbt(WALLY_PSBT_VERSION_0, WALLY_SIGHASH_ALL);
+    if (wally_psbt_sign(psbt, priv_key, sizeof(priv_key), 0) != WALLY_OK ||
+        psbt->inputs[0].signatures.num_items != 1 || psbt->tx_modifiable_flags)
+        fail("Signing a v0 PSBT set modifiable flags");
+    wally_psbt_free(psbt);
+    wally_bzero(priv_key, sizeof(priv_key));
 }
 
 int main(void)
@@ -182,6 +273,8 @@ int main(void)
         wally_psbt_free(psbt_clone);
         wally_psbt_free(psbt);
     }
+
+    check_signer_modifiable_flags();
 
     wally_cleanup(0);
     return 0;

@@ -3954,6 +3954,29 @@ static int psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src,
     return ret;
 }
 
+/* Update a v2 PSBT's modifiable flags for a signature that was added
+ * using the given sighash, as BIP-370 requires of signers. A taproot
+ * SIGHASH_DEFAULT signature covers the same as SIGHASH_ALL. */
+static void psbt_signature_added(struct wally_psbt *psbt, uint32_t sighash)
+{
+    if (psbt->version != PSBT_2)
+        return;
+    if (sighash == WALLY_SIGHASH_DEFAULT)
+        sighash = WALLY_SIGHASH_ALL;
+    if (!(sighash & WALLY_SIGHASH_ANYONECANPAY))
+        psbt->tx_modifiable_flags &= ~WALLY_PSBT_TXMOD_INPUTS;
+    if ((sighash & WALLY_SIGHASH_MASK) != WALLY_SIGHASH_NONE)
+        psbt->tx_modifiable_flags &= ~WALLY_PSBT_TXMOD_OUTPUTS;
+    if ((sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE)
+        psbt->tx_modifiable_flags |= WALLY_PSBT_TXMOD_SINGLE;
+}
+
+/* Return the sighash of a taproot signature */
+static uint32_t taproot_sig_sighash(const unsigned char *sig, size_t sig_len)
+{
+    return sig_len == EC_SIGNATURE_LEN + 1 ? sig[EC_SIGNATURE_LEN] : WALLY_SIGHASH_DEFAULT;
+}
+
 static int psbt_combine_sigs(struct wally_psbt *psbt, const struct wally_psbt *src)
 {
     int ret = WALLY_OK;
@@ -3965,9 +3988,11 @@ static int psbt_combine_sigs(struct wally_psbt *psbt, const struct wally_psbt *s
     for (size_t i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i) {
         struct wally_psbt_input *dst_p = psbt->inputs + i;
         const struct wally_psbt_input *src_p = src->inputs + i;
+        const struct wally_map_item *key_sig = NULL;
+        const bool have_leaf_sigs = dst_p->taproot_leaf_signatures.num_items != 0;
+
         ret = wally_map_combine(&dst_p->signatures, &src_p->signatures);
         if (ret == WALLY_OK) {
-            const struct wally_map_item *key_sig;
             key_sig = wally_map_get_integer(&src_p->psbt_fields, PSBT_IN_TAP_KEY_SIG);
             if (key_sig)
                 ret = wally_map_add_integer(&dst_p->psbt_fields, PSBT_IN_TAP_KEY_SIG,
@@ -3976,6 +4001,20 @@ static int psbt_combine_sigs(struct wally_psbt *psbt, const struct wally_psbt *s
         if (ret == WALLY_OK)
             ret = combine_map_if_empty(&dst_p->taproot_leaf_signatures,
                                        &src_p->taproot_leaf_signatures);
+        if (ret == WALLY_OK) {
+            /* Update the modifiable flags for the signatures added */
+            const struct wally_map *m = &src_p->signatures;
+            for (size_t j = 0; j < m->num_items; ++j)
+                if (m->items[j].value_len)
+                    psbt_signature_added(psbt, m->items[j].value[m->items[j].value_len - 1]);
+            if (key_sig)
+                psbt_signature_added(psbt, taproot_sig_sighash(key_sig->value,
+                                                               key_sig->value_len));
+            m = &src_p->taproot_leaf_signatures;
+            for (size_t j = 0; !have_leaf_sigs && j < m->num_items; ++j)
+                psbt_signature_added(psbt, taproot_sig_sighash(m->items[j].value,
+                                                               m->items[j].value_len));
+        }
     }
     return ret;
 }
@@ -4854,6 +4893,8 @@ int wally_psbt_sign_input_bip32(struct wally_psbt *psbt,
                                                      der, der_len);
             }
         }
+        if (ret == WALLY_OK)
+            psbt_signature_added(psbt, sighash);
     }
 done:
     wally_clear_3(signing_key, sizeof(signing_key), sig,
@@ -6055,16 +6096,8 @@ int wally_psbt_add_input_signature(struct wally_psbt *psbt, size_t index,
     if (!p)
         return WALLY_EINVAL;
     ret = wally_psbt_input_add_signature(p, pub_key, pub_key_len, sig, sig_len);
-    if (ret == WALLY_OK && psbt->version == PSBT_2) {
-        /* Update tx_modifiable_flags based on what the signature covers */
-        const unsigned char sighash = sig[sig_len - 1];
-        if (!(sighash & WALLY_SIGHASH_ANYONECANPAY))
-            psbt->tx_modifiable_flags &= ~WALLY_PSBT_TXMOD_INPUTS;
-        if ((sighash & WALLY_SIGHASH_MASK) != WALLY_SIGHASH_NONE)
-            psbt->tx_modifiable_flags &= ~WALLY_PSBT_TXMOD_OUTPUTS;
-        if ((sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE)
-            psbt->tx_modifiable_flags |= WALLY_PSBT_TXMOD_SINGLE;
-    }
+    if (ret == WALLY_OK)
+        psbt_signature_added(psbt, sig[sig_len - 1]);
     return ret;
 }
 
