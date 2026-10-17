@@ -73,7 +73,7 @@ static void check_signer_modifiable_flags(void)
     };
     const uint32_t modifiable = WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_OUTPUTS;
     unsigned char priv_key[EC_PRIVATE_KEY_LEN], other_key[EC_PRIVATE_KEY_LEN];
-    struct wally_psbt *psbt, *sigs_only, *combined;
+    struct wally_psbt *psbt;
     char *sigs_base64;
     size_t i;
 
@@ -83,6 +83,7 @@ static void check_signer_modifiable_flags(void)
     memset(other_key, 0x11, sizeof(other_key)); /* Not a key in the PSBT */
 
     for (i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+        struct wally_psbt *sigs_only = NULL, *combined = NULL, *clone = NULL;
         psbt = signer_psbt(WALLY_PSBT_VERSION_2, cases[i].sighash);
         if (psbt->tx_modifiable_flags != modifiable)
             fail("Unexpected initial modifiable flags");
@@ -105,6 +106,26 @@ static void check_signer_modifiable_flags(void)
         wally_free_string(sigs_base64);
         wally_psbt_free(sigs_only);
         wally_psbt_free(combined);
+
+        /* Combining with the unsigned PSBT, in either order, gives the same
+         * flags, as does cloning */
+        combined = signer_psbt(WALLY_PSBT_VERSION_2, cases[i].sighash);
+        if (wally_psbt_combine(combined, psbt) != WALLY_OK ||
+            combined->tx_modifiable_flags != cases[i].flags)
+            fail("sighash 0x%x: combining the signed PSBT gave flags 0x%x",
+                 cases[i].sighash, combined->tx_modifiable_flags);
+        wally_psbt_free(combined);
+        if (wally_psbt_clone_alloc(psbt, 0, &clone) != WALLY_OK ||
+            clone->tx_modifiable_flags != cases[i].flags)
+            fail("sighash 0x%x: cloning gave flags 0x%x",
+                 cases[i].sighash, clone->tx_modifiable_flags);
+        combined = signer_psbt(WALLY_PSBT_VERSION_2, cases[i].sighash);
+        if (wally_psbt_combine(clone, combined) != WALLY_OK ||
+            clone->tx_modifiable_flags != cases[i].flags)
+            fail("sighash 0x%x: combining the unsigned PSBT gave flags 0x%x",
+                 cases[i].sighash, clone->tx_modifiable_flags);
+        wally_psbt_free(combined);
+        wally_psbt_free(clone);
         wally_psbt_free(psbt);
     }
 

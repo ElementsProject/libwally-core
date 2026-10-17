@@ -3929,8 +3929,16 @@ static int psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src,
         psbt->has_fallback_locktime = src->has_fallback_locktime;
     }
 
-    /* Take any extra flags from the source psbt that we don't have  */
-    psbt->tx_modifiable_flags |= src->tx_modifiable_flags;
+    if (for_clone)
+        psbt->tx_modifiable_flags = src->tx_modifiable_flags;
+    else {
+        /* A signature in either PSBT restricts what can be modified, so
+         * only keep what both allow, and SIGHASH_SINGLE if either has it */
+        const uint32_t perms = WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_OUTPUTS;
+        const uint32_t both = psbt->tx_modifiable_flags & src->tx_modifiable_flags;
+        const uint32_t either = psbt->tx_modifiable_flags | src->tx_modifiable_flags;
+        psbt->tx_modifiable_flags = (both & perms) | (either & ~perms);
+    }
 
     for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i)
         ret = combine_input(&psbt->inputs[i], &src->inputs[i], is_pset, for_clone);
