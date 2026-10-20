@@ -803,8 +803,6 @@ static int bip143_signature_hash(
     bool is_elements,
     unsigned char *bytes_out, size_t len)
 {
-    const struct wally_tx_input *txin = tx ? tx->inputs + index : NULL;
-    const struct wally_tx_output *txout = tx ? tx->outputs + index : NULL;
     const bool sh_anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
 #ifdef BUILD_ELEMENTS
     const bool sh_rangeproof = sighash & WALLY_SIGHASH_RANGEPROOF;
@@ -850,7 +848,7 @@ static int bip143_signature_hash(
     }
 #endif
     /* Input data */
-    hash_outpoint(&io.ctx, txin);
+    hash_outpoint(&io.ctx, tx->inputs + index);
 #ifdef BUILD_ELEMENTS
     if (is_elements)
         txio_hash_input_elements(&io, tx, index, NULL, NULL, values,
@@ -864,6 +862,7 @@ static int bip143_signature_hash(
     if (sh_none || (sh_single && index >= tx->num_outputs))
         hash_bytes(&io.ctx, zero_hash, sizeof(zero_hash));
     else if (sh_single) {
+        const struct wally_tx_output *txout = tx->outputs + index;
 #ifdef BUILD_ELEMENTS
         if (is_elements)
             txio_hash_sha_single_output_elements(&io, txout, TXIO_UNCACHED_D);
@@ -883,9 +882,10 @@ static int bip143_signature_hash(
     if (sh_rangeproof) {
         if (sh_none || (sh_single && index >= tx->num_outputs))
             hash_bytes(&io.ctx, zero_hash, sizeof(zero_hash));
-        else if (sh_single)
+        else if (sh_single) {
+            const struct wally_tx_output *txout = tx->outputs + index;
             txio_hash_sha_single_output_witness(&io, txout, TXIO_UNCACHED_D);
-        else
+        } else
             txio_hash_sha_output_witnesses(&io, tx, TXIO_SHA_OUTPUT_WITNESSES_D);
     }
 #endif
@@ -946,8 +946,6 @@ static int bip341_signature_hash(
     bool is_elements,
     unsigned char *bytes_out, size_t len)
 {
-    const struct wally_tx_input *txin = tx ? tx->inputs + index : NULL;
-    const struct wally_tx_output *txout = tx ? tx->outputs + index : NULL;
     const uint32_t output_type = tr_get_output_sighash_type(sighash);
     const bool sh_anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
     const bool sh_anyprevout = bip341_is_input_hash_type(sighash, WALLY_SIGHASH_ANYPREVOUT);
@@ -1040,6 +1038,7 @@ static int bip341_signature_hash(
         hash_le32(&io.ctx, tx->inputs[index].sequence); /* nSequence */
     } else if (sh_anyonecanpay || sh_anyprevout) {
         if (sh_anyonecanpay) {
+            const struct wally_tx_input *txin = tx->inputs + index;
 #ifdef BUILD_ELEMENTS
             if (is_elements)
                 txio_hash_outpoint_flag(&io, txin);
@@ -1061,6 +1060,7 @@ static int bip341_signature_hash(
     }
     /* Output data */
     if (output_type == WALLY_SIGHASH_SINGLE) {
+        const struct wally_tx_output *txout = tx->outputs + index;
 #ifdef BUILD_ELEMENTS
         if (is_elements) {
             txio_hash_sha_single_output_elements(&io, txout, TXIO_UNCACHED);
