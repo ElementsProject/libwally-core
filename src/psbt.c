@@ -154,7 +154,7 @@ static const struct wally_tx_output *utxo_from_input(
             if ((!psbt || psbt->version == PSBT_2)) {
                 if (input->index < input->utxo->num_outputs &&
                     !mem_is_zero(input->txhash, WALLY_TXHASH_LEN))
-                return &input->utxo->outputs[input->index];
+                    return &input->utxo->outputs[input->index];
             }
         }
     }
@@ -2954,7 +2954,7 @@ static int push_length_and_tx(unsigned char **cursor, size_t *max,
                               const struct wally_tx *tx, uint32_t flags)
 {
     int ret;
-    size_t tx_len;
+    size_t tx_len, tx_written;
     unsigned char *p;
 
     if ((ret = wally_tx_get_length(tx, flags, &tx_len)) != WALLY_OK)
@@ -2966,7 +2966,10 @@ static int push_length_and_tx(unsigned char **cursor, size_t *max,
     if (!(p = push_bytes(cursor, max, NULL, tx_len)))
         return WALLY_OK; /* We catch this in caller. */
 
-    return wally_tx_to_bytes(tx, flags, p, tx_len, &tx_len);
+    ret = wally_tx_to_bytes(tx, flags, p, tx_len, &tx_written);
+    if (ret == WALLY_OK && tx_written != tx_len)
+        ret = WALLY_ERROR; /* Shouldn't happen! */
+    return ret;
 }
 
 static void push_witness(unsigned char **cursor, size_t *max,
@@ -3482,7 +3485,8 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
     if (written)
         *written = 0;
 
-    if (!psbt_is_valid(psbt) || flags & ~all_flags || !written)
+    if (!psbt_is_valid(psbt) || BYTES_INVALID(bytes_out, len) ||
+        (flags & ~all_flags) || !written)
         return WALLY_EINVAL;
 
     if (flags & WALLY_PSBT_SERIALIZE_SIGS_ONLY)
@@ -4970,7 +4974,8 @@ static bool finalize_p2pkh(struct wally_psbt_input *input)
                                        script, sizeof(script),
                                        &script_len) != WALLY_OK)
         return false;
-
+    if (script_len > sizeof(script))
+        return false; /* Shouldn't happen! */
     return wally_psbt_input_set_final_scriptsig(input, script, script_len) == WALLY_OK;
 }
 
@@ -5513,6 +5518,7 @@ int wally_psbt_blind(struct wally_psbt *psbt,
         const unsigned char *surjectionproof_seed = explicit_rangeproof_seed + BLINDING_FACTOR_LEN;
         const struct wally_map_item *p = wally_map_get_integer(&out->pset_fields, PSET_OUT_ASSET);
         const unsigned char *asset = p && p->value_len == ASSET_TAG_LEN ? p->value : NULL;
+        const struct wally_map_item *blinding_pubkey;
         unsigned char asset_commitment[ASSET_COMMITMENT_LEN];
         unsigned char value_commitment[ASSET_COMMITMENT_LEN];
         const size_t entropy_per_output = 5;
@@ -5533,6 +5539,12 @@ int wally_psbt_blind(struct wally_psbt *psbt,
             ret = WALLY_EINVAL; /* Missing asset, value, or insufficient entropy */
             goto done;
         }
+        blinding_pubkey = wally_map_get_integer(&out->pset_fields, PSET_OUT_BLINDING_PUBKEY);
+        if (!blinding_pubkey) {
+            ret = WALLY_EINVAL; /* Missing blinding pubkey */
+            goto done;
+        }
+
         entropy += BLINDING_FACTOR_LEN * entropy_per_output;
         entropy_len -= BLINDING_FACTOR_LEN * entropy_per_output;
 
@@ -5565,10 +5577,8 @@ int wally_psbt_blind(struct wally_psbt *psbt,
             ret = wally_psbt_output_set_value_commitment(out, value_commitment,
                                                          ASSET_COMMITMENT_LEN);
         if (ret == WALLY_OK) {
-            const struct wally_map_item *blinding_pubkey;
             unsigned char rangeproof[ASSET_RANGEPROOF_MAX_LEN];
             size_t rangeproof_len;
-            blinding_pubkey = wally_map_get_integer(&out->pset_fields, PSET_OUT_BLINDING_PUBKEY);
             ret = wally_asset_rangeproof(out->amount,
                                          blinding_pubkey->value, blinding_pubkey->value_len,
                                          ephemeral_key, EC_PRIVATE_KEY_LEN,
@@ -5581,9 +5591,13 @@ int wally_psbt_blind(struct wally_psbt *psbt,
                                          1, 0, 52,
                                          rangeproof, sizeof(rangeproof),
                                          &rangeproof_len);
-            if (ret == WALLY_OK)
-                ret = wally_psbt_output_set_value_rangeproof(out, rangeproof,
-                                                             rangeproof_len);
+            if (ret == WALLY_OK) {
+                if (rangeproof_len > sizeof(rangeproof))
+                    ret = WALLY_ERROR; /* Shouldn't happen! */
+                else
+                    ret = wally_psbt_output_set_value_rangeproof(out, rangeproof,
+                                                                 rangeproof_len);
+            }
         }
 
         if (ret == WALLY_OK) {
@@ -5596,9 +5610,13 @@ int wally_psbt_blind(struct wally_psbt *psbt,
                                             asset_commitment, ASSET_COMMITMENT_LEN,
                                             rangeproof, sizeof(rangeproof),
                                             &rangeproof_len);
-            if (ret == WALLY_OK)
-                ret = wally_psbt_output_set_value_blinding_rangeproof(out, rangeproof,
-                                                                      rangeproof_len);
+            if (ret == WALLY_OK) {
+                if (rangeproof_len > sizeof(rangeproof))
+                    ret = WALLY_ERROR; /* Shouldn't happen! */
+                else
+                    ret = wally_psbt_output_set_value_blinding_rangeproof(out, rangeproof,
+                                                                          rangeproof_len);
+            }
         }
 
         if (ret == WALLY_OK) {
@@ -6192,10 +6210,10 @@ int wally_psbt_get_output_script(const struct wally_psbt *psbt, size_t index,
     struct wally_psbt_output *p = psbt_get_output(psbt, index);
     if (written)
         *written = 0;
-    if (!p || !written)
+    if (!p || BYTES_INVALID(bytes_out, len) || !written)
         return WALLY_EINVAL;
     *written = psbt->version == PSBT_0 ? psbt->tx->outputs[index].script_len : p->script_len;
-    if (*written <= len && *written)
+    if (bytes_out && *written <= len && *written)
         memcpy(bytes_out,
                psbt->version == PSBT_0 ? psbt->tx->outputs[index].script : p->script,
                *written);
