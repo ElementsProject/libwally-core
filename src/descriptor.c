@@ -1522,8 +1522,12 @@ static int generate_sh_wsh(ms_ctx *ctx, ms_node *node,
                ret = (is_sh ? wally_scriptpubkey_p2sh_from_bytes :
                               wally_witness_program_from_bytes)(
                       script, output_len, flags, output, sizeof(output), written);
-               if (ret == WALLY_OK && *written <= script_len)
-                   memcpy(script, output, *written);
+               if (ret == WALLY_OK) {
+                   if (*written > sizeof(output))
+                       ret = WALLY_EINVAL; /* Shouldn't happen! */
+                   else if (*written <= script_len)
+                       memcpy(script, output, *written);
+               }
            }
         }
     }
