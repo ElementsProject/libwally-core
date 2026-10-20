@@ -119,9 +119,11 @@ static bool value_len_ok(size_t len)
 
 static uint64_t satoshi_from_item(const struct wally_map_item *item)
 {
-    uint64_t v;
-    /* Map values must be in cpu byte order, but may not be aligned */
-    memcpy(&v, item->value, item->value_len);
+    uint64_t v = WALLY_SATOSHI_MAX + 1;
+    if (item && satoshi_len_ok(item->value_len)) {
+        /* memcpy as values must be in cpu byte order but may not be aligned */
+        memcpy(&v, item->value, item->value_len);
+    }
     return v;
 }
 
@@ -206,7 +208,8 @@ static void hash_map_varbuff(struct sha256_ctx *ctx,
                              const struct wally_map *m, size_t index)
 {
     const struct wally_map_item *item = wally_map_get_integer(m, index);
-    hash_varbuff(ctx, item->value, item->value_len);
+    if (item)
+        hash_varbuff(ctx, item->value, item->value_len);
 }
 
 static bool txio_hash_cached_item(cursor_io *io, uint32_t key)
@@ -311,7 +314,8 @@ static void hash_map_commmitment(struct sha256_ctx *ctx,
                                  const struct wally_map *m, size_t index)
 {
     const struct wally_map_item *item = wally_map_get_integer(m, index);
-    hash_commmitment(ctx, item->value, item->value_len);
+    if (item)
+        hash_commmitment(ctx, item->value, item->value_len);
 }
 
 static void hash_asset_issuance(struct sha256_ctx *ctx,
@@ -902,7 +906,7 @@ static void txio_bip341_init(cursor_io *io,
     if (TXIO_CTX_CACHEABLE && io->cache) {
         const struct wally_map_item *item = NULL;
         item = wally_map_get_integer(io->cache, TXIO_SHA_TAPSIGHASH_CTX);
-        if (item) {
+        if (item && item->value_len == sizeof(io->ctx)) {
             /* Note we cached the initial sha256_ctx itself here and so memcpy it */
             memcpy(&io->ctx, item->value, item->value_len);
             return;
@@ -1105,6 +1109,9 @@ int wally_tx_get_input_signature_hash(
         BYTES_INVALID_N(genesis_blockhash, genesis_blockhash_len, SHA256_LEN) ||
         !flags || (flags & ~SIGTYPE_ALL) || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
+
+    if (cache && (cache == scripts || cache == assets || cache == values))
+        return WALLY_EINVAL; /* Caller error */
 
 #ifdef BUILD_ELEMENTS
     if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
