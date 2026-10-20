@@ -2846,8 +2846,9 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
             (node->data[9] != ']' && node->data[9] != '/'))
             return WALLY_EINVAL; /* Invalid key origin fingerprint */
         size = end - node->data + 1;
-        /* Store offset and length of any origin info in the number field */
-        node->number = (uint64_t)(node->data - ctx->src) << 32u;
+        /* Store offset and length of any origin info in the number field.
+         * Skip when parsing a key for policy checks (so src is NULL) */
+        node->number = ctx->src ? (uint64_t)(node->data - ctx->src) << 32u : 0;
         node->number |= size;
         ctx->features |= WALLY_MS_IS_PARENTED;
         node->flags |= WALLY_MS_IS_PARENTED;
