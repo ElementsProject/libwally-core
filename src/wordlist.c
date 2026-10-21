@@ -1,9 +1,31 @@
 #include "internal.h"
 #include "wordlist.h"
 
-static int bstrcmp(const void *l, const void *r)
+/* The maximum offset that can be stored in a wordlist index */
+#define WORDLIST_INDEX_MAX 0xffffu
+
+static inline const char *wordlist_at(const struct words *w, size_t idx)
 {
-    return strcmp(l, (*(const char **)r));
+    return w->str + w->indices[idx];
+}
+
+static bool wordlist_bsearch(const struct words *w, const char *word, size_t *index_out)
+{
+    size_t lo = 0, hi = w->len;
+
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2u;
+        const int cmp = strcmp(word, wordlist_at(w, mid));
+        if (!cmp) {
+            *index_out = mid;
+            return true;
+        }
+        if (cmp < 0)
+            hi = mid;
+        else
+            lo = mid + 1;
+    }
+    return false;
 }
 
 /* https://graphics.stanford.edu/~seander/bithacks.html#IntegerLogObvious */
@@ -24,11 +46,14 @@ static struct words *wordlist_alloc(const char *words, size_t len)
         w->str = wally_strdup(words);
         if (w->str) {
             w->str_len = strlen(w->str);
-            w->len = len;
-            w->bits = get_bits(len);
-            w->indices = wally_malloc(len * sizeof(const char *));
-            if (w->indices)
-                return w;
+            if (w->str_len <= 0xffff) {
+                /* Word offsets fits into unsigned shorts */
+                w->len = len;
+                w->bits = get_bits(len);
+                w->indices = wally_malloc(len * sizeof(*w->indices));
+                if (w->indices)
+                    return w;
+            }
         }
         wordlist_free(w);
     }
@@ -49,10 +74,11 @@ struct words *wordlist_init(const char *words)
     struct words *w = wordlist_alloc(words, len);
 
     if (w) {
-        /* Tokenise the strings into w->indices */
+        /* Tokenise the strings, storing their offsets into w->indices */
+        unsigned short *indices = (unsigned short *) w->indices;
         const char *p = w->str;
         for (len = 0; len < w->len; ++len) {
-            w->indices[len] = p;
+            indices[len] = (unsigned short)(p - w->str);
             while (*p && *p != ' ') /* FIXME: utf-8 sep */
                 ++p;
             *((char *)p) = '\0';
@@ -61,7 +87,7 @@ struct words *wordlist_init(const char *words)
 
         w->sorted = true;
         for (i = 1; i < len && w->sorted; ++i)
-            if (strcmp(w->indices[i - 1], w->indices[i]) > 0)
+            if (strcmp(wordlist_at(w, i - 1), wordlist_at(w, i)) > 0)
                 w->sorted = false;
     }
     return w;
@@ -69,25 +95,24 @@ struct words *wordlist_init(const char *words)
 
 size_t wordlist_lookup_word(const struct words *w, const char *word)
 {
-    const size_t size = sizeof(const char *);
-    const char **found = NULL;
+    size_t i;
 
-    if (w->sorted)
-        found = (const char **)bsearch(word, w->indices, w->len, size, bstrcmp);
-    else {
-        size_t i;
-        for (i = 0; i < w->len && !found; ++i)
-            if (!strcmp(word, w->indices[i]))
-                found = w->indices + i;
+    if (w->sorted) {
+        if (!wordlist_bsearch(w, word, &i))
+            return 0;
+        return i + 1u;
     }
-    return found ? found - w->indices + 1u : 0u;
+    for (i = 0; i < w->len; ++i)
+        if (!strcmp(word, wordlist_at(w, i)))
+            return i + 1u;
+    return 0;
 }
 
 const char *wordlist_lookup_index(const struct words *w, size_t idx)
 {
     if (idx >= w->len)
         return NULL;
-    return w->indices[idx];
+    return wordlist_at(w, idx);
 }
 
 void wordlist_free(struct words *w)

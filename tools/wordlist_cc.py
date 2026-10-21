@@ -20,7 +20,8 @@ if __name__ == "__main__":
         lengths = [ 0 ]
         for w in words:
             lengths.append(lengths[-1] + len(w.encode('utf-8')) + 1)
-        idxs = ['{0}+{1}'.format(string_name, n) for n in lengths]
+        assert lengths[-1] <= 0xffff  # Must fit into unsigned short
+        idxs = [str(n) for n in lengths]
 
         print('/* Generated file - do not edit! */')
         print('#include <wordlist.h>')
@@ -32,14 +33,11 @@ if __name__ == "__main__":
             print('    %s,0,' % as_hex(w))
         print('};')
 
-        print('#define %s ((const char*)%s_)' % (string_name, string_name))
-
-        print('static const char *%s_i[] = {' % (string_name))
+        print('static const unsigned short %s_i[] = {' % (string_name))
         grouped = [idxs[i : i + 6] for i in range(0, len(idxs), 6)]
         for g in grouped:
             print('    %s,' % (', '.join(g)))
         print('   };')
-        print('#undef %s' % string_name)
 
         print()
         print('static const struct words %s = {' % struct_name)

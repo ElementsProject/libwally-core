@@ -36,7 +36,7 @@ char *mnemonic_from_bytes(const struct words *w, const unsigned char *bytes, siz
     /* Compute length of result */
     for (i = 0; i < total_mnemonics; ++i) {
         size_t idx = extract_index(w->bits, bytes, i);
-        size_t mnemonic_len = strlen(w->indices[idx]);
+        size_t mnemonic_len = strlen(wordlist_lookup_index(w, idx));
 
         str_len += mnemonic_len + 1; /* +1 for following separator or NUL */
     }
@@ -47,9 +47,10 @@ char *mnemonic_from_bytes(const struct words *w, const unsigned char *bytes, siz
 
         for (i = 0; i < total_mnemonics; ++i) {
             size_t idx = extract_index(w->bits, bytes, i);
-            size_t mnemonic_len = strlen(w->indices[idx]);
+            const char *mnemonic = wordlist_lookup_index(w, idx);
+            size_t mnemonic_len = strlen(mnemonic);
 
-            wally_memcpy(out, w->indices[idx], mnemonic_len);
+            wally_memcpy(out, mnemonic, mnemonic_len);
             out[mnemonic_len] = ' '; /* separator */
             out += mnemonic_len + 1;
         }
@@ -82,7 +83,7 @@ int mnemonic_to_bytes(const struct words *w, const char *mnemonic,
     wally_clear(bytes_out, len);
 
     for (i = 0; i < mnemonic_w->len; ++i) {
-        size_t idx = wordlist_lookup_word(w, mnemonic_w->indices[i]);
+        size_t idx = wordlist_lookup_word(w, wordlist_lookup_index(mnemonic_w, i));
         if (!idx) {
             wordlist_free(mnemonic_w);
             wally_clear(bytes_out, len);

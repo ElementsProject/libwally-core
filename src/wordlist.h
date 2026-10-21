@@ -19,8 +19,8 @@ struct words {
     const char *str;
     /* The length of str, or 0 if str points to constant storage */
     size_t str_len;
-    /* Pointers to the individual words */
-    const char **indices;
+    /* Offsets of the individual words, from the start of str */
+    const unsigned short *indices;
 };
 
 /**
