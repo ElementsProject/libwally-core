@@ -1037,7 +1037,8 @@ static int bk_to_abf_vbf_impl(
     size_t i;
     int ret;
 
-    if (!bytes_out || len != SHA256_LEN * (flags == (BK_ABF|BK_VBF) ? 2 : 1))
+    if (!hash_prevouts || hash_prevouts_len != SHA256_LEN || !bytes_out ||
+        len != SHA256_LEN * (flags == (BK_ABF|BK_VBF) ? 2 : 1))
         return WALLY_EINVAL;
     ret = asset_blinding_key_hash(bytes, bytes_len,
                                   hash_prevouts, hash_prevouts_len,
