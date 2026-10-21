@@ -1008,8 +1008,8 @@ int bip32_key_init(uint32_t version, uint32_t depth, uint32_t child_num,
                    const unsigned char *parent160, size_t parent160_len,
                    struct ext_key *key_out)
 {
-    if (!key_out)
-        return WALLY_EINVAL;
+    if (key_out)
+        wally_clear(key_out, sizeof(*key_out));
 
     switch (version) {
     case BIP32_VER_MAIN_PRIVATE:
@@ -1022,6 +1022,8 @@ int bip32_key_init(uint32_t version, uint32_t depth, uint32_t child_num,
         if (!pub_key || pub_key_len != key_size(pub_key))
             return WALLY_EINVAL;
         break;
+    default:
+        return WALLY_EINVAL;
     }
 
     if (!chain_code || chain_code_len != key_size(chain_code))
@@ -1031,10 +1033,9 @@ int bip32_key_init(uint32_t version, uint32_t depth, uint32_t child_num,
         (pub_key && pub_key_len != key_size(pub_key)) || (!pub_key && pub_key_len) ||
         (hash160 && hash160_len != key_size(hash160)) || (!hash160 && hash160_len) ||
         (parent160 && !is_valid_parent160_len(parent160_len)) ||
-        (!parent160 && parent160_len) || depth > 0xff)
+        (!parent160 && parent160_len) || depth > 0xff || !key_out)
         return WALLY_EINVAL;
 
-    wally_clear(key_out, sizeof(*key_out));
     key_out->version = version;
     key_out->depth = depth;
     key_out->child_num = child_num;
