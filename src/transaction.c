@@ -2616,7 +2616,7 @@ int wally_tx_from_hex(const char *hex, uint32_t flags,
     }
     ret = wally_hex_to_bytes(hex, buff_p, bin_len, &written);
     if (ret == WALLY_OK)
-        ret = tx_from_bytes(buff_p, bin_len, flags, output);
+        ret = tx_from_bytes(buff_p, written, flags, output);
 
     if (buff_p != buff)
         clear_and_free(buff_p, bin_len);
