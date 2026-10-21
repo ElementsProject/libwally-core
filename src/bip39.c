@@ -217,7 +217,7 @@ int bip39_mnemonic_validate(const struct words *w, const char *mnemonic)
     size_t len;
     int ret = bip39_mnemonic_to_bytes(w, mnemonic, buf, sizeof(buf), &len);
     wally_clear(buf, sizeof(buf));
-    return ret;
+    return ret == WALLY_OK && len <= sizeof(buf) ? WALLY_OK : WALLY_EINVAL;
 }
 
 int bip39_mnemonic_to_seed(const char *mnemonic, const char *passphrase,
