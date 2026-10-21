@@ -394,6 +394,9 @@ int wally_explicit_rangeproof_verify(const unsigned char *rangeproof, size_t ran
     secp256k1_generator gen;
     uint64_t min_v, max_v;
 
+    if (!ctx)
+        return WALLY_ENOMEM;
+
     if (!rangeproof || rangeproof_len > ASSET_EXPLICIT_RANGEPROOF_MAX_LEN ||
         parse_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
         parse_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
