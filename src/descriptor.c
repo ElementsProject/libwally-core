@@ -3666,11 +3666,12 @@ int wally_descriptor_parse(const char *miniscript,
     ms_ctx *ctx;
     int ret;
 
-    *output = NULL;
+    if (output)
+        *output = NULL;
     flags &= ~WALLY_MINISCRIPT_DEPTH_MASK;
 
     if (!miniscript || flags & ~MS_FLAGS_ALL ||
-        (network != WALLY_NETWORK_NONE && !addr_ver))
+        (network != WALLY_NETWORK_NONE && !addr_ver) || !output)
         return WALLY_EINVAL;
 
 #ifndef BUILD_ELEMENTS
