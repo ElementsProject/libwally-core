@@ -150,8 +150,9 @@ int bip38_raw_from_private_key(const unsigned char *bytes, size_t bytes_len,
     int ret = WALLY_EINVAL;
 
     if (!bytes || bytes_len != EC_PRIVATE_KEY_LEN ||
-        !bytes_out || len != BIP38_SERIALIZED_LEN ||
-        flags & ~BIP38_ALL_DEFINED_FLAGS)
+        BYTES_INVALID(pass, pass_len) ||
+        (flags & ~BIP38_ALL_DEFINED_FLAGS) ||
+        !bytes_out || len != BIP38_SERIALIZED_LEN)
         goto finish;
 
     if (flags & BIP38_KEY_RAW_MODE)
@@ -196,6 +197,9 @@ int bip38_raw_from_private_key(const unsigned char *bytes, size_t bytes_len,
     memcpy(bytes_out, &buf.prefix, BIP38_SERIALIZED_LEN);
 
 finish:
+    if (ret != WALLY_OK && bytes_out && len == BIP38_SERIALIZED_LEN)
+        wally_clear(bytes_out, len);
+
     wally_clear_2(&derived, sizeof(derived), &buf, sizeof(buf));
     return ret;
 }
@@ -318,10 +322,11 @@ static int to_private_key(const char *bip38,
     }
     if (ret == WALLY_OK && buf.u.normal.hash != checksum)
         ret = WALLY_EINVAL;
-    if (ret != WALLY_OK)
-        wally_clear(bytes_out, len); /* Don't return an unverified key */
 
 finish:
+    if (ret != WALLY_OK && bytes_out && len == EC_PRIVATE_KEY_LEN)
+        wally_clear(bytes_out, len); /* Don't return an unverified key */
+
     wally_clear_2(&derived, sizeof(derived), &buf, sizeof(buf));
     return ret;
 }
