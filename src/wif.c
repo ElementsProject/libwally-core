@@ -158,7 +158,8 @@ int wally_wif_to_address(const char *wif,
                          char **output)
 {
     int ret;
-    unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN], address[HASH160_LEN + 1];
+    unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
+    unsigned char address[HASH160_LEN + 1];
     size_t written;
 
     if (output)
@@ -167,16 +168,13 @@ int wally_wif_to_address(const char *wif,
     if (!wif || (prefix & ~0xff) || (version & ~0xff) || !output)
         return WALLY_EINVAL;
 
-    if ((ret = wally_wif_to_public_key(wif, prefix, pubkey, sizeof(pubkey), &written)))
-        return ret;
-
-    address[0] = (unsigned char) version & 0xff;
-
-    if ((ret = wally_hash160(pubkey, written, &address[1], HASH160_LEN)))
-        return ret;
-
-    ret = wally_base58_from_bytes(address, sizeof(address), BASE58_FLAG_CHECKSUM, output);
-
-    wally_clear_2(pubkey, sizeof(pubkey), address, sizeof(address));
+    ret = wally_wif_to_public_key(wif, prefix, pubkey, sizeof(pubkey), &written);
+    if (ret == WALLY_OK) {
+        address[0] = (unsigned char) version & 0xff;
+        ret = wally_hash160(pubkey, written, &address[1], HASH160_LEN);
+        if (ret == WALLY_OK)
+            ret = wally_base58_from_bytes(address, sizeof(address),
+                                          BASE58_FLAG_CHECKSUM, output);
+    }
     return ret;
 }
