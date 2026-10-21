@@ -1095,6 +1095,8 @@ int wally_elements_pegout_script_size(size_t genesis_blockhash_len,
                                       size_t whitelistproof_len,
                                       size_t *written)
 {
+    if (!written)
+        return WALLY_EINVAL;
     *written = 1
                + script_get_push_size(genesis_blockhash_len)
                + script_get_push_size(mainchain_script_len)
