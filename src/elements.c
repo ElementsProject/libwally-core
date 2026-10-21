@@ -285,13 +285,19 @@ int wally_asset_rangeproof_with_nonce(uint64_t value,
         parse_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
         goto cleanup;
 
-    /* Create the rangeproof message */
+    *written = len;
     if (!is_explicit) {
+        /* Create the rangeproof message */
         memcpy(message, asset, ASSET_TAG_LEN);
         memcpy(message + ASSET_TAG_LEN, abf, BLINDING_FACTOR_LEN);
+    } else {
+        /* FIXME: secp is bugged checking the required output size:
+         *        It requires 32 more bytes than it writes. Remove
+         *        this else branch when fixed upstream.
+         */
+        *written += 32; /* FIXME */
     }
 
-    *written = ASSET_RANGEPROOF_MAX_LEN;
     if (secp256k1_rangeproof_sign(ctx, bytes_out, written, min_value, &commit,
                                   vbf, nonce_hash, exp, min_bits, value,
                                   is_explicit ? NULL : message,
