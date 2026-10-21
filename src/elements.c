@@ -227,12 +227,21 @@ int wally_asset_rangeproof_get_maximum_len(uint64_t value, int min_bits, size_t 
     return WALLY_ERROR;
 #else
     const secp256k1_context *ctx = secp_ctx();
-    if (!written)
-        return WALLY_EINVAL;
-    *written = 0;
+    (void)value;
+
+    if (written)
+        *written = 0;
+
     if (!ctx)
         return WALLY_ENOMEM;
-    *written = secp256k1_rangeproof_max_size(ctx, value, min_bits);
+
+    if (min_bits < 0 || min_bits > 64 || !written)
+        return WALLY_EINVAL;
+
+    /* We can't determine if this is an explicit rangeproof since we don't
+     * have min_value or exp to check. So, return the maximum size.
+     */
+    *written = ASSET_RANGEPROOF_MAX_LEN;
     return WALLY_OK;
 #endif /* BUILD_ELEMENTS */
 }
