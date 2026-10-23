@@ -121,6 +121,7 @@ void sha512_init(struct sha512_ctx *ctx);
  * }
  */
 #ifdef CCAN_CRYPTO_SHA512_USE_OPENSSL
+#define SHA512_INIT						\
 	{ { { 0x6a09e667f3bcc908ull, 0xbb67ae8584caa73bull,	\
 	      0x3c6ef372fe94f82bull, 0xa54ff53a5f1d36f1ull,	\
 	      0x510e527fade682d1ull, 0x9b05688c2b3e6c1full,	\
