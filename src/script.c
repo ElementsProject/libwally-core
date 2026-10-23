@@ -447,7 +447,7 @@ static bool scriptpubkey_is_csv_2of2_then_1(const unsigned char *bytes, size_t b
         return false;
     bytes_len -= bytes[0] + 1;
     bytes += bytes[0] + 1;
-    if (bytes_len < 3 + (EC_PUBLIC_KEY_LEN + 1) + 1)
+    if (bytes_len != 3 + (EC_PUBLIC_KEY_LEN + 1) + 1)
         return false;
     if (bytes[0] != OP_CHECKSEQUENCEVERIFY || bytes[1] != OP_DROP ||
         bytes[2] != OP_ENDIF || bytes[3] != EC_PUBLIC_KEY_LEN ||
