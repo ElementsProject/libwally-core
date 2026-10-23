@@ -605,6 +605,9 @@ class BIP32Tests(unittest.TestCase):
                  ('/h',           0, 0),          # Missing number (3)
                  ('h',            B, 0),          # Missing number (bare)
                  ('/h1',          0, 0),          # Invalid hardened indicator position
+                 ('/1h2',         0, 0),          # Missing slash after hardened (1)
+                 ("/1'2'",        0, 0),          # Missing slash after hardened (2)
+                 ('1h2',          B, 0),          # Missing slash after hardened (bare)
                  ('m/2147483648', 0, 0),          # Child num too large
                  ('/*',           0, 0),          # Wildcard without flag
                  ('/*/*',         W, 0),          # More than one wildcard
@@ -638,12 +641,14 @@ class BIP32Tests(unittest.TestCase):
 
         # path_from_str invalid args (that aren't covered above)
         cases = [
-            ('1',     0, 1, 0, c_path, len(c_path)), # Non-zero multi_index without flag
-            ('1',     0, 1, M, c_path, len(c_path)), # Non-zero multi_index with no multi element
-            ('<0;1>', 0, 0, 0, c_path, len(c_path)), # Multi-path without flag
-            ('<0;1>', 0, 2, M, c_path, len(c_path)), # Invalid multi_index
-            ('1',     0, 0, 0, None,   len(c_path)), # NULL output
-            ('1',     0, 0, 0, c_path, 0),           # Empty output
+            ('1',      0, 1, 0,   c_path, len(c_path)), # Non-zero multi_index without flag
+            ('1',      0, 1, M,   c_path, len(c_path)), # Non-zero multi_index with no multi element
+            ('<0;1>',  0, 0, 0,   c_path, len(c_path)), # Multi-path without flag
+            ('<0;1>',  0, 2, M,   c_path, len(c_path)), # Invalid multi_index
+            ('<0;1>2', 0, 0, M,   c_path, len(c_path)), # Missing slash after multi-path (1)
+            ('<0;1>*', 0, 0, W|M, c_path, len(c_path)), # Missing slash after multi-path (2)
+            ('1',      0, 0, 0,   None,   len(c_path)), # NULL output
+            ('1',      0, 0, 0,   c_path, 0),           # Empty output
         ]
         for path, child_num, multi_index, flags, out, out_len in cases:
             ret, written = bip32_path_from_str(path, child_num, multi_index, flags, out, out_len)

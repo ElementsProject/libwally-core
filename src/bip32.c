@@ -82,13 +82,75 @@ static bool version_is_mainnet(uint32_t ver)
     return ver == BIP32_VER_MAIN_PRIVATE || ver == BIP32_VER_MAIN_PUBLIC;
 }
 
-static bool is_hardened_indicator(char c, bool allow_upper, uint32_t *features)
+static bool is_hardened_indicator(char c, bool allow_upper)
 {
-    if (c == '\'' || c == 'h' || (allow_upper && c == 'H')) {
-        *features |= BIP32_PATH_IS_HARDENED;
-        return true;
+    return c == '\'' || c == 'h' || (allow_upper && c == 'H');
+}
+
+static size_t get_child_number(const char *str, size_t str_len, bool allow_upper, uint32_t *v)
+{
+    uint64_t value = 0;
+    size_t i = 0;
+    while (i < str_len && str[i] >= '0' && str[i] <= '9') {
+        value = value * 10 + (uint64_t)(str[i] - '0');
+        if (value >= BIP32_INITIAL_HARDENED_CHILD)
+            return 0; /* Derivation index too large */
+        ++i;
     }
-    return false;
+    if (i) {
+        if (i < str_len && is_hardened_indicator(str[i], allow_upper)) {
+            value |= BIP32_INITIAL_HARDENED_CHILD;
+            ++i;
+        }
+        *v = value & 0xffffffff;
+    }
+    return i;
+}
+
+static size_t get_multi_index(const char *str, size_t str_len, uint32_t multi_index, bool allow_upper, uint32_t *features, uint32_t *v)
+{
+    size_t i = 1; /* Start at 1 to skip '<' */
+    uint32_t cur_index = 0;
+    bool found_ours = false;
+
+    if (!str_len || str[0] != '<')
+        return 0; /* Not a multi-index expression */
+
+    while (i < str_len) {
+        uint32_t value = 0;
+        size_t expr_len = get_child_number(str + i, str_len - i, allow_upper, &value);
+        if (!expr_len) {
+            if (str[i] != '>' || !found_ours || cur_index < 2) {
+                /* No number, improperly terminated, multi_index not found,
+                 * or only a single number alone */
+                break;
+            }
+            *features |= BIP32_PATH_IS_MULTIPATH;
+            *features |= (cur_index << BIP32_PATH_MULTI_SHIFT);
+            return i + 1; /* Consume trailing '>' */
+        }
+        i += expr_len;
+        if (cur_index == multi_index) {
+            found_ours = true;
+            *v = value;
+        }
+        if (++cur_index >= 255)
+            break; /* Unsupported number of multi_indices */
+        if (value & BIP32_INITIAL_HARDENED_CHILD)
+            *features |= BIP32_PATH_IS_HARDENED;
+        if (i < str_len) {
+           if (str[i] == ';') {
+               ++i;
+               if (i == str_len || (str[i] < '0' || str[i] > '9'))
+                   break; /* ';' not followed by number */
+           } else if (str[i] != '>')
+               break; /* Not terminated by '>' */
+        }
+    }
+    /* No valid multi-index expression found */
+    *features = 0;
+    *v = 0;
+    return 0;
 }
 
 static int path_from_str_n(const char *str, size_t str_len,
@@ -98,8 +160,10 @@ static int path_from_str_n(const char *str, size_t str_len,
                            size_t *written)
 {
     const bool allow_upper = flags & BIP32_FLAG_ALLOW_UPPER;
-    size_t start, multi_start, num_multi = 0, i = 0;
-    uint64_t v;
+    size_t i = 0;
+
+    if (written)
+        *written = 0;
 
     *features = 0;
 
@@ -117,7 +181,7 @@ static int path_from_str_n(const char *str, size_t str_len,
             goto fail; /* bare path must start with a number */
         *features |= BIP32_PATH_IS_BARE;
     } else {
-        start = i;
+        size_t start = i;
         if (i < str_len && (str[i] == 'm' || (allow_upper && str[i] == 'M')))
             ++i; /* Skip */
         if (i < str_len && str[i] == '/')
@@ -127,100 +191,48 @@ static int path_from_str_n(const char *str, size_t str_len,
     }
 
     while (i < str_len) {
-        size_t multi;
-        bool is_wildcard = false, is_multi = false;
-        start = i;
-        v = 0;
-        if (str[i] == '<' && (flags & BIP32_FLAG_STR_MULTIPATH)) {
-            /* Multi-path expression - skip to the required multi_index */
-            ++i;
-            if (i < str_len && (str[i] < '0' || str[i] > '9'))
-                goto fail; /* Missing initial child */
-            *features |= BIP32_PATH_IS_MULTIPATH;
-            is_multi = true;
-            for (multi = 0; i < str_len && multi < multi_index; ++multi) {
-                multi_start = i;
-                while (i < str_len && str[i] >= '0' && str[i] <= '9')
-                    ++i;
-                if (i == multi_start)
-                    goto fail; /* Missing multi-item number */
-                if (i < str_len && is_hardened_indicator(str[i], allow_upper, features))
-                    ++i;
-                if (i == str_len || str[i] != ';')
-                    goto fail; /* Malformed multi or incorrect index */
-                ++i;
-                ++num_multi;
-            }
-            if (multi < multi_index && i == start + 1)
-                goto fail; /* No number found */
-        }
-        while (i < str_len && str[i] >= '0' && str[i] <= '9') {
-            v = v * 10 + (str[i] - '0');
-            if (v >= BIP32_INITIAL_HARDENED_CHILD)
-                goto fail; /* Derivation index too large */
-            ++i;
-        }
-        if (i == start) {
-            /* No number found */
-            if (is_multi)
-                goto fail; /* Must have a number for multi */
-            if (str[i] == '/') {
-                if (i && (str[i - 1] < '0' || str[i - 1] > '9') &&
-                    !is_hardened_indicator(str[i - 1], allow_upper, features) &&
-                    str[i - 1] != '*' && str[i - 1] != '>') {
-                    /* Only valid after number/wildcard/hardened/multi-end */
-                    goto fail;
-                }
-                ++i;
-                if (i == str_len || str[i] == '/')
-                    goto fail; /* Trailing slash, invalid */
-                continue;
-            }
-            if (!(is_wildcard = str[i] == '*'))
-                goto fail; /* Unknown character */
+        size_t expr_len = 0;
+        uint32_t v = 0;
 
-            /* Wildcard */
+        if (str[i] == '<') {
+            /* Start of a multi-path expression */
+            if (!(flags & BIP32_FLAG_STR_MULTIPATH))
+                goto fail; /* Multi-path not allowed */
+            flags &= ~BIP32_FLAG_STR_MULTIPATH; /* Only allow one multi-path */
+            expr_len = get_multi_index(str + i, str_len - i, multi_index,
+                                        allow_upper, features, &v);
+            if (!expr_len)
+                goto fail; /* Invalid multi-path expression */
+
+        } else if (i < str_len && str[i] == '*') {
+            /* Wildcard ('*') */
             if (!(flags & BIP32_FLAG_STR_WILDCARD))
                 goto fail; /* Wildcard not allowed, or previously seen */
+            ++i;
             flags &= ~BIP32_FLAG_STR_WILDCARD; /* Only allow one wildcard */
             *features |= BIP32_PATH_IS_WILDCARD;
             *features |= (*written << BIP32_PATH_WILDCARD_SHIFT);
-            if (i && str[i - 1] != '/')
-                goto fail; /* Must follow a slash */
-            ++i;
             v = child_num; /* Use the given child number for the wildcard value */
-        }
-        if (i < str_len && is_hardened_indicator(str[i], allow_upper, features)) {
-            v |= BIP32_INITIAL_HARDENED_CHILD;
-            ++i;
-        }
-        if (is_multi) {
-            /* Multi-path expression - skip remaining multi-path items */
-            ++num_multi; /* For the item we just read */
-            while (i < str_len && str[i] != '>') {
-                if (str[i] == ';') {
-                    ++i;
-                    ++num_multi;
-                }
-                multi_start = i;
-                while (i < str_len && str[i] >= '0' && str[i] <= '9')
-                    ++i;
-                if (i == multi_start)
-                    goto fail; /* Missing multi-item number */
-                if (i < str_len && is_hardened_indicator(str[i], allow_upper, features))
-                    ++i;
+            if (i < str_len && is_hardened_indicator(str[i], allow_upper)) {
+                v |= BIP32_INITIAL_HARDENED_CHILD;
+                *features |= BIP32_PATH_IS_HARDENED;
+                ++i;
             }
-            if (i == str_len || str[i] != '>')
-                goto fail; /* Malformed multi or incorrect index */
+        } else {
+            /* Child number */
+            expr_len = get_child_number(str + i, str_len - i, allow_upper, &v);
+            if (!expr_len)
+                goto fail; /* Expected a number */
+            if (v & BIP32_INITIAL_HARDENED_CHILD)
+                *features |= BIP32_PATH_IS_HARDENED;
+        }
+        i += expr_len;
+        if (i < str_len) {
+            if (str[i] != '/' || i == str_len - 1)
+                goto fail; /* Expected a slash, but not as the final element */
             ++i;
-            if (num_multi < 2 || num_multi >= 255)
-                goto fail;
-            *features |= (num_multi << BIP32_PATH_MULTI_SHIFT);
-            flags &= ~BIP32_FLAG_STR_MULTIPATH; /* Only allow one multi-path */
         }
 
-        if (is_wildcard && i != str_len && str[i] != '/')
-            goto fail; /* Wildcard followed by something other than a slash */
         if (*written == child_path_len) {
             /* Continue counting the resulting length, but don't write any more */
             child_path = NULL;

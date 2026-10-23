@@ -1138,6 +1138,12 @@ static const descriptor_test g_descriptor_cases[] = {
         "76a914bb57ca9e62c7084081edc68d2cbc9524a523784288ac",
         "uvzwp2pn", VARS_STD
     }, {
+        "descriptor - multi-path (leading zero)",
+        "pkh(mainnet_xpub/<00;1>)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "76a914bb57ca9e62c7084081edc68d2cbc9524a523784288ac",
+        "7jv5hgx2", VARS_STD
+    }, {
         "descriptor - hardened multi-path",
         "pkh(mainnet_xpriv/<0';1>)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
@@ -1824,8 +1830,40 @@ static const descriptor_test g_descriptor_cases[] = {
         "pkh(mainnet_xpub/<0;*>)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     }, {
-        "descriptor - not enough  multi-path elements",
+        "descriptor - no multi-path elements",
+        "pkh(mainnet_xpub/<>)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        "descriptor - not enough multi-path elements",
         "pkh(mainnet_xpub/<0>)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        "descriptor - trailing number on multi-path element (1)",
+        "pkh(mainnet_xpriv/<0h2;1h>)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        "descriptor - trailing number on multi-path element (2)",
+        "pkh(mainnet_xpriv/<0h;1h2>)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        "descriptor - out-of-range multi-path element (1)",
+        "pkh(mainnet_xpub/<4294967296;1>)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        "descriptor - out-of-range multi-path element (2)",
+        "pkh(mainnet_xpub/<1;4294967296>)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        "descriptor - hardened only multi-path element (1)",
+        "pkh(mainnet_xpub/<0;h>)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        "descriptor - truncated multi-path element (1)",
+        "pkh(mainnet_xpub/<1)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        "descriptor - truncated multi-path element (2)",
+        "pkh(mainnet_xpub/<1;)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     }, {
         "descriptor - Too many multi-path elements (>255)",
