@@ -80,6 +80,14 @@ public class test_tx {
         assert_eq("00", h(Wally.tx_get_input_script(tx, 0)), "set input script doesn't match");
         Wally.tx_set_output_script(tx,0,h("0100"));
         assert_eq("0100", h(Wally.tx_get_output_script(tx, 0)), "set output script doesn't match");
+        // Empty scripts are returned as empty arrays
+        Wally.tx_set_input_script(tx, 0, null);
+        assert_eq(0, Wally.tx_get_input_script(tx, 0).length, "empty input script mismatch");
+        Wally.tx_set_output_script(tx, 0, null);
+        assert_eq(0, Wally.tx_get_output_script(tx, 0).length, "empty output script mismatch");
+        final Object tx_input_empty = Wally.tx_input_init(tx_get_input_txhash, 0, 4294967295L, null, null);
+        assert_eq(0, Wally.tx_input_get_script(tx_input_empty).length, "empty input script mismatch");
+        assert_eq(0, Wally.tx_output_get_script(Wally.tx_output_init(100, null)).length, "empty output script mismatch");
 
         Wally.cleanup();
     }

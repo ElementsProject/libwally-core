@@ -72,8 +72,20 @@ public class test_elements_tx {
         Wally.map_free(scripts);
     }
 
+    public void test_empty_fields() {
+        // Unblinded outputs and inputs without issuance have empty fields
+        final Object tx = Wally.tx_init(2, 0, 1, 1);
+        Wally.tx_add_elements_raw_input(tx, new byte[32], 0, 0xffffffffL,
+            null, null, null, null, null, null, null, null, null, 0);
+        Wally.tx_add_elements_raw_output(tx, null, null, null, null, null, null, 0);
+        assert_eq(0, Wally.tx_get_input_issuance_amount(tx, 0).length, "issuance amount mismatch");
+        assert_eq(0, Wally.tx_get_output_surjectionproof(tx, 0).length, "surjection proof mismatch");
+        assert_eq(0, Wally.tx_get_output_rangeproof(tx, 0).length, "rangeproof mismatch");
+    }
+
     public static void main(final String[] args) {
         final test_elements_tx t = new test_elements_tx();
         t.test_elements_taproot_sighash();
+        t.test_empty_fields();
     }
 }

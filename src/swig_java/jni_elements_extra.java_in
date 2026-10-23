@@ -275,42 +275,49 @@
 
   public final static byte[] tx_input_get_issuance_amount(Object tx_input) {
       final byte[] buf = new byte[tx_input_get_issuance_amount_len(tx_input)];
+      if (buf.length == 0) return buf;
       final int len = _tx_input_get_issuance_amount(tx_input, buf);
       return checkBuffer(buf, len);
   }
 
   public final static byte[] tx_input_get_inflation_keys(Object tx_input) {
       final byte[] buf = new byte[tx_input_get_inflation_keys_len(tx_input)];
+      if (buf.length == 0) return buf;
       final int len = _tx_input_get_inflation_keys(tx_input, buf);
       return checkBuffer(buf, len);
   }
 
   public final static byte[] tx_input_get_issuance_amount_rangeproof(Object tx_input) {
       final byte[] buf = new byte[tx_input_get_issuance_amount_rangeproof_len(tx_input)];
+      if (buf.length == 0) return buf;
       final int len = _tx_input_get_issuance_amount_rangeproof(tx_input, buf);
       return checkBuffer(buf, len);
   }
 
   public final static byte[] tx_input_get_inflation_keys_rangeproof(Object tx_input) {
       final byte[] buf = new byte[tx_input_get_inflation_keys_rangeproof_len(tx_input)];
+      if (buf.length == 0) return buf;
       final int len = _tx_input_get_inflation_keys_rangeproof(tx_input, buf);
       return checkBuffer(buf, len);
   }
 
   public final static byte[] tx_output_get_value(Object tx_out) {
       final byte[] buf = new byte[tx_output_get_value_len(tx_out)];
+      if (buf.length == 0) return buf;
       final int len = _tx_output_get_value(tx_out, buf);
       return trimBuffer(buf, len);
   }
 
   public final static byte[] tx_output_get_surjectionproof(Object tx_out) {
       final byte[] buf = new byte[tx_output_get_surjectionproof_len(tx_out)];
+      if (buf.length == 0) return buf;
       final int len = _tx_output_get_surjectionproof(tx_out, buf);
       return trimBuffer(buf, len);
   }
 
   public final static byte[] tx_output_get_rangeproof(Object tx_out) {
       final byte[] buf = new byte[tx_output_get_rangeproof_len(tx_out)];
+      if (buf.length == 0) return buf;
       final int len = _tx_output_get_rangeproof(tx_out, buf);
       return trimBuffer(buf, len);
   }
@@ -353,24 +360,28 @@
 
   public final static byte[] tx_get_input_issuance_amount(Object tx, final int index) {
       final byte[] buf = new byte[tx_get_input_issuance_amount_len(tx, index)];
+      if (buf.length == 0) return buf;
       final int len = _tx_get_input_issuance_amount(tx, index, buf);
       return checkBuffer(buf, len);
   }
 
   public final static byte[] tx_get_input_inflation_keys(Object tx, final int index) {
       final byte[] buf = new byte[tx_get_input_inflation_keys_len(tx, index)];
+      if (buf.length == 0) return buf;
       final int len = _tx_get_input_inflation_keys(tx, index, buf);
       return checkBuffer(buf, len);
   }
 
   public final static byte[] tx_get_input_issuance_amount_rangeproof(Object tx, final int index) {
       final byte[] buf = new byte[tx_get_input_issuance_amount_rangeproof_len(tx, index)];
+      if (buf.length == 0) return buf;
       final int len = _tx_get_input_issuance_amount_rangeproof(tx, index, buf);
       return checkBuffer(buf, len);
   }
 
   public final static byte[] tx_get_input_inflation_keys_rangeproof(Object tx, final int index) {
       final byte[] buf = new byte[tx_get_input_inflation_keys_rangeproof_len(tx, index)];
+      if (buf.length == 0) return buf;
       final int len = _tx_get_input_inflation_keys_rangeproof(tx, index, buf);
       return checkBuffer(buf, len);
   }
@@ -381,6 +392,7 @@
 
   public final static byte[] tx_get_output_value(Object tx, final int index) {
       final byte[] buf = new byte[tx_get_output_value_len(tx, index)];
+      if (buf.length == 0) return buf;
       final int len = _tx_get_output_value(tx, index, buf);
       return trimBuffer(buf, len);
   }
@@ -391,12 +403,14 @@
 
   public final static byte[] tx_get_output_surjectionproof(Object tx, final int index) {
       final byte[] buf = new byte[tx_get_output_surjectionproof_len(tx, index)];
+      if (buf.length == 0) return buf;
       final int len = _tx_get_output_surjectionproof(tx, index, buf);
       return trimBuffer(buf, len);
   }
 
   public final static byte[] tx_get_output_rangeproof(Object tx, final int index) {
       final byte[] buf = new byte[tx_get_output_rangeproof_len(tx, index)];
+      if (buf.length == 0) return buf;
       final int len = _tx_get_output_rangeproof(tx, index, buf);
       return trimBuffer(buf, len);
   }

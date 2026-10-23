@@ -322,36 +322,42 @@
 
   public final static byte[] tx_get_input_script(Object tx, long jarg2) {
       final byte[] buf = new byte[tx_get_input_script_len(tx, jarg2)];
+      if (buf.length == 0) return buf;
       final int len = _tx_get_input_script(tx, jarg2, buf);
       return checkBuffer(buf, len);
   }
 
   public final static byte[] tx_input_get_script(Object tx) {
       final byte[] buf = new byte[tx_input_get_script_len(tx)];
+      if (buf.length == 0) return buf;
       final int len = _tx_input_get_script(tx, buf);
       return checkBuffer(buf, len);
   }
 
   public final static byte[] tx_get_input_witness(Object tx, long jarg2, long jarg3) {
       final byte[] buf = new byte[tx_get_input_witness_len(tx, jarg2, jarg3)];
+      if (buf.length == 0) return buf;
       final int len = _tx_get_input_witness(tx, jarg2, jarg3, buf);
       return checkBuffer(buf, len);
   }
 
   public final static byte[] tx_input_get_witness(Object tx, long jarg2) {
       final byte[] buf = new byte[tx_input_get_witness_len(tx, jarg2)];
+      if (buf.length == 0) return buf;
       final int len = _tx_input_get_witness(tx, jarg2, buf);
       return checkBuffer(buf, len);
   }
 
   public final static byte[] tx_get_output_script(Object tx, long jarg2) {
       final byte[] buf = new byte[tx_get_output_script_len(tx, jarg2)];
+      if (buf.length == 0) return buf;
       final int len = _tx_get_output_script(tx, jarg2, buf);
       return checkBuffer(buf, len);
   }
 
   public final static byte[] tx_output_get_script(Object tx_out) {
       final byte[] buf = new byte[tx_output_get_script_len(tx_out)];
+      if (buf.length == 0) return buf;
       final int len = _tx_output_get_script(tx_out, buf);
       return checkBuffer(buf, len);
   }

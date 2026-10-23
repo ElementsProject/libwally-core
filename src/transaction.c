@@ -2921,9 +2921,9 @@ static int tx_getb_impl(const void *input,
 {
     if (written)
         *written = 0;
-    if (!input || !bytes_out || len < src_len || !written)
+    if (!input || BYTES_INVALID(bytes_out, len) || !written)
         return WALLY_EINVAL;
-    if (src_len)
+    if (bytes_out && src_len && len >= src_len)
         memcpy(bytes_out, src, src_len);
     *written = src_len;
     return WALLY_OK;
@@ -2933,9 +2933,15 @@ static int tx_getb_impl(const void *input,
     int wally_ ## typ ## _get_ ## name(const struct wally_ ## typ *input, \
                                        unsigned char *bytes_out, size_t len) { \
         size_t written; \
+        int ret; \
         if (!input || len != n) \
             return WALLY_EINVAL; \
-        return tx_getb_impl(input, input->name, siz, bytes_out, len, &written); \
+        ret = tx_getb_impl(input, input->name, siz, bytes_out, len, &written); \
+        if (ret == WALLY_OK && written > len) { \
+            wally_clear(bytes_out, len); \
+            return WALLY_EINVAL; \
+        } \
+        return ret; \
     }
 
 #define GET_TX_B(typ, name, siz) \
