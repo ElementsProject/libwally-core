@@ -2085,12 +2085,14 @@ static int generate_hash_type(ms_ctx *ctx, ms_node *node,
         op_code = OP_HASH160;
         hash_size = HASH160_LEN;
     } else
-        return WALLY_ERROR; /* Shouldn't happen */
+        return WALLY_ERROR; /* Shouldn't happen! */
 
     if (script_len >= 7)
         remaining_len = script_len - 7;
     ret = generate_script(ctx, node->child, script + 6, remaining_len, written);
     if (ret == WALLY_OK) {
+        if (node->child->data_len != hash_size)
+            return WALLY_ERROR; /* Shouldn't happen! */
         if (*written + 7 <= script_len) {
             script[0] = OP_SIZE;
             script[1] = 0x01;
@@ -3020,12 +3022,19 @@ static int analyze_miniscript_value(ms_ctx *ctx, const char *str, size_t str_len
             if (kind == KIND_DESCRIPTOR_SLIP77 && str_len != 64)
                 ret = WALLY_EINVAL; /* slip77 blinding keys must be 32 bytes */
             else if ((ret = wally_hex_n_verify(str, str_len)) == WALLY_OK) {
-                if (!(node->data = wally_malloc(str_len / 2)))
+                const size_t num_bytes = str_len / 2;
+                if ((kind == KIND_MINISCRIPT_SHA256 ||
+                     kind == KIND_MINISCRIPT_HASH256) && num_bytes != SHA256_LEN)
+                    ret = WALLY_EINVAL;
+                else if ((kind == KIND_MINISCRIPT_RIPEMD160 ||
+                          kind == KIND_MINISCRIPT_HASH160) && num_bytes != HASH160_LEN)
+                    ret = WALLY_EINVAL;
+                else if (!(node->data = wally_malloc(num_bytes)))
                     ret = WALLY_ENOMEM;
                 else {
                     size_t written;
                     wally_hex_n_to_bytes(str, str_len,
-                                         (unsigned char*)node->data, str_len / 2,
+                                         (unsigned char*)node->data, num_bytes,
                                          &written);
                     node->data_len = written;
                     node->kind = KIND_RAW;

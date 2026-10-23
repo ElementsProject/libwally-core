@@ -1120,6 +1120,78 @@ static const descriptor_test g_descriptor_cases[] = {
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "5120d7aca3c726329f6b1b27b7c776dcdf489704ad6dc0280444be78a56870f8c855",
         "rr00se2w", VARS_STD
+    }, {
+        "miniscript - sha256 bad hex",
+        "sha256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ezz)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - sha256 short",
+        "sha256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36e)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - sha256 long",
+        "sha256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2d2)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - hash256 bad hex",
+        "hash256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ezz)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - hash256 short",
+        "hash256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36e)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - hash256 long",
+        "hash256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2d2)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - ripemd160 bad hex",
+        "ripemd160(dd69735817e0e3f6f826a9238dc2e291184f0131zz)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - ripemd160 short",
+        "ripemd160(dd69735817e0e3f6f826a9238dc2e291184f01)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - ripemd160 long",
+        "ripemd160(dd69735817e0e3f6f826a9238dc2e291184f013131)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - hash160 bad hex",
+        "hash160(dd69735817e0e3f6f826a9238dc2e291184f0131zz)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - hash160 short",
+        "hash160(dd69735817e0e3f6f826a9238dc2e291184f01)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - hash160 long",
+        "hash160(dd69735817e0e3f6f826a9238dc2e291184f013131)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
     },
     /*
      * Miniscript: BOLT examples
