@@ -5,7 +5,7 @@ def _wrap_bin(fn, length, resize=False):
     def wrapped(*args):
         n = length(*args) if callable(length) else length
         buf = bytearray(n)
-        ret = fn(*list(args)+[buf])
+        ret = fn(*list(args)+[buf if n else None])
         if resize:
             # Truncate buf to bytes written if needed. Also assert the
             # wrapper allocated enough space for the returned value to fit.

@@ -163,18 +163,23 @@ static void destroy_words(PyObject *obj) { (void)obj; }
  */
 %define %pybuffer_output_binary(TYPEMAP, SIZE)
 %typemap(in) (TYPEMAP, SIZE) {
-  int res; Py_ssize_t size = 0; void *buf = 0;
-  Py_buffer view;
-  res = PyObject_GetBuffer($input, &view, PyBUF_WRITABLE);
-  if (res < 0) {
-    PyErr_Clear();
-    %argument_fail(res, "(TYPEMAP, SIZE)", $symname, $argnum);
+  if ($input == Py_None) {
+    $1 = ($1_ltype) NULL;
+    $2 = ($2_ltype) 0;
+  } else {
+    int res; Py_ssize_t size = 0; void *buf = 0;
+    Py_buffer view;
+    res = PyObject_GetBuffer($input, &view, PyBUF_WRITABLE);
+    if (res < 0) {
+      PyErr_Clear();
+      %argument_fail(res, "(TYPEMAP, SIZE)", $symname, $argnum);
+    }
+    size = view.len;
+    buf = view.buf;
+    PyBuffer_Release(&view);
+    $1 = ($1_ltype) buf;
+    $2 = ($2_ltype) (size/sizeof($*1_type));
   }
-  size = view.len;
-  buf = view.buf;
-  PyBuffer_Release(&view);
-  $1 = ($1_ltype) buf;
-  $2 = ($2_ltype) (size/sizeof($*1_type));
 }
 %enddef
 
