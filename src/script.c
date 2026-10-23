@@ -404,11 +404,13 @@ bool scriptpubkey_is_witness_program(const unsigned char *bytes, size_t bytes_le
 static bool scriptpubkey_is_multisig(const unsigned char *bytes, size_t bytes_len)
 {
     const size_t min_1of1_len = 1 + 1 + 33 + 1 + 1; /* OP_1 [pubkey] OP_1 OP_CHECKMULTISIG */
-    size_t i, n_pushes;
+    size_t i, threshold, n_pushes;
 
-    if (bytes_len < min_1of1_len || !script_is_op_n(bytes[0], false, NULL) ||
+    if (bytes_len < min_1of1_len ||
+        !script_is_op_n(bytes[0], false, &threshold) ||
         bytes[bytes_len - 1] != OP_CHECKMULTISIG ||
-        !script_is_op_n(bytes[bytes_len - 2], false, &n_pushes))
+        !script_is_op_n(bytes[bytes_len - 2], false, &n_pushes) ||
+        threshold > n_pushes)
         return false;
 
     ++bytes;
