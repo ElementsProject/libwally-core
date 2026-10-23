@@ -3859,6 +3859,42 @@ static bool check_canonical_length_overflow(void)
     return tests_ok;
 }
 
+/* Verify that keys that can't be derived are rejected when parsing,
+ * rather than when generating scripts.
+ */
+static bool check_underivable_keys(void)
+{
+    static const struct {
+        const char *descriptor;
+        int expected_ret;
+    } cases[] = {
+        /* Hardened derivation requires a private key */
+        { "pkh(mainnet_xpub/1h)", WALLY_EINVAL },
+        { "pkh(mainnet_xpub/*h)", WALLY_EINVAL },
+        { "pkh(mainnet_xpub/1/*')", WALLY_EINVAL },
+        { "pkh(mainnet_xpub/<0;1>/*h)", WALLY_EINVAL },
+        { "pkh(mainnet_xpriv/1h)", WALLY_OK },
+        { "pkh(mainnet_xpriv/*h)", WALLY_OK },
+    };
+    const struct wally_map *keys = &g_vars[VARS_STD];
+    bool tests_ok = true;
+    size_t i;
+
+    for (i = 0; i < NUM_ELEMS(cases); ++i) {
+        struct wally_descriptor *descriptor = NULL;
+        int ret;
+
+        ret = wally_descriptor_parse(cases[i].descriptor, keys,
+                                     WALLY_NETWORK_NONE, 0, &descriptor);
+        if (!check_ret("underivable keys", ret, cases[i].expected_ret)) {
+            printf("[%s] underivable key check failed!\n", cases[i].descriptor);
+            tests_ok = false;
+        }
+        wally_descriptor_free(descriptor);
+    }
+    return tests_ok;
+}
+
 /* Verify that insane scripts are rejected unless allowed. The wsh() results
  * match Bitcoin Core's sanity checks for the same miniscript, leaving out
  * its resource limits, which are not checked here.
@@ -3997,6 +4033,11 @@ int main(void)
 
     if (!check_sanity()) {
         printf("sanity test failed!\n");
+        tests_ok = false;
+    }
+
+    if (!check_underivable_keys()) {
+        printf("underivable keys test failed!\n");
         tests_ok = false;
     }
 
