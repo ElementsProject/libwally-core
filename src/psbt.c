@@ -308,14 +308,14 @@ static int map_field_get(const struct wally_map *map_in, uint32_t type,
 
     if (written)
         *written = 0;
-    if (!map_in || !bytes_out || !written)
+    if (!map_in || BYTES_INVALID(bytes_out, len) || !written)
         return WALLY_EINVAL;
     ret = wally_map_find_integer(map_in, type, &index);
     if (ret == WALLY_OK && index) {
         /* Found */
         const struct wally_map_item *item = map_in->items + index - 1;
         *written = item->value_len;
-        if (len >= item->value_len)
+        if (bytes_out && item->value_len && len >= item->value_len)
             memcpy(bytes_out, item->value, item->value_len);
     }
     return ret;
