@@ -57,11 +57,14 @@ if [ -z "$skip_emsdk" ]; then
     # Install emsdk
     git clone https://github.com/emscripten-core/emsdk
     cd emsdk
+    git checkout 35659964bc2762fffec0d257997fb61475f765b7 # tag: 6.0.13
     EMSDK_VERSION=3.1.57
     ./emsdk install ${EMSDK_VERSION}
     ./emsdk activate ${EMSDK_VERSION}
     # Force emsdk to use the installed node version instead of its own
     sed -i "s/^NODE_JS = .*$/NODE_JS = 'node'/g" /opt/emsdk/.emscripten
+    # Remove the emsdk installed version which is likely old/insecure
+    rm -rf /opt/emsdk/node
     # Make emsdk commands available
     source ./emsdk_env.sh
 fi
