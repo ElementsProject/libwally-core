@@ -5185,11 +5185,13 @@ static bool is_input_csv_expired(const struct wally_psbt *psbt,
     if (seq & ((1u << 31u) | (1u << 22u)))
         return false; /* Locktime opt-out enabled, or time-based lock */
 
-    /* Note we don't mask out the locktime value, because we don't want to
-     * finalize inputs if a soft-fork we don't know about has changed the
-     * meaning of locktime extra bits in a way we don't understand.
-     */
-    return blocks <= seq;
+    if (seq & 0xffff0000) {
+        /* Locktime extra bits are set: return false as a soft-fork may
+         * have changed their meaning in a way we don't understand. */
+        return false;
+    }
+
+    return blocks <= seq; /* Check against the bottom 16 bits of seq */
 }
 
 static bool finalize_csv2of2_1(const struct wally_psbt *psbt,
