@@ -4743,6 +4743,11 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
     else if (sighash & 0xffffff00)
         return WALLY_EINVAL;
 
+    if (sighash_type == WALLY_SIGTYPE_PRE_SW &&
+        ((sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE) &&
+        index >= psbt->num_outputs)
+        return WALLY_EINVAL; /* Disallow legacy SIGHASH_SINGLE bug */
+
     if (is_taproot) {
         /* FIXME: Support script path spends */
         script = NULL;
