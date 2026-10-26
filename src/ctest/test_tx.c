@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include <wally_transaction.h>
+#include <wally_transaction_members.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -202,6 +203,54 @@ static bool test_tx_add_aliased(void)
            tx_add_aliased(4); /* Arrays are shifted */
 }
 
+/* Test getting witness items with (NULL, 0-length) and too short buffers */
+static bool test_tx_get_witness(void)
+{
+    static const unsigned char txhash[WALLY_TXHASH_LEN] = { 1 };
+    static const unsigned char item[] = { 0x01, 0x02 };
+    static const struct {
+        size_t wit_index;
+        size_t len;
+        size_t expected_written;
+    } cases[] = {
+        { 0, 0, 0 },            /* Empty item, (NULL, 0-length) buffer */
+        { 1, 0, sizeof(item) }, /* Size query, (NULL, 0-length) buffer */
+        { 1, 1, sizeof(item) }, /* Buffer too short */
+    };
+    struct wally_tx_witness_stack *witness;
+    struct wally_tx *tx;
+    unsigned char buf[sizeof(item)];
+    size_t i, written;
+    int ret;
+
+    ret = wally_tx_witness_stack_init_alloc(2, &witness);
+    check_ret(ret);
+    ret = wally_tx_witness_stack_add(witness, NULL, 0);
+    check_ret(ret);
+    ret = wally_tx_witness_stack_add(witness, item, sizeof(item));
+    check_ret(ret);
+    ret = wally_tx_init_alloc(2, 0, 1, 0, &tx);
+    check_ret(ret);
+    ret = wally_tx_add_raw_input(tx, txhash, sizeof(txhash), 0, 0xffffffff,
+                                 NULL, 0, witness, 0);
+    check_ret(ret);
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+        memset(buf, 0, sizeof(buf));
+        ret = wally_tx_get_input_witness(tx, 0, cases[i].wit_index,
+                                         cases[i].len ? buf : NULL,
+                                         cases[i].len, &written);
+        if (ret != WALLY_OK || written != cases[i].expected_written || buf[0]) {
+            printf("witness case %d failed\n", (int)i);
+            return false;
+        }
+    }
+
+    wally_tx_witness_stack_free(witness);
+    wally_tx_free(tx);
+    return true;
+}
+
 int main(void)
 {
     bool tests_ok = true;
@@ -210,6 +259,7 @@ int main(void)
 
     RUN(test_tx_parse);
     RUN(test_tx_add_aliased);
+    RUN(test_tx_get_witness);
 
     return tests_ok ? 0 : 1;
 }

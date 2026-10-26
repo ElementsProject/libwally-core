@@ -3005,10 +3005,10 @@ int wally_tx_input_get_witness(const struct wally_tx_input *input, size_t index,
                                unsigned char *bytes_out, size_t len, size_t *written)
 {
     const struct wally_tx_witness_item *item;
-    if (!(item = get_witness_preamble(input, index, written)) || !bytes_out ||
-        len < item->witness_len)
+    if (!(item = get_witness_preamble(input, index, written)) ||
+        BYTES_INVALID(bytes_out, len))
         return WALLY_EINVAL;
-    if (item->witness_len)
+    if (bytes_out && item->witness_len && len >= item->witness_len)
         memcpy(bytes_out, item->witness, item->witness_len);
     *written = item->witness_len;
     return WALLY_OK;
