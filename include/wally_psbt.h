@@ -2649,6 +2649,10 @@ WALLY_CORE_API int wally_psbt_signing_cache_disable(
  *
  * .. note:: See https://github.com/bitcoin/bips/blob/master/bip-0174.mediawiki#simple-signer-algorithm
  *|    for a description of the signing algorithm.
+ *
+ * .. note:: Inputs are signed using the sighash stored for the input,
+ *|    or SIGHASH_ALL/SIGHASH_DEFAULT if not present. The caller should ensure
+ *|    that each input sighash is acceptable before signing.
  */
 WALLY_CORE_API int wally_psbt_sign(
     struct wally_psbt *psbt,
@@ -2667,6 +2671,10 @@ WALLY_CORE_API int wally_psbt_sign(
  *
  * .. note:: See https://github.com/bitcoin/bips/blob/master/bip-0174.mediawiki#simple-signer-algorithm
  *|    for a description of the signing algorithm.
+ *
+ * .. note:: Inputs are signed using the sighash stored for the input,
+ *|    or SIGHASH_ALL/SIGHASH_DEFAULT if not present. The caller should ensure
+ *|    that each input sighash is acceptable before signing.
  */
 WALLY_CORE_API int wally_psbt_sign_bip32(
     struct wally_psbt *psbt,
@@ -2684,6 +2692,10 @@ WALLY_CORE_API int wally_psbt_sign_bip32(
  * :param hdkey: The derived extended key to sign with.
  * :param flags: Flags controlling signing. Must be 0 or `EC_FLAG_GRIND_R`,
  *|    logical or-d with `EC_FLAG_ELEMENTS` if ``psbt`` is a PSET.
+ *
+ * .. note:: Inputs are signed using the sighash stored for the input,
+ *|    or SIGHASH_ALL/SIGHASH_DEFAULT if not present. The caller should ensure
+ *|    that the sighash is acceptable before signing.
  */
 WALLY_CORE_API int wally_psbt_sign_input_bip32(
     struct wally_psbt *psbt,
