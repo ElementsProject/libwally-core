@@ -356,10 +356,12 @@ static int map_field_set(struct wally_map *map_in, uint32_t type,
 #define MAP_INNER_FIELD_PSET(typ, name, FT) \
     int wally_psbt_ ## typ ## _get_ ## name ## _len(const struct wally_psbt_ ## typ *p, \
                                                     size_t * written) { \
+        if (written) *written = 0; \
         return WALLY_ERROR; \
     } \
     int wally_psbt_ ## typ ## _get_ ## name(const struct wally_psbt_ ## typ *p, \
                                             unsigned char *bytes_out, size_t len, size_t * written) { \
+        if (written) *written = 0; \
         return WALLY_ERROR; \
     } \
     int wally_psbt_ ## typ ## _clear_ ## name(struct wally_psbt_ ## typ *p) { \
@@ -1039,6 +1041,8 @@ int wally_psbt_output_get_blinding_status(const struct wally_psbt_output *output
                                           uint32_t flags, size_t *written)
 {
 #ifndef BUILD_ELEMENTS
+    if (written)
+        *written = 0;
     return WALLY_ERROR;
 #else
     uint64_t state;
@@ -1416,6 +1420,7 @@ int wally_psbt_get_global_tx_alloc(const struct wally_psbt *psbt, struct wally_t
 #else
 #define PSBT_GET_PSET(name, v) \
     int wally_psbt_get_ ## name(const struct wally_psbt *psbt, size_t *written) { \
+        if (written) *written = 0; \
         return WALLY_ERROR; \
     }
 #endif /* BUILD_ELEMENTS */
@@ -1540,10 +1545,10 @@ int wally_psbt_find_input_spending_utxo(const struct wally_psbt *psbt,
 #ifndef WALLY_ABI_NO_ELEMENTS
 int wally_psbt_get_global_scalars_size(const struct wally_psbt *psbt, size_t *written)
 {
+    if (written) *written = 0;
 #ifndef BUILD_ELEMENTS
     return WALLY_ERROR;
 #else
-    if (written) *written = 0;
     if (!psbt_is_valid(psbt) || psbt->version == PSBT_0 || !written)
         return WALLY_EINVAL;
     *written = psbt->global_scalars.num_items;
@@ -1555,10 +1560,10 @@ int wally_psbt_find_global_scalar(struct wally_psbt *psbt,
                                   const unsigned char *scalar, size_t scalar_len,
                                   size_t *written)
 {
+    if (written) *written = 0;
 #ifndef BUILD_ELEMENTS
     return WALLY_ERROR;
 #else
-    if (written) *written = 0;
     if (!psbt_is_valid(psbt) || psbt->version == PSBT_0)
         return WALLY_EINVAL;
     return wally_map_find(&psbt->global_scalars, scalar, scalar_len, written);
@@ -4541,6 +4546,8 @@ int wally_psbt_get_input_signing_script_len(const struct wally_psbt *psbt,
                                         size_t index, size_t *written)
 {
     const unsigned char *p;
+    if (written)
+        *written = 0;
     return written ? get_signing_script(psbt, index, &p, written) : WALLY_EINVAL;
 }
 
@@ -4679,6 +4686,9 @@ int wally_psbt_get_input_scriptcode_len(const struct wally_psbt *psbt, size_t in
 {
     unsigned char p2pkh[WALLY_SCRIPTPUBKEY_P2PKH_LEN];
     const unsigned char *p;
+
+    if (written)
+        *written = 0;
     return get_scriptcode(psbt, index, p2pkh, sizeof(p2pkh),
                           script, script_len, &p, written);
 }
@@ -5962,10 +5972,12 @@ int wally_psbt_is_elements(const struct wally_psbt *psbt, size_t *written)
 #define PSBT_FIELD_PSET(typ, name, ver) \
     int wally_psbt_get_ ## typ ## _ ## name ## _len(const struct wally_psbt *psbt, \
                                                     size_t index, size_t *written) { \
+        if (written) *written = 0; \
         return WALLY_ERROR; \
     } \
     int wally_psbt_get_ ## typ ## _ ## name(const struct wally_psbt *psbt, size_t index, \
                                             unsigned char *bytes_out, size_t len, size_t *written) { \
+        if (written) *written = 0; \
         return WALLY_ERROR; \
     } \
     int wally_psbt_clear_ ## typ ## _ ## name(struct wally_psbt *psbt, size_t index) { \
@@ -6282,6 +6294,7 @@ PSBT_GET_I_PSET(output, blinder_index, uint32_t, PSBT_2)
 
 int wally_psbt_has_output_blinder_index(const struct wally_psbt *psbt, size_t index, size_t *written) {
 #ifndef BUILD_ELEMENTS
+    if (written) *written = 0;
     return WALLY_ERROR;
 #else
     struct wally_psbt_output *p = psbt_get_output(psbt, index);
@@ -6316,6 +6329,7 @@ PSBT_FIELD_PSET(output, asset_blinding_surjectionproof, PSBT_2)
 int wally_psbt_get_output_blinding_status(const struct wally_psbt *psbt, size_t index, uint32_t flags, size_t *written)
 {
 #ifndef BUILD_ELEMENTS
+    if (written) *written = 0;
     return WALLY_ERROR;
 #else
     struct wally_psbt_output *p = psbt_get_output(psbt, index);

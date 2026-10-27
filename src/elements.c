@@ -224,6 +224,8 @@ int wally_asset_value_commitment(uint64_t value,
 int wally_asset_rangeproof_get_maximum_len(uint64_t value, int min_bits, size_t *written)
 {
 #ifndef BUILD_ELEMENTS
+    if (written)
+        *written = 0;
     return WALLY_ERROR;
 #else
     const secp256k1_context *ctx = secp_ctx();
@@ -259,6 +261,8 @@ int wally_asset_rangeproof_with_nonce(uint64_t value,
                                       size_t *written)
 {
 #ifndef BUILD_ELEMENTS
+    if (written)
+        *written = 0;
     return WALLY_ERROR;
 #else
     const secp256k1_context *ctx = secp_ctx();
@@ -340,10 +344,15 @@ int wally_asset_rangeproof(uint64_t value,
                            size_t *written)
 {
 #ifndef BUILD_ELEMENTS
+    if (written)
+        *written = 0;
     return WALLY_ERROR;
 #else
     unsigned char nonce_hash[SHA256_LEN];
     int ret;
+
+    if (written)
+        *written = 0;
 
     ret = wally_ecdh_nonce_hash(pub_key, pub_key_len, priv_key, priv_key_len,
                                 nonce_hash, sizeof(nonce_hash));
@@ -371,6 +380,9 @@ int wally_explicit_rangeproof(uint64_t value,
                               const unsigned char *generator, size_t generator_len,
                               unsigned char *bytes_out, size_t len, size_t *written)
 {
+    if (written)
+        *written = 0;
+
 #ifndef BUILD_ELEMENTS
     return WALLY_ERROR;
 #else
@@ -509,10 +521,15 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
                         uint64_t *value_out)
 {
 #ifndef BUILD_ELEMENTS
+    if (value_out)
+        *value_out = 0;
     return WALLY_ERROR;
 #else
     unsigned char nonce_hash[SHA256_LEN];
     int ret;
+
+    if (value_out)
+        *value_out = 0;
 
     ret = wally_ecdh_nonce_hash(pub_key, pub_key_len, priv_key, priv_key_len,
                                 nonce_hash, sizeof(nonce_hash));
@@ -535,11 +552,14 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
 int wally_asset_surjectionproof_size(size_t num_inputs, size_t *written)
 {
 #ifndef BUILD_ELEMENTS
+    if (written)
+        *written = 0;
     return WALLY_ERROR;
 #else
     size_t num_used = num_inputs > 3 ? 3 : num_inputs;
     if (written)
         *written = 0;
+
     if (!num_inputs || num_inputs > SECP256K1_SURJECTIONPROOF_MAX_N_INPUTS || !written)
         return WALLY_EINVAL;
     *written = SECP256K1_SURJECTIONPROOF_SERIALIZATION_BYTES(num_inputs, num_used);
@@ -646,9 +666,13 @@ int wally_asset_surjectionproof_len(const unsigned char *output_asset, size_t ou
                                     size_t *written)
 {
 #ifndef BUILD_ELEMENTS
+    if (written)
+        *written = 0;
     return WALLY_ERROR;
 #else
     unsigned char buff[1];
+    if (written)
+        *written = 0;
     return surjproof_impl(output_asset, output_asset_len, output_abf, output_abf_len,
                           output_generator, output_generator_len, bytes, bytes_len,
                           asset, asset_len, abf, abf_len, generator, generator_len,
@@ -666,6 +690,9 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
                                 unsigned char *bytes_out, size_t len,
                                 size_t *written)
 {
+    if (written)
+        *written = 0;
+
 #ifndef BUILD_ELEMENTS
     return WALLY_ERROR;
 #else
@@ -1092,11 +1119,12 @@ int wally_asset_blinding_key_to_vbf(
 
 int wally_asset_pak_whitelistproof_size(size_t num_keys, size_t *written)
 {
+    if (written)
+        *written = 0;
+
 #ifndef BUILD_ELEMENTS
     return WALLY_ERROR;
 #else
-    if (written)
-        *written = 0;
     if (!written || num_keys > SECP256K1_WHITELIST_MAX_N_KEYS)
         return WALLY_EINVAL;
     *written = 1 + 32 * (1 + num_keys);
@@ -1114,6 +1142,8 @@ int wally_asset_pak_whitelistproof(
     unsigned char *bytes_out, size_t len, size_t *written)
 {
 #ifndef BUILD_ELEMENTS
+    if (written)
+        *written = 0;
     return WALLY_ERROR;
 #else
     const secp256k1_context *ctx = secp_ctx();
@@ -1183,9 +1213,13 @@ int wally_asset_pak_whitelistproof_len(
     size_t *written)
 {
 #ifndef BUILD_ELEMENTS
+    if (written)
+        *written = 0;
     return WALLY_ERROR;
 #else
     unsigned char buff[1]; /* Undersized: we only want the length */
+    if (written)
+        *written = 0;
     return wally_asset_pak_whitelistproof(online_keys, online_keys_len,
                                           offline_keys, offline_keys_len,
                                           key_index,

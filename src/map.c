@@ -99,6 +99,8 @@ static int map_find(const struct wally_map *map_in, size_t index,
 int wally_map_find_from(const struct wally_map *map_in, size_t index,
                         const unsigned char *key, size_t key_len, size_t *written)
 {
+    if (written)
+        *written = 0;
     return key ? map_find(map_in, index, key, key_len, written) : WALLY_EINVAL;
 }
 

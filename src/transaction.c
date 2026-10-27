@@ -1836,6 +1836,10 @@ int wally_tx_get_length(const struct wally_tx *tx, uint32_t flags,
                         size_t *written)
 {
     size_t is_elements = 0;
+
+    if (written)
+        *written = 0;
+
 #ifdef BUILD_ELEMENTS
     if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
         return WALLY_EINVAL;
@@ -2154,6 +2158,9 @@ int wally_tx_to_bytes(const struct wally_tx *tx, uint32_t flags,
                       size_t *written)
 {
     size_t is_elements = 0;
+
+    if (written)
+        *written = 0;
 
 #ifdef BUILD_ELEMENTS
     if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
@@ -3207,6 +3214,7 @@ static struct wally_tx_output *tx_get_output(const struct wally_tx *tx, size_t i
 #else
 #define TX_GET_B_ELEMENTS(typ, name) \
     int wally_tx_get_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len, size_t *written) { \
+        if (written) *written = 0; \
         return WALLY_ERROR; \
     }
 #endif /* BUILD_ELEMENTS */
@@ -3233,6 +3241,7 @@ static struct wally_tx_output *tx_get_output(const struct wally_tx *tx, size_t i
 #else
 #define TX_GET_I_ELEMENTS(typ, name) \
     int wally_tx_get_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, size_t *written) { \
+        if (written) *written = 0; \
         return WALLY_ERROR; \
     }
 #endif /* BUILD_ELEMENTS */
