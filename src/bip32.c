@@ -6,6 +6,7 @@
 #include "ccan/ccan/build_assert/build_assert.h"
 #include <include/wally_bip32.h>
 #include <include/wally_crypto.h>
+#include <include/wally_map.h>
 #include "bip32_int.h"
 
 #define BIP32_BTC_DEFINED_FLAGS (BIP32_FLAG_KEY_PRIVATE | \
@@ -87,7 +88,7 @@ static bool is_hardened_indicator(char c, bool allow_upper)
     return c == '\'' || c == 'h' || (allow_upper && c == 'H');
 }
 
-static size_t get_child_number(const char *str, size_t str_len, bool allow_upper, uint32_t *v)
+static size_t get_child_num(const char *str, size_t str_len, bool allow_upper, uint32_t *v)
 {
     uint64_t value = 0;
     size_t i = 0;
@@ -107,18 +108,56 @@ static size_t get_child_number(const char *str, size_t str_len, bool allow_upper
     return i;
 }
 
-static size_t get_multi_index(const char *str, size_t str_len, uint32_t multi_index, bool allow_upper, uint32_t *features, uint32_t *v)
+static int check_reused_child_num(struct wally_map *child_map,
+                                  uint64_t *first64, size_t remaining_len,
+                                  uint32_t child_num)
 {
+    if (child_num < 64) {
+        /* Fast path for small numbers uses 'first64' as a bitset */
+        if ((*first64) & (uint64_t)1 << child_num)
+            return WALLY_EINVAL; /* Re-used */
+        (*first64) |= (uint64_t)1 << child_num;
+        return WALLY_OK; /* Unused, added to the bitset */
+    } else {
+        /* Look up large numbers in 'child_map' */
+        int ret;
+        size_t found_idx;
+        if (!child_map->items_allocation_len) {
+            /* Initialize on demand, try to minimize reallocs */
+            ret = wally_map_init((remaining_len >> 2) + 1, NULL, child_map);
+            if (ret != WALLY_OK)
+                return ret;
+        } else {
+            ret = wally_map_find_integer(child_map, child_num, &found_idx);
+            if (ret != WALLY_OK || found_idx != 0)
+                return WALLY_EINVAL; /* Re-used */
+        }
+        /* Unused, add it to 'child_map' */
+        return wally_map_add_integer(child_map, child_num, NULL, 0);
+    }
+}
+
+static int get_multi_index(const char *str, size_t str_len,
+                           uint32_t multi_index, bool allow_upper,
+                           uint32_t *features, uint32_t *v, size_t *expr_len_out)
+{
+    struct wally_map child_map;
+    uint64_t first64 = 0;
     size_t i = 1; /* Start at 1 to skip '<' */
     uint32_t cur_index = 0;
     bool found_ours = false;
+    int ret = WALLY_OK;
+
+    *expr_len_out = 0;
 
     if (!str_len || str[0] != '<')
-        return 0; /* Not a multi-index expression */
+        return WALLY_OK; /* Not a multi-index expression */
+
+    child_map.items_allocation_len = 0; /* Initialized on-demand */
 
     while (i < str_len) {
         uint32_t value = 0;
-        size_t expr_len = get_child_number(str + i, str_len - i, allow_upper, &value);
+        size_t expr_len = get_child_num(str + i, str_len - i, allow_upper, &value);
         if (!expr_len) {
             if (str[i] != '>' || !found_ours || cur_index < 2) {
                 /* No number, improperly terminated, multi_index not found,
@@ -127,14 +166,20 @@ static size_t get_multi_index(const char *str, size_t str_len, uint32_t multi_in
             }
             *features |= BIP32_PATH_IS_MULTIPATH;
             *features |= (cur_index << BIP32_PATH_MULTI_SHIFT);
-            return i + 1; /* Consume trailing '>' */
+            if (child_map.items_allocation_len)
+                wally_map_clear(&child_map);
+            *expr_len_out = i + 1; /* Consume trailing '>' */
+            return WALLY_OK;
         }
         i += expr_len;
+        ret = check_reused_child_num(&child_map, &first64, str_len - i, value);
+        if (ret != WALLY_OK)
+            break;
         if (cur_index == multi_index) {
             found_ours = true;
             *v = value;
         }
-        if (++cur_index >= 255)
+        if (++cur_index > 255)
             break; /* Unsupported number of multi_indices */
         if (value & BIP32_INITIAL_HARDENED_CHILD)
             *features |= BIP32_PATH_IS_HARDENED;
@@ -148,9 +193,11 @@ static size_t get_multi_index(const char *str, size_t str_len, uint32_t multi_in
         }
     }
     /* No valid multi-index expression found */
+    if (child_map.items_allocation_len)
+        wally_map_clear(&child_map);
     *features = 0;
     *v = 0;
-    return 0;
+    return ret;
 }
 
 static int path_from_str_n(const char *str, size_t str_len,
@@ -161,6 +208,7 @@ static int path_from_str_n(const char *str, size_t str_len,
 {
     const bool allow_upper = flags & BIP32_FLAG_ALLOW_UPPER;
     size_t i = 0;
+    int ret = WALLY_OK;
 
     if (written)
         *written = 0;
@@ -198,12 +246,12 @@ static int path_from_str_n(const char *str, size_t str_len,
             if (!(flags & BIP32_FLAG_STR_MULTIPATH))
                 goto fail; /* Multi-path not allowed */
             flags &= ~BIP32_FLAG_STR_MULTIPATH; /* Only allow one multi-path */
-            expr_len = get_multi_index(str + i, str_len - i, multi_index,
-                                        allow_upper, features, &v);
-            if (!expr_len)
-                goto fail; /* Invalid multi-path expression */
+            ret = get_multi_index(str + i, str_len - i, multi_index,
+                                  allow_upper, features, &v, &expr_len);
+            if (ret != WALLY_OK || !expr_len)
+                goto fail; /* Error during parse or invalid multi-path */
 
-        } else if (i < str_len && str[i] == '*') {
+        } else if (str[i] == '*') {
             /* Wildcard ('*') */
             if (!(flags & BIP32_FLAG_STR_WILDCARD))
                 goto fail; /* Wildcard not allowed, or previously seen */
@@ -219,7 +267,7 @@ static int path_from_str_n(const char *str, size_t str_len,
             }
         } else {
             /* Child number */
-            expr_len = get_child_number(str + i, str_len - i, allow_upper, &v);
+            expr_len = get_child_num(str + i, str_len - i, allow_upper, &v);
             if (!expr_len)
                 goto fail; /* Expected a number */
             if (v & BIP32_INITIAL_HARDENED_CHILD)
@@ -253,7 +301,7 @@ fail:
         *features = 0;
     if (written)
         *written = 0;
-    return WALLY_EINVAL;
+    return ret != WALLY_OK ? ret : WALLY_EINVAL;
 }
 
 int bip32_path_from_str_n(const char *str, size_t str_len,
