@@ -3003,6 +3003,28 @@ static const struct address_test {
         ADDR("mn9rm3FtHUHANae2p5jURy9GXJGDM1ox43")
     },
     /*
+     * raw() witness programs
+     */
+    {
+        "address - raw - witness v1 anchor",
+        "raw(51024e73)",
+        WALLY_NETWORK_BITCOIN_MAINNET,
+        0, 0, 0,
+        ADDR("bc1pfeessrawgf")
+    }, {
+        "address - raw - witness v2",
+        "raw(5210751e76e8199196d454941c45d1b3a323)",
+        WALLY_NETWORK_BITCOIN_MAINNET,
+        0, 0, 0,
+        ADDR("bc1zw508d6qejxtdg4y5r3zarvaryvaxxpcs")
+    }, {
+        "address - raw - witness v16",
+        "raw(6002751e)",
+        WALLY_NETWORK_BITCOIN_MAINNET,
+        0, 0, 0,
+        ADDR("bc1sw50qgdz25j")
+    },
+    /*
      * Taproot (Bitcoin)
      */
     {
@@ -3199,6 +3221,18 @@ static const struct address_test {
         WALLY_NETWORK_LIQUID,
         0, 0, 0,
         ADDR("lq1pqvrmexgzdqfplvx5lmtytu2jqwyqklahrva5pr87ujeq0c6s7el285y2q8urxwx44a605v5q9kj9a75cx6myl58yj879veess8jk0uwtedks5lxz9v7l")
+    }, {
+        "address errchk - unsupported address - liquid bare multi",
+        "multi(1,0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("")
+    }, {
+        "address errchk - unsupported address - liquid ct bare multi",
+        "ct(slip77(slip77_key),multi(1,0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798))",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("")
     },
     /* ct() descriptors are Elements without the el prefix, and blinded */
     {
@@ -3289,6 +3323,47 @@ static const struct address_test {
     },{
         "address errchk - unsupported address - raw",
         "raw(6a4c4f54686973204f505f52455455524e207472616e73616374696f6e206f7574707574207761732063726561746564206279206d6f646966696564206372656174657261777472616e73616374696f6e2e)#zf2avljj",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
+    },{
+        /* The script starts with OP_1 <33 byte push> but is not a witness program */
+        "address errchk - unsupported address - bare multi",
+        "multi(1,0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
+    },{
+        "address errchk - unsupported address - bare sortedmulti",
+        "sortedmulti(1,0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)",
+        WALLY_NETWORK_BITCOIN_TESTNET, 0, 0, 0, ADDR("")
+    },{
+        "address errchk - unsupported address - ranged bare multi",
+        "multi(1,mainnet_xpub/*)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
+    },{
+        "address errchk - unsupported address - bare 2 key multi",
+        "multi(1,0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798,03f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
+    },{
+        "address errchk - unsupported address - bare miniscript",
+        "or_d(multi(1,0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798),older(2))",
+        WALLY_NETWORK_BITCOIN_REGTEST, 0, 0, 0, ADDR("")
+    },{
+        "address errchk - unsupported address - raw bare multi",
+        "raw(51210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179851ae)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
+    },{
+        "address errchk - unsupported address - raw v0 short push",
+        "raw(00141111111111111111111111111111111111111111111111111111111111111111)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
+    },{
+        "address errchk - unsupported address - raw v1 empty push",
+        "raw(51001111111111111111111111111111111111111111111111111111111111111111)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
+    },{
+        "address errchk - unsupported address - raw v16 pushdata1",
+        "raw(604c02abcd)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
+    },{
+        "address errchk - unsupported address - raw v0 bad length",
+        "raw(0002abcd)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
     },{
         "address errchk - unterminated key origin",

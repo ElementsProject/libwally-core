@@ -421,6 +421,9 @@ WALLY_CORE_API int wally_descriptor_to_script(
 /**
  * Create an address corresponding to an output descriptor.
  *
+ * Returns WALLY_EINVAL if the descriptor script has no address
+ * representation, e.g. p2pk or bare multisig.
+ *
  * :param descriptor: Parsed output descriptor.
  * :param variant: The variant of descriptor to generate. See `wally_descriptor_get_num_variants`.
  * :param multi_index: The multi-path item to generate. See `wally_descriptor_get_num_paths`.
@@ -439,6 +442,9 @@ WALLY_CORE_API int wally_descriptor_to_address(
 
 /**
  * Create addresses that correspond to the derived range of an output descriptor.
+ *
+ * Returns WALLY_EINVAL if the descriptor script has no address
+ * representation, e.g. p2pk or bare multisig.
  *
  * :param descriptor: Parsed output descriptor.
  * :param variant: The variant of descriptor to generate. See `wally_descriptor_get_num_variants`.
