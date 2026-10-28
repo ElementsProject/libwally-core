@@ -124,19 +124,21 @@ static int address_from_private_key(const unsigned char *bytes,
     return ret;
 }
 
-static void aes_enc_impl(const unsigned char *src, const unsigned char *xor_bytes,
-                         const unsigned char *key, unsigned char *bytes_out)
+static int aes_enc_impl(const unsigned char *src, const unsigned char *xor_bytes,
+                        const unsigned char *key, unsigned char *bytes_out)
 {
     unsigned char plaintext[AES_BLOCK_LEN];
     size_t i;
+    int ret;
 
     for (i = 0; i < sizeof(plaintext); ++i)
         plaintext[i] = src[i] ^ xor_bytes[i];
 
-    wally_aes(key, AES_KEY_LEN_256, plaintext, AES_BLOCK_LEN,
-              AES_FLAG_ENCRYPT, bytes_out, AES_BLOCK_LEN);
+    ret = wally_aes(key, AES_KEY_LEN_256, plaintext, AES_BLOCK_LEN,
+                    AES_FLAG_ENCRYPT, bytes_out, AES_BLOCK_LEN);
 
     wally_clear(plaintext, sizeof(plaintext));
+    return ret;
 }
 
 int bip38_raw_from_private_key(const unsigned char *bytes, size_t bytes_len,
@@ -181,8 +183,12 @@ int bip38_raw_from_private_key(const unsigned char *bytes, size_t bytes_len,
     buf.prefix = BIP38_PREFIX;
     buf.ec_type = BIP38_NO_ECMUL; /* FIXME: EC-Multiply support */
     buf.flags = BIP38_FLAG_DEFAULT | (compressed ? BIP38_FLAG_COMPRESSED : 0);
-    aes_enc_impl(bytes + 0, derived.half1_lo, derived.half2, buf.u.normal.half1);
-    aes_enc_impl(bytes + 16, derived.half1_hi, derived.half2, buf.u.normal.half2);
+    ret = aes_enc_impl(bytes + 0, derived.half1_lo, derived.half2, buf.u.normal.half1);
+    if (ret != WALLY_OK)
+        goto finish;
+    ret = aes_enc_impl(bytes + 16, derived.half1_hi, derived.half2, buf.u.normal.half2);
+    if (ret != WALLY_OK)
+        goto finish;
 
     if (flags & BIP38_KEY_SWAP_ORDER) {
         /* Shuffle hash from the beginning to the end (normal->swapped) */
@@ -227,18 +233,20 @@ int bip38_from_private_key(const unsigned char *bytes, size_t bytes_len,
 }
 
 
-static void aes_dec_impl(const unsigned char *cyphertext, const unsigned char *xor_bytes,
-                         const unsigned char *key, unsigned char *bytes_out)
+static int aes_dec_impl(const unsigned char *cyphertext, const unsigned char *xor_bytes,
+                        const unsigned char *key, unsigned char *bytes_out)
 {
     size_t i;
+    int ret;
 
-    wally_aes(key, AES_KEY_LEN_256,
-              (unsigned char *)cyphertext, AES_BLOCK_LEN,
-              AES_FLAG_DECRYPT,
-              bytes_out, AES_BLOCK_LEN);
+    ret = wally_aes(key, AES_KEY_LEN_256,
+                    (unsigned char *)cyphertext, AES_BLOCK_LEN,
+                    AES_FLAG_DECRYPT,
+                    bytes_out, AES_BLOCK_LEN);
 
     for (i = 0; i < AES_BLOCK_LEN; ++i)
         bytes_out[i] ^= xor_bytes[i];
+    return ret;
 }
 
 static int to_private_key(const char *bip38,
@@ -305,8 +313,12 @@ static int to_private_key(const char *bip38,
                            (unsigned char *)&derived, sizeof(derived))))
         goto finish;
 
-    aes_dec_impl(buf.u.normal.half1, derived.half1_lo, derived.half2, bytes_out + 0);
-    aes_dec_impl(buf.u.normal.half2, derived.half1_hi, derived.half2, bytes_out + 16);
+    ret = aes_dec_impl(buf.u.normal.half1, derived.half1_lo, derived.half2, bytes_out + 0);
+    if (ret != WALLY_OK)
+        goto finish;
+    ret = aes_dec_impl(buf.u.normal.half2, derived.half1_hi, derived.half2, bytes_out + 16);
+    if (ret != WALLY_OK)
+        goto finish;
 
     if (flags & BIP38_KEY_RAW_MODE)
         ret = base58_get_checksum(bytes_out, len, &checksum);
