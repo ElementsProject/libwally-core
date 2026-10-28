@@ -231,8 +231,10 @@ static int path_from_str_n(const char *str, size_t str_len,
         size_t start = i;
         if (i < str_len && (str[i] == 'm' || (allow_upper && str[i] == 'M')))
             ++i; /* Skip */
-        if (i < str_len && str[i] == '/')
+        if (i < str_len && str[i] == '/') {
             ++i; /* Skip */
+        } else if (i == start + 1)
+            goto fail; /* Leading m with no following slash */
         if (start == i)
             *features |= BIP32_PATH_IS_BARE;
     }

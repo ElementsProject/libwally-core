@@ -594,6 +594,8 @@ class BIP32Tests(unittest.TestCase):
                  ('m',            0, 0),          # Empty resulting path (1)
                  ('m/',           0, 0),          # Empty resulting path (2)
                  ('/',            0, 0),          # Empty resulting path (3)
+                 ('m*',           0, 0),          # Wildcard without path
+                 ('m0',           0, 0),          # M without seperator
                  ('M/1',          0, 0),          # Uppercase M without flag
                  ('m/1H',         0, 0),          # Uppercase H without flag
                  ('//',           0, 0),          # Trailing slash (1)
