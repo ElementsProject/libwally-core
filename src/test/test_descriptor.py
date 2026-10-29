@@ -378,7 +378,7 @@ class DescriptorTests(unittest.TestCase):
              MS_ONLY, MS_IS_PRIVATE, 5, 2),
             # tr() key-path only: MS_IS_TAPSCRIPT must NOT be set
             (f'tr({k1})',
-             0, MS_IS_DESCRIPTOR|MS_IS_TAPROOT, 2, 1),
+             0, MS_IS_DESCRIPTOR|MS_IS_TAPROOT|MS_IS_X_ONLY, 2, 1),
             # tr() with taptree: MS_IS_TAPSCRIPT must be set
             (f'tr({k1},{{pk({k1}),pk({k1})}})',
              0, MS_IS_DESCRIPTOR|MS_IS_TAPROOT|MS_IS_TAPSCRIPT|MS_IS_X_ONLY, 4, 3),
@@ -388,10 +388,10 @@ class DescriptorTests(unittest.TestCase):
             cases.extend([
                 # Parsing a descriptor as elements returns elements in its features
                 (f'tr({k1})',
-                 AS_ELEMENTS, MS_IS_DESCRIPTOR|MS_IS_TAPROOT|MS_IS_ELEMENTS, 2, 1),
+                 AS_ELEMENTS, MS_IS_DESCRIPTOR|MS_IS_TAPROOT|MS_IS_X_ONLY|MS_IS_ELEMENTS, 2, 1),
                 # el-prefixed builtins return elements in their features
                 (f'eltr({k1})',
-                 0, MS_IS_DESCRIPTOR|MS_IS_TAPROOT|MS_IS_ELEMENTS, 2, 1),
+                 0, MS_IS_DESCRIPTOR|MS_IS_TAPROOT|MS_IS_X_ONLY|MS_IS_ELEMENTS, 2, 1),
                 # Note that ct() blinding keys aren't returned in the key count.
                 # slip77 builtins return elements and slip77 in their features,
                 # and the ct() parent wrapper is included in their depth.
@@ -418,7 +418,7 @@ class DescriptorTests(unittest.TestCase):
                 (f'ct(0286fc9a38e765d955e9b0bcc18fa9ae81b0c893e2dd1ef5542a9c73780a086b90,wpkh({k1}))',
                  0, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS|MS_IS_ELIP150, 3, 1),
                 (f'ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,tr({k1}))',
-                 0, MS_IS_DESCRIPTOR|MS_IS_TAPROOT|MS_IS_ELEMENTS|MS_IS_ELIP150, 3, 1),
+                 0, MS_IS_DESCRIPTOR|MS_IS_TAPROOT|MS_IS_X_ONLY|MS_IS_ELEMENTS|MS_IS_ELIP150, 3, 1),
                 ])
 
         for descriptor, flags, expected_features, expected_depth, expected_keys in cases:

@@ -688,6 +688,17 @@ static bool node_is_root(const ms_node *node)
            node->parent->kind == KIND_BRANCH;
 }
 
+static bool node_must_be_xonly(const ms_node *node, uint32_t flags)
+{
+    /* True if this node must be treated as an x-only key */
+    if (node->parent && (node->parent->kind == KIND_DESCRIPTOR_RAW_TR ||
+                         node->parent->kind == KIND_DESCRIPTOR_TR))
+        return true; /* Taproot internal key: x-only */
+    if (node->parent && node_is_ct(node->parent))
+        return false; /* ct() blinding key: Not x-only */
+    return (flags & WALLY_MINISCRIPT_TAPSCRIPT) != 0;
+}
+
 static void node_free(ms_node *node)
 {
     if (node) {
@@ -2741,7 +2752,7 @@ static int analyze_key_hex(ms_ctx *ctx, ms_node *node,
 {
     unsigned char key[EC_PUBLIC_KEY_UNCOMPRESSED_LEN], *key_p = key;
     size_t key_len;
-    bool allow_xonly, make_xonly = false, is_private = false;
+    bool make_xonly = false, is_private = false;
     int ret = WALLY_OK;
 
     /* Strings too long for 'key' return OK without being hex checked */
@@ -2765,13 +2776,12 @@ static int analyze_key_hex(ms_ctx *ctx, ms_node *node,
     } else
         goto cleanup; /* Not a pubkey */
 
+    make_xonly = node_must_be_xonly(node, flags);
+
     if (!is_private) {
         /* Ensure the pubkey is allowed in this context/convert as needed */
-        make_xonly = node->parent &&
-            (node->parent->kind == KIND_DESCRIPTOR_RAW_TR ||
-             node->parent->kind == KIND_DESCRIPTOR_TR);
-        allow_xonly = make_xonly || flags & WALLY_MINISCRIPT_TAPSCRIPT;
-        if (key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN && allow_xonly)
+        bool allow_xonly = make_xonly || flags & WALLY_MINISCRIPT_TAPSCRIPT;
+        if (key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN && (is_ct_key || allow_xonly))
             goto cleanup; /* Uncompressed key not allowed here */
         if (key_len == EC_XONLY_PUBLIC_KEY_LEN && !allow_xonly)
             goto cleanup; /* X-only not allowed here */
@@ -2797,8 +2807,12 @@ static int analyze_key_hex(ms_ctx *ctx, ms_node *node,
     if (is_ct_key)
         ctx->features |= WALLY_MS_IS_ELIP150;
     if (is_private) {
+        uint32_t features = WALLY_MS_IS_PRIVATE | WALLY_MS_IS_RAW |
+                            (make_xonly ? WALLY_MS_IS_X_ONLY : 0);
         node->kind = KIND_PRIVATE_KEY;
-        node->flags |= (WALLY_MS_IS_PRIVATE | WALLY_MS_IS_RAW);
+        node->flags |= features;
+        if (!is_ct_key)
+            ctx->features |= features;
         goto cleanup;
     }
     node->kind = KIND_PUBLIC_KEY;
@@ -2856,8 +2870,9 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
          * Skip when parsing a key for policy checks (so src is NULL) */
         node->number = ctx->src ? (uint64_t)(node->data - ctx->src) << 32u : 0;
         node->number |= size;
-        ctx->features |= WALLY_MS_IS_PARENTED;
         node->flags |= WALLY_MS_IS_PARENTED;
+        if (!is_ct_key)
+            ctx->features |= WALLY_MS_IS_PARENTED;
         if (size > 10u) {
             if (size == 11u)
                 return WALLY_EINVAL; /* Single leading '/' */
@@ -2888,11 +2903,12 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
             return ret; /* Hashing the checksum failed */
     }
     if (ret == WALLY_OK && privkey_len && privkey_len <= EC_PRIVATE_KEY_LEN + 2) {
+        const bool make_xonly = node_must_be_xonly(node, flags);
         if (ctx->addr_ver && ctx->addr_ver->version_wif != privkey[0])
             ret = WALLY_EINVAL;
         else if (privkey_len == EC_PRIVATE_KEY_LEN + 1) {
-            if (flags & WALLY_MINISCRIPT_TAPSCRIPT)
-                ret = WALLY_EINVAL; /* Tapscript only allows x-only keys */
+            if (make_xonly || is_ct_key)
+                ret = WALLY_EINVAL; /* Tapscript/blinding must be compressed */
             node->flags |= WALLY_MS_IS_UNCOMPRESSED;
             ctx->features |= WALLY_MS_IS_UNCOMPRESSED;
         } else if (privkey_len != EC_PRIVATE_KEY_LEN + 2 ||
@@ -2900,16 +2916,18 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
             ret = WALLY_EINVAL; /* Unknown WIF format */
 
         if (ret == WALLY_OK) {
-            node->flags |= (flags & WALLY_MINISCRIPT_TAPSCRIPT) ? WALLY_MS_IS_X_ONLY : 0;
             ret = wally_ec_private_key_verify(&privkey[1], EC_PRIVATE_KEY_LEN);
         }
         if (ret == WALLY_OK && !clone_bytes((unsigned char **)&node->data, &privkey[1], EC_PRIVATE_KEY_LEN))
             ret = WALLY_ENOMEM;
         else if (ret == WALLY_OK) {
+            uint32_t features = WALLY_MS_IS_PRIVATE | WALLY_MS_IS_RAW |
+                                (make_xonly ? WALLY_MS_IS_X_ONLY : 0);
             node->data_len = EC_PRIVATE_KEY_LEN;
             node->kind = KIND_PRIVATE_KEY;
-            ctx->features |= (WALLY_MS_IS_PRIVATE | WALLY_MS_IS_RAW);
-            node->flags |= (WALLY_MS_IS_PRIVATE | WALLY_MS_IS_RAW);
+            node->flags |= features;
+            if (!is_ct_key)
+                ctx->features |= features;
             ret = ctx_add_key_node(ctx, node);
         }
         wally_clear(privkey, sizeof(privkey));
@@ -2992,7 +3010,7 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
         if (is_ct_key) {
             ctx->features |= WALLY_MS_IS_ELIP150;
         } else {
-            if (flags & WALLY_MINISCRIPT_TAPSCRIPT) {
+            if (node_must_be_xonly(node, flags)) {
                 node->flags |= WALLY_MS_IS_X_ONLY;
                 ctx->features |= WALLY_MS_IS_X_ONLY;
             }

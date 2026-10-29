@@ -92,6 +92,9 @@ static struct wally_map g_vars[] = {
 static const uint32_t g_miniscript_index_0 = 0;
 static const uint32_t g_miniscript_index_16 = 0x10;
 
+static const uint32_t g_child_num_1 = 1;
+static const uint32_t g_child_num_2 = 2;
+
 static bool check_ret(const char *function, int ret, int expected)
 {
     if (ret != expected)
@@ -2047,9 +2050,35 @@ static const descriptor_test g_descriptor_cases[] = {
         "descriptor - wsh - tr() inside wsh not allowed",
         "wsh(and_v(v:pk(key_1),tr(key_2)))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },
+    /* multi_a() error cases */
+    {
+        "descriptor - multi_a unsupported top level",
+        "multi_a(1,03669b8afcec803a0d323e9a17f3ea8e68e8abe5a278020a929adbec52421adbd0)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     },{
-        "descriptor - multi_a not allowed outside tapscript context",
-        "wsh(multi_a(2,key_1,key_2))",
+        "descriptor - multi_a not allowed in sh()",
+        "sh(multi_a(1,03669b8afcec803a0d323e9a17f3ea8e68e8abe5a278020a929adbec52421adbd0))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - multi_a not allowed in wsh()",
+        "wsh(multi_a(1,03669b8afcec803a0d323e9a17f3ea8e68e8abe5a278020a929adbec52421adbd0))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - multi_a invalid threshold",
+        "tr(50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0,multi_a(a,03a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5bd))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - multi_a threshold of 0",
+        "tr(50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0,multi_a(0,03a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5bd))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - multi_a uncompressed pubkey",
+        "tr(50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0,multi_a(1,04a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5bd5b8dec5235a0fa8722476c7709c02559e3aa73aa03918ba2d492eea75abea235))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - multi_a threshold larger than keys",
+        "tr(50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0,multi_a(3,L4rK1yDtCWekvXuE6oXD9jCYfFNV2cWRpVuPLBcCU2z8TrisoyY1,5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     },{
         "descriptor - after - non number child",
@@ -2432,6 +2461,10 @@ static const descriptor_test g_descriptor_cases[] = {
         "descriptor errchk - ELIP 150 long hex key",
         "ct(0202fc9a38e765d955e9b0bcc18fa9ae81b0c893e2dd1ef5542a9c73780a086b90,elwpkh(key_4))",
         WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    }, {
+        "descriptor errchk - uncompressed binding key",
+        "ct(uncompressed,elwpkh(key_4))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     }
     /* Elements/Confidential wallet policy error cases */
     , {
@@ -2662,6 +2695,282 @@ static const taproot_descriptor_test g_taproot_cases[] = {
         /* k1,k2,k3 inside multi_a() (as x-only) */
          { TR_K3("8bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048", "a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7", "b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284" ) },
          { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }
+    }},
+    {{
+        "taproot - bip387 1of1 multi_a leaf with WIF keys",
+        "tr(L4rK1yDtCWekvXuE6oXD9jCYfFNV2cWRpVuPLBcCU2z8TrisoyY1,multi_a(1,KzoAz5CanayRKex3fSLQ2BwJpN7U52gZvxMyk78nDMHuqrUxuSJy))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "5120eb5bd3894327d75093891cc3a62506df7d58ec137fcd104cdd285d67816074f3",
+        "", VARS_STD
+    },
+    3,
+    /* The x-only pubkey of the WIF internal key */
+    "a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5bd",
+    "8d74cd332e49d28227255a7a747446e64e0d554ca4a3731da8ebcd5098b16e91",
+    {
+        /* scripts */
+        /* = [k] CHECKSIG 1 CHECKSIGADD 1 CHECKMULTISIG */
+        "20669b8afcec803a0d323e9a17f3ea8e68e8abe5a278020a929adbec52421adbd0ac519c",
+        "", "", "", "",
+    }, {
+        /* hashes */
+        "8d74cd332e49d28227255a7a747446e64e0d554ca4a3731da8ebcd5098b16e91",
+        "", "", "", "",
+    }, {
+        /* control blocks */
+        "c1a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5bd",
+        "", "", "", "",
+    }, {
+        /* leaf_keys */
+        /* The leaf key is reported as the WIF private key it was given as */
+        { TR_K1("KzoAz5CanayRKex3fSLQ2BwJpN7U52gZvxMyk78nDMHuqrUxuSJy") },
+        { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }
+    }},
+    {{
+        "taproot - bip387 1of1 multi_a leaf with x-only keys",
+        "tr(a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5bd,multi_a(1,669b8afcec803a0d323e9a17f3ea8e68e8abe5a278020a929adbec52421adbd0))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "5120eb5bd3894327d75093891cc3a62506df7d58ec137fcd104cdd285d67816074f3",
+        "", VARS_STD
+    },
+    3,
+    "a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5bd",
+    "8d74cd332e49d28227255a7a747446e64e0d554ca4a3731da8ebcd5098b16e91",
+    {
+        /* scripts */
+        "20669b8afcec803a0d323e9a17f3ea8e68e8abe5a278020a929adbec52421adbd0ac519c",
+        "", "", "", "",
+    }, {
+        /* hashes */
+        "8d74cd332e49d28227255a7a747446e64e0d554ca4a3731da8ebcd5098b16e91",
+        "", "", "", "",
+    }, {
+        /* control blocks */
+        "c1a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5bd",
+        "", "", "", "",
+    }, {
+        /* leaf_keys */
+        { TR_K1("669b8afcec803a0d323e9a17f3ea8e68e8abe5a278020a929adbec52421adbd0") },
+        { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }
+    }},
+    {{
+        "taproot - bip387 2of2 multi_a leaf with xpriv keys",
+        "tr(50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0,multi_a(2,[00000000/111'/222]xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc,xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L/0))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "51202eea93581594a43c0c8423b70dc112e5651df63984d108d4fc8ccd3b63b4eafa",
+        "", VARS_STD
+    },
+    3,
+    "50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+    "1540b5de4dc9c3fb05747199c6a88350fe79191237860c528c0c84c6565593ea",
+    {
+        /* scripts */
+        /* = [k1] CHECKSIG [k2] CHECKSIGADD 2 CHECKMULTISIG */
+        "20d2b36900396c9282fa14628566582f206a5dd0bcc8d5e892611806cafb0301f0ac2079e45b3cf75f9c5f9befd8e9506fb962f6a9d185ac87001ec44a8d3df8d4a9e3ba529c",
+        "", "", "", "",
+    }, {
+        /* hashes */
+        "1540b5de4dc9c3fb05747199c6a88350fe79191237860c528c0c84c6565593ea",
+        "", "", "", "",
+    }, {
+        /* control blocks */
+        "c050929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+        "", "", "", "",
+    }, {
+        /* leaf_keys */
+        { TR_K2("xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc", "xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L") },
+        { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }
+    }},
+    {{
+        "taproot - bip387 2of2 sortedmulti_a leaf with xpriv keys",
+        "tr(50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0,sortedmulti_a(2,[00000000/111'/222]xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc,xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L/0))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "512016fa6a6ba7e98c54b5bf43b3144912b78a61b60b02f6a74172b8dcb35b12bc30",
+        "", VARS_STD
+    },
+    3,
+    "50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+    "1da14590a048a79a44330842f6afca6189996523d74a3b21b67575f69c8bd3c2",
+    {
+        /* scripts */
+        /* = sorted [k2,k1] CHECKSIG... 2 CHECKMULTISIG */
+        "2079e45b3cf75f9c5f9befd8e9506fb962f6a9d185ac87001ec44a8d3df8d4a9e3ac20d2b36900396c9282fa14628566582f206a5dd0bcc8d5e892611806cafb0301f0ba529c",
+        "", "", "", "",
+    }, {
+        /* hashes */
+        "1da14590a048a79a44330842f6afca6189996523d74a3b21b67575f69c8bd3c2",
+        "", "", "", "",
+    }, {
+        /* control blocks */
+        "c050929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+        "", "", "", "",
+    }, {
+        /* leaf_keys */
+        /* Keys are reported in descriptor order, not sorted order */
+        { TR_K2("xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc", "xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L") },
+        { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }
+    }},
+    {{
+        "taproot - bip387 2of2 sortedmulti_a leaf with ranged xpubs (child 0)",
+        "tr(50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0,sortedmulti_a(2,xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL/*,xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y/0/0/*))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "5120abd47468515223f58a1a18edfde709a7a2aab2b696d59ecf8c34f0ba274ef772",
+        "", VARS_STD
+    },
+    3,
+    "50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+    "963546979548c15929253ae4fcd2bf65fdc4454ebaaae5524998931dac7a7be6",
+    {
+        /* scripts */
+        "205d5fc65ebb8d44a5274b53bac21ff8307fec2334a32df05553459f8b1f7fe1b6ac20fbd47cc8034098f0e6a94c6aeee8528abf0a2153a5d8e46d325b7284c0467846ba529c",
+        "", "", "", "",
+    }, {
+        /* hashes */
+        "963546979548c15929253ae4fcd2bf65fdc4454ebaaae5524998931dac7a7be6",
+        "", "", "", "",
+    }, {
+        /* control blocks */
+        "c050929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+        "", "", "", "",
+    }, {
+        /* leaf_keys */
+        { TR_K2("xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL", "xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y") },
+        { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }
+    }},
+    {{
+        "taproot - bip387 2of2 sortedmulti_a leaf with ranged xpubs (child 1)",
+        "tr(50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0,sortedmulti_a(2,xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL/*,xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y/0/0/*))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, &g_child_num_1, 0,
+        "5120fe62e7ed20705bd1d3678e072bc999acb014f07795fa02cb8f25a7aa787e8cbd",
+        "", VARS_STD
+    },
+    3,
+    "50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+    "96f479748be9318da09997aab0d1237729cd86f0afe0fb082d7558745b033804",
+    {
+        /* scripts */
+        "2064fd4d1f5dea8ded94c61e9641309349b62f27fbffe807291f664e286bfbe647ac20f4ece6dfccfa37b211eb3d0af4d0c61dba9ef698622dc17eecdf764beeb005a6ba529c",
+        "", "", "", "",
+    }, {
+        /* hashes */
+        "96f479748be9318da09997aab0d1237729cd86f0afe0fb082d7558745b033804",
+        "", "", "", "",
+    }, {
+        /* control blocks */
+        "c050929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+        "", "", "", "",
+    }, {
+        /* leaf_keys */
+        { TR_K2("xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL", "xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y") },
+        { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }
+    }},
+    {{
+        "taproot - 2of2 bip387 sortedmulti_a leaf with ranged xpubs (child 2)",
+        "tr(50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0,sortedmulti_a(2,xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL/*,xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y/0/0/*))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, &g_child_num_2, 0,
+        "51201311093750f459039adaa2a5ed23b0f7a8ae2c2ffb07c5390ea37e2fb1050b41",
+        "", VARS_STD
+    },
+    3,
+    "50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+    "2f9d205879967e680b6c1e7bf83817af54f4c35d3c29b846569eda22d96360b3",
+    {
+        /* scripts */
+        "202ccabda84c30bad578b13c89eb3b9544ce149787e5b538175b1d1ba259cbb833ac204d902e1a2fc7a8755ab5b694c575fce742c48d9ff192e63df5193e4c7afe1f9cba529c",
+        "", "", "", "",
+    }, {
+        /* hashes */
+        "2f9d205879967e680b6c1e7bf83817af54f4c35d3c29b846569eda22d96360b3",
+        "", "", "", "",
+    }, {
+        /* control blocks */
+        "c150929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+        "", "", "", "",
+    }, {
+        /* leaf_keys */
+        { TR_K2("xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL", "xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrADWgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y") },
+        { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }
+    }},
+    {{
+        "taproot - bip387 2of3 multi_a leaf with ranged xpriv keys (child 0)",
+        "tr(50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0,multi_a(2,xprv9s21ZrQH143K31xYSDQpPDxsXRTUcvj2iNHm5NUtrGiGG5e2DtALGdso3pGz6ssrdK4PFmM8NSpSBHNqPqm55Qn3LqFtT2emdEXVYsCzC2U/2147483647'/0,xprv9vHkqa6EV4sPZHYqZznhT2NPtPCjKuDKGY38FBWLvgaDx45zo9WQRUT3dKYnjwih2yJD9mkrocEZXo1ex8G81dwSM1fwqWpWkeS3v86pgKt/1/2/*,xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi/10/20/30/40/*'))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "5120e4c8f2b0a7d3a688ac131cb03248c0d4b0a59bbd4f37211c848cfbd22a981192",
+        "", VARS_STD
+    },
+    3,
+    "50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+    "aa0edb56c7c4ba911f1dde0843cb4a6279e8fe77a51986ce14c31d0718c00eca",
+    {
+        /* scripts */
+        "20d09efc9b0092ddd4daddd8b65805834232c397c22064d620c1324ceda113c924ac201a45661073b3902a29ab5d1bf2545d3bc09420d8ff1f574e5eebd3c4da98c589ba200a222cbb7187367ea5145c98ff029937fd897292aaa9e52f975c4a71a34d8671ba529c",
+        "", "", "", "",
+    }, {
+        /* hashes */
+        "aa0edb56c7c4ba911f1dde0843cb4a6279e8fe77a51986ce14c31d0718c00eca",
+        "", "", "", "",
+    }, {
+        /* control blocks */
+        "c050929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+        "", "", "", "",
+    }, {
+        /* leaf_keys */
+        { TR_K3("xprv9s21ZrQH143K31xYSDQpPDxsXRTUcvj2iNHm5NUtrGiGG5e2DtALGdso3pGz6ssrdK4PFmM8NSpSBHNqPqm55Qn3LqFtT2emdEXVYsCzC2U", "xprv9vHkqa6EV4sPZHYqZznhT2NPtPCjKuDKGY38FBWLvgaDx45zo9WQRUT3dKYnjwih2yJD9mkrocEZXo1ex8G81dwSM1fwqWpWkeS3v86pgKt", "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi") },
+        { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }
+    }},
+    {{
+        "taproot - bip387 2of3 multi_a leaf with ranged xpriv keys (child 1)",
+        "tr(50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0,multi_a(2,xprv9s21ZrQH143K31xYSDQpPDxsXRTUcvj2iNHm5NUtrGiGG5e2DtALGdso3pGz6ssrdK4PFmM8NSpSBHNqPqm55Qn3LqFtT2emdEXVYsCzC2U/2147483647'/0,xprv9vHkqa6EV4sPZHYqZznhT2NPtPCjKuDKGY38FBWLvgaDx45zo9WQRUT3dKYnjwih2yJD9mkrocEZXo1ex8G81dwSM1fwqWpWkeS3v86pgKt/1/2/*,xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi/10/20/30/40/*'))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, &g_child_num_1, 0,
+        "5120827faedaa21e52fca2ac83b53afd1ab7d4d1e6ce67ff42b19f2723d48b5a19ab",
+        "", VARS_STD
+    },
+    3,
+    "50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+    "1628a521d42a256e1390fa42e4634424d6a21da9aa63c205b49e78e5174ad6d5",
+    {
+        /* scripts */
+        "20d09efc9b0092ddd4daddd8b65805834232c397c22064d620c1324ceda113c924ac20c99d4ca62021dadf698e56d7d0542660dfe6f090e466d0232026052b078a9b19ba208c22dde9f1cd0157a43ba9254cab16e50ecb00f3a124a72c990e6b13280bd3a9ba529c",
+        "", "", "", "",
+    }, {
+        /* hashes */
+        "1628a521d42a256e1390fa42e4634424d6a21da9aa63c205b49e78e5174ad6d5",
+        "", "", "", "",
+    }, {
+        /* control blocks */
+        "c150929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+        "", "", "", "",
+    }, {
+        /* leaf_keys */
+        { TR_K3("xprv9s21ZrQH143K31xYSDQpPDxsXRTUcvj2iNHm5NUtrGiGG5e2DtALGdso3pGz6ssrdK4PFmM8NSpSBHNqPqm55Qn3LqFtT2emdEXVYsCzC2U", "xprv9vHkqa6EV4sPZHYqZznhT2NPtPCjKuDKGY38FBWLvgaDx45zo9WQRUT3dKYnjwih2yJD9mkrocEZXo1ex8G81dwSM1fwqWpWkeS3v86pgKt", "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi") },
+        { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }
+    }},
+    {{
+        "taproot - bip387 2of3 multi_a leaf with ranged xpriv keys (child 2)",
+        "tr(50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0,multi_a(2,xprv9s21ZrQH143K31xYSDQpPDxsXRTUcvj2iNHm5NUtrGiGG5e2DtALGdso3pGz6ssrdK4PFmM8NSpSBHNqPqm55Qn3LqFtT2emdEXVYsCzC2U/2147483647'/0,xprv9vHkqa6EV4sPZHYqZznhT2NPtPCjKuDKGY38FBWLvgaDx45zo9WQRUT3dKYnjwih2yJD9mkrocEZXo1ex8G81dwSM1fwqWpWkeS3v86pgKt/1/2/*,xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi/10/20/30/40/*'))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, &g_child_num_2, 0,
+        "5120647495ed09de61a3a324704f9203c130d655bf3141f9b748df8f7be7e9af55a4",
+        "", VARS_STD
+    },
+    3,
+    "50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+    "96fcf1878510da806cb3d06b437da69dae5671ffd220cd671fd194a30f19c2a8",
+    {
+        /* scripts */
+        "20d09efc9b0092ddd4daddd8b65805834232c397c22064d620c1324ceda113c924ac20683791601676cdefeabbc87d3740f31050b83419c9cc40d0aaf83c64fd862b81ba20823c2dee4a74788ed2dc59e45ac183c444f625f269a83c692b2af2bd6440c286ba529c",
+        "", "", "", "",
+    }, {
+        /* hashes */
+        "96fcf1878510da806cb3d06b437da69dae5671ffd220cd671fd194a30f19c2a8",
+        "", "", "", "",
+    }, {
+        /* control blocks */
+        "c050929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+        "", "", "", "",
+    }, {
+        /* leaf_keys */
+        { TR_K3("xprv9s21ZrQH143K31xYSDQpPDxsXRTUcvj2iNHm5NUtrGiGG5e2DtALGdso3pGz6ssrdK4PFmM8NSpSBHNqPqm55Qn3LqFtT2emdEXVYsCzC2U", "xprv9vHkqa6EV4sPZHYqZznhT2NPtPCjKuDKGY38FBWLvgaDx45zo9WQRUT3dKYnjwih2yJD9mkrocEZXo1ex8G81dwSM1fwqWpWkeS3v86pgKt", "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi") },
+        { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }
     }},
 #ifdef BUILD_ELEMENTS
     /* Elements taptrees use the "/elements" tagged hashes and the Elements
@@ -3703,6 +4012,7 @@ static bool check_taproot_descriptor(const taproot_descriptor_test* tr_test)
     struct wally_descriptor *descriptor;
     const descriptor_test* test = &tr_test->test;
     const struct wally_map *keys = &g_vars[test->policy_map_index];
+    const uint32_t child_num = test->child_num ? *test->child_num : 0;
     size_t i, n, written;
     uint32_t num_leaves, expected_num_leaves = 0;
     int ret, expected_ret;
@@ -3727,7 +4037,8 @@ static bool check_taproot_descriptor(const taproot_descriptor_test* tr_test)
 
         /* The internal key is always key index 0 */
         ret = wally_descriptor_derive_bip32_key_alloc(descriptor, 0,
-                                                      0, 0, 0, 0,
+                                                      0, 0, child_num,
+                                                      BIP32_FLAG_KEY_PUBLIC,
                                                       &internal_key);
         if (!check_ret("derive_bip32_key(internal)", ret, WALLY_OK))
             return false;
@@ -3739,8 +4050,10 @@ static bool check_taproot_descriptor(const taproot_descriptor_test* tr_test)
         ret = wally_descriptor_get_key_features(descriptor, 0, &features);
         if (!check_ret("get_key_features(internal)", ret, WALLY_OK))
             return false;
-        if (features != (WALLY_MS_IS_X_ONLY|WALLY_MS_IS_RAW)) {
-            printf("features(internal): expected raw x-only, got %x\n",
+        const uint32_t tr_features = WALLY_MS_IS_X_ONLY | WALLY_MS_IS_RAW;
+        if (features != tr_features &&
+            features != (WALLY_MS_IS_PRIVATE | tr_features)) {
+            printf("features(internal): expected raw private or raw x-only, got %x\n",
                     features);
             return false;
         }
@@ -3758,7 +4071,7 @@ static bool check_taproot_descriptor(const taproot_descriptor_test* tr_test)
     }
 
     /* If there is no taptree, get_taproot_merkle_root returns WALLY_EINVAL */
-    ret = wally_descriptor_get_taproot_merkle_root(descriptor, 0, 0, 0,
+    ret = wally_descriptor_get_taproot_merkle_root(descriptor, 0, child_num, 0,
                                                    buf, SHA256_LEN);
     if (!check_ret("get_taproot_merkle_root", ret,
                    num_leaves ? WALLY_OK : WALLY_EINVAL))
@@ -3777,7 +4090,7 @@ static bool check_taproot_descriptor(const taproot_descriptor_test* tr_test)
         expected_ret = i == num_leaves ? WALLY_EINVAL : WALLY_OK;
         expected_sub_ret = expected_ret;
 
-        ret = wally_descriptor_get_taproot_leaf_script(descriptor, i, 0, 0, 0,
+        ret = wally_descriptor_get_taproot_leaf_script(descriptor, i, 0, child_num, 0,
                                                        buf, sizeof(buf), &written);
         if (!check_ret("get_taproot_leaf_script", ret, expected_ret))
             return false;
@@ -3785,7 +4098,7 @@ static bool check_taproot_descriptor(const taproot_descriptor_test* tr_test)
             !check_varbuff("leaf_script", buf, written, tr_test->leaf_scripts[i]))
             return false;
 
-        ret = wally_descriptor_get_taproot_leaf_hash(descriptor, i, 0, 0, 0,
+        ret = wally_descriptor_get_taproot_leaf_hash(descriptor, i, 0, child_num, 0,
                                                      buf, SHA256_LEN);
         if (!check_ret("get_taproot_leaf_hash", ret, expected_ret))
             return false;
@@ -3793,13 +4106,13 @@ static bool check_taproot_descriptor(const taproot_descriptor_test* tr_test)
             !check_varbuff("leaf_hash", buf, SHA256_LEN, tr_test->leaf_hashes[i]))
             return false;
 
-        ret = wally_descriptor_get_taproot_control_block(descriptor, i, 0, 0, 0,
+        ret = wally_descriptor_get_taproot_control_block(descriptor, i, 0, child_num, 0,
                                                          buf, sizeof(buf), &written);
         if (!check_ret("get_taproot_control_block", ret, expected_ret))
             return false;
 
         ret = wally_descriptor_get_taproot_control_block_len(descriptor,
-                                                             i, 0, 0, 0, &cb_len);
+                                                             i, 0, child_num, 0, &cb_len);
         if (!check_ret("get_taproot_control_block_len", ret, expected_ret))
             return false;
 
