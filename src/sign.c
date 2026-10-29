@@ -381,12 +381,19 @@ int wally_ec_sig_from_bytes_aux(const unsigned char *priv_key, size_t priv_key_l
 
     if (flags & EC_FLAG_SCHNORR) {
         secp256k1_keypair keypair;
+        secp256k1_xonly_pubkey xonly_pub;
         int ret = WALLY_OK;
         if (!keypair_create(&keypair, priv_key))
             ret = WALLY_EINVAL;
+        else if (!secp256k1_keypair_xonly_pub(ctx, &xonly_pub, NULL, &keypair))
+            ret = WALLY_ERROR;
         else if (!secp256k1_schnorrsig_sign32(ctx, bytes_out, bytes, &keypair, aux_rand))
             ret = WALLY_ERROR;
-        wally_clear(&keypair, sizeof(keypair));
+        else if (!secp256k1_schnorrsig_verify(ctx, bytes_out, bytes, bytes_len, &xonly_pub))
+            ret = WALLY_ERROR; /* Don't return sigs that fail to verify */
+        wally_clear_2(&keypair, sizeof(keypair), &xonly_pub, sizeof(xonly_pub));
+        if (ret != WALLY_OK)
+            wally_clear(bytes_out, len);
         return ret;
     } else {
         unsigned char extra_entropy[32] = {0}, *entropy_p = (unsigned char *)aux_rand;
