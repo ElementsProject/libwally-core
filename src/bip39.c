@@ -46,18 +46,22 @@ int bip39_get_wordlist(const char *lang, struct words **output)
 {
     size_t i;
 
+    if (output)
+        *output = NULL;
+
     if (!output)
         return WALLY_EINVAL;
 
-    *output = (struct words *)&en_words; /* Fallback to English if not found */
-
-    if (lang)
+    if (!lang)
+        *output = (struct words *)&en_words; /* Use English if not given */
+    else {
         for (i = 0; i < NUM_ELEMS(lookup); ++i)
             if (!strcmp(lang, lookup[i].name)) {
                 *output = (struct words *)lookup[i].words;
                 break;
             }
-    return WALLY_OK;
+    }
+    return *output ? WALLY_OK : WALLY_EINVAL;
 }
 
 const char *bip39_get_word_by_index(const struct words *w, size_t idx)
