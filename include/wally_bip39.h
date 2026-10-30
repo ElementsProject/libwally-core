@@ -97,7 +97,7 @@ WALLY_CORE_API int bip39_mnemonic_from_bytes(
  * Convert a mnemonic sentence into entropy at ``bytes_out``.
  *
  * :param w: Word list to use. Pass NULL to use the default English list.
- * :param mnemonic: Mnemonic to convert.
+ * :param mnemonic: Mnemonic to convert. Must be ASCII or UTF-8 NFKD encoded.
  * :param bytes_out: Destination for the resulting entropy.
  * MAX_SIZED_OUTPUT(len, bytes_out, BIP39_ENTROPY_MAX_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
@@ -113,7 +113,7 @@ WALLY_CORE_API int bip39_mnemonic_to_bytes(
  * Validate the checksum embedded in a mnemonic sentence.
  *
  * :param w: Word list to use. Pass NULL to use the default English list.
- * :param mnemonic: Mnemonic to validate.
+ * :param mnemonic: Mnemonic to validate. Must be ASCII or UTF-8 NFKD encoded.
  */
 WALLY_CORE_API int bip39_mnemonic_validate(
     const struct words *w,
@@ -122,8 +122,8 @@ WALLY_CORE_API int bip39_mnemonic_validate(
 /**
  * Convert a mnemonic into a binary seed.
  *
- * :param mnemonic: Mnemonic to convert.
- * :param passphrase: Mnemonic passphrase or NULL if no passphrase is needed.
+ * :param mnemonic: Mnemonic to convert. Must be ASCII or UTF-8 NFKD encoded.
+ * :param passphrase: Mnemonic passphrase or NULL if no passphrase is needed. Must be ASCII or UTF-8 NFKD encoded.
  * :param bytes_out: The destination for the binary seed.
  * FIXED_SIZED_OUTPUT(len, bytes_out, BIP39_SEED_LEN_512)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
@@ -138,8 +138,8 @@ WALLY_CORE_API int bip39_mnemonic_to_seed(
 /**
  * Convert a mnemonic into a binary seed of 512 bits.
  *
- * :param mnemonic: Mnemonic to convert.
- * :param passphrase: Mnemonic passphrase or NULL if no passphrase is needed.
+ * :param mnemonic: Mnemonic to convert. Must be ASCII or UTF-8 NFKD encoded.
+ * :param passphrase: Mnemonic passphrase or NULL if no passphrase is needed. Must be ASCII or UTF-8 NFKD encoded.
  * :param bytes_out: The destination for the binary seed.
  * FIXED_SIZED_OUTPUT(len, bytes_out, BIP39_SEED_LEN_512)
  *
