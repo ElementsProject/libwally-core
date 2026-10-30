@@ -4437,12 +4437,15 @@ int wally_descriptor_get_taproot_num_leaves(
 
     if (value_out)
         *value_out = 0;
-    if (!descriptor || !value_out ||
-        !(descriptor->features & WALLY_MS_IS_TAPROOT))
+
+    if (!descriptor || !value_out)
         return WALLY_EINVAL;
-    /* Return the number of leaves, or zero for key-only tr() expressions */
-    if ((taptree = tr_get_tree(descriptor)) != NULL)
-        *value_out = count_taptree_leaves(taptree);
+
+    if (descriptor->features & WALLY_MS_IS_TAPROOT) {
+        /* Return the number of leaves, or zero for key-only tr() expressions */
+        if ((taptree = tr_get_tree(descriptor)) != NULL)
+            *value_out = count_taptree_leaves(taptree);
+    }
     return WALLY_OK;
 }
 

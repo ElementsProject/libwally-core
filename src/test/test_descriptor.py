@@ -81,6 +81,11 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(written, len(expected) / 2)
             self.assertEqual(script[:written], make_cbuffer(expected)[0])
+
+            # get_taproot_num_leaves returns 0 for non tr() descriptors
+            ret = wally_descriptor_get_taproot_num_leaves(d)
+            self.assertEqual(ret, (WALLY_OK, 0))
+
             wally_descriptor_free(d)
 
         # pk_k and pk_h fragment tests: (miniscript, flags, expected_hex)
