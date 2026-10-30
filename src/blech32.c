@@ -228,7 +228,7 @@ int wally_confidential_addr_to_addr_segwit(
     if (output)
         *output = NULL;
 
-    if (!address || !output)
+    if (!address || !addr_family || !confidential_addr_family || !output)
         return WALLY_EINVAL;
 
     if (!blech32_addr_decode(&witver, buf, &written, confidential_addr_family, address))
