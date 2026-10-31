@@ -198,6 +198,7 @@ export const ec_public_key_compress = wrap('wally_ec_public_key_compress', [T.By
 export const ec_public_key_decompress = wrap('wally_ec_public_key_decompress', [T.Bytes, T.DestPtrSized(T.Bytes, C.EC_PUBLIC_KEY_UNCOMPRESSED_LEN)]);
 export const ec_public_key_from_private_key = wrap('wally_ec_public_key_from_private_key', [T.Bytes, T.DestPtrSized(T.Bytes, C.EC_PUBLIC_KEY_LEN)]);
 export const ec_public_key_negate = wrap('wally_ec_public_key_negate', [T.Bytes, T.DestPtrSized(T.Bytes, C.EC_PUBLIC_KEY_LEN)]);
+export const ec_public_key_strict_verify = wrap('wally_ec_public_key_strict_verify', [T.Bytes]);
 export const ec_public_key_tweak = wrap('wally_ec_public_key_tweak', [T.Bytes, T.Bytes, T.DestPtrSized(T.Bytes, C.EC_PUBLIC_KEY_LEN)]);
 export const ec_public_key_verify = wrap('wally_ec_public_key_verify', [T.Bytes]);
 export const ec_scalar_add = wrap('wally_ec_scalar_add', [T.Bytes, T.Bytes, T.DestPtrSized(T.Bytes, C.EC_SCALAR_LEN)]);

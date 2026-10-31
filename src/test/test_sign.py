@@ -132,6 +132,14 @@ class SignTests(unittest.TestCase):
             ret = wally_ec_sig_from_der(der, der_len, out_buf, out_len)
             self.assertEqual(ret, WALLY_EINVAL)
 
+    def test_hybrid_pubkeys(self):
+        even, even_len = make_cbuffer('0679be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8')
+        odd, odd_len = make_cbuffer('0779be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798b7c52588d95c3b9aa25b0403f1eef75702e84bb7597aabe663b82f6f04ef2777')
+
+        for pk, pk_len in [(even, even_len), (odd, odd_len)]:
+            self.assertEqual(wally_ec_public_key_verify(pk, pk_len), WALLY_OK)
+            self.assertEqual(wally_ec_public_key_strict_verify(pk, pk_len), WALLY_EINVAL)
+
     def test_invalid_inputs(self):
         out_buf, out_len = make_cbuffer('00' * EC_SIGNATURE_LEN)
 

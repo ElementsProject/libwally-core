@@ -58,6 +58,15 @@ int wally_ec_public_key_verify(const unsigned char *pub_key, size_t pub_key_len)
     return WALLY_OK;
 }
 
+int wally_ec_public_key_strict_verify(const unsigned char *pub_key, size_t pub_key_len)
+{
+    int ret = wally_ec_public_key_verify(pub_key, pub_key_len);
+    if (ret == WALLY_OK && pub_key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN &&
+        pub_key[0] != 0x04)
+        ret = WALLY_EINVAL; /* Hybrid pubkey: reject */
+    return ret;
+}
+
 int wally_ec_xonly_public_key_verify(const unsigned char *pub_key, size_t pub_key_len)
 {
     secp256k1_xonly_pubkey pub;

@@ -767,6 +767,12 @@ inline int ec_public_key_negate(const PUB_KEY& pub_key, BYTES_OUT& bytes_out) {
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class PUB_KEY>
+inline bool ec_public_key_strict_verify(const PUB_KEY& pub_key) {
+    int ret = ::wally_ec_public_key_strict_verify(pub_key.data(), pub_key.size());
+    return ret == WALLY_OK;
+}
+
 template <class PUB_KEY, class TWEAK, class BYTES_OUT>
 inline int ec_public_key_tweak(const PUB_KEY& pub_key, const TWEAK& tweak, BYTES_OUT& bytes_out) {
     int ret = ::wally_ec_public_key_tweak(pub_key.data(), pub_key.size(), tweak.data(), tweak.size(), bytes_out.data(), bytes_out.size());

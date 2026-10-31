@@ -403,6 +403,17 @@ WALLY_CORE_API int wally_ec_public_key_verify(
     size_t pub_key_len);
 
 /**
+ * Verify that a public key is valid, and not a hybrid public key.
+ *
+ * :param pub_key: The public key to validate.
+ * :param pub_key_len: The length of ``pub_key`` in bytes. Must be
+ *|    `EC_PUBLIC_KEY_LEN` or `EC_PUBLIC_KEY_UNCOMPRESSED_LEN`.
+ */
+WALLY_CORE_API int wally_ec_public_key_strict_verify(
+    const unsigned char *pub_key,
+    size_t pub_key_len);
+
+/**
  * Verify that an x-only public key is valid.
  *
  * :param pub_key: The x-only public key to validate.

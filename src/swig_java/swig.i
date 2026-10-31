@@ -617,6 +617,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_array_(wally_ec_public_key_decompress, 3, 4, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
 %returns_array_(wally_ec_public_key_from_private_key, 3, 4, EC_PUBLIC_KEY_LEN);
 %returns_array_(wally_ec_public_key_negate, 3, 4, EC_PUBLIC_KEY_LEN);
+%returns_void__(wally_ec_public_key_strict_verify);
 %returns_array_(wally_ec_public_key_tweak, 5, 6, EC_PUBLIC_KEY_LEN);
 %returns_void__(wally_ec_public_key_verify);
 %returns_size_t(wally_ec_sig_from_bytes_aux_len);

@@ -158,6 +158,7 @@ export function ec_public_key_compress(pub_key: Buffer|Uint8Array|null): Buffer;
 export function ec_public_key_decompress(pub_key: Buffer|Uint8Array|null): Buffer;
 export function ec_public_key_from_private_key(priv_key: Buffer|Uint8Array|null): Buffer;
 export function ec_public_key_negate(pub_key: Buffer|Uint8Array|null): Buffer;
+export function ec_public_key_strict_verify(pub_key: Buffer|Uint8Array|null): void;
 export function ec_public_key_tweak(pub_key: Buffer|Uint8Array|null, tweak: Buffer|Uint8Array|null): Buffer;
 export function ec_public_key_verify(pub_key: Buffer|Uint8Array|null): void;
 export function ec_scalar_add(scalar: Buffer|Uint8Array|null, operand: Buffer|Uint8Array|null): Buffer;
