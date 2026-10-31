@@ -1705,6 +1705,33 @@ static int get_txin_issuance_size(const struct wally_tx_input *input,
     return WALLY_OK;
 }
 
+static bool tx_check_args(const struct wally_tx *tx,
+                          uint32_t *flags, bool is_elements)
+{
+    if (!is_valid_tx(tx) || ((*flags) & ~WALLY_TX_ALL_FLAGS))
+        return false;
+
+    if (!((*flags) & WALLY_TX_FLAG_ALLOW_PARTIAL)) {
+        /* 0-input/output txs can be only be written with this flag */
+        if (!tx->num_inputs || !tx->num_outputs)
+            return false;
+    }
+
+    if (is_elements) {
+        /* No pre-BIP 144 serialization for elements */
+        (*flags) &= ~WALLY_TX_FLAG_PRE_BIP144;
+    } else if (!tx->num_inputs) {
+        /* 0-input txs can only be written in the pre-BIP144 format,
+         * since otherwise the resulting tx is ambiguous.
+         * Used in PSBTs while building the tx for example.
+         */
+        if (!((*flags) & WALLY_TX_FLAG_PRE_BIP144))
+            return false;
+        *flags &= ~WALLY_TX_FLAG_USE_WITNESS;
+    }
+    return true;
+}
+
 /* We compute the size of the witness separately so we can compute vsize
  * without iterating the transaction twice with different flags.
  */
@@ -1719,12 +1746,11 @@ static int tx_get_lengths(const struct wally_tx *tx,
     *witness_size = 0;
     *witness_count = 0;
 
-    if (!is_valid_tx(tx))
+    if (!tx_check_args(tx, &flags, is_elements))
         return WALLY_EINVAL;
 
-    if ((flags & ~WALLY_TX_ALL_FLAGS) ||
-        ((flags & WALLY_TX_FLAG_USE_WITNESS) &&
-         wally_tx_get_witness_count(tx, witness_count) != WALLY_OK))
+    if ((flags & WALLY_TX_FLAG_USE_WITNESS) &&
+         wally_tx_get_witness_count(tx, witness_count) != WALLY_OK)
         return WALLY_EINVAL;
 
     if (!*witness_count)
@@ -2014,26 +2040,11 @@ static int tx_to_bytes(const struct wally_tx *tx,
     if (written)
         *written = 0;
 
-    if (!is_valid_tx(tx) ||
-        (flags & ~WALLY_TX_ALL_FLAGS) || !bytes_out || !written ||
-        tx_get_length(tx, flags, &n, is_elements) != WALLY_OK)
+    if (!tx_check_args(tx, &flags, is_elements) || !bytes_out || !written)
         return WALLY_EINVAL;
 
-    if (!(flags & WALLY_TX_FLAG_ALLOW_PARTIAL)) {
-        /* 0-input/output txs can be only be written with this flag */
-        if (!tx->num_inputs || !tx->num_outputs)
-            return WALLY_EINVAL;
-    }
-
-    if (!tx->num_inputs) {
-        /* 0-input txs can only be written in the pre-BIP144 format,
-         * since otherwise the resulting tx is ambiguous.
-         * Used in PSBTs while building the tx for example.
-         */
-        if (!(flags & WALLY_TX_FLAG_PRE_BIP144))
-            return WALLY_EINVAL;
-        flags &= ~WALLY_TX_FLAG_USE_WITNESS;
-    }
+    if (tx_get_length(tx, flags, &n, is_elements) != WALLY_OK)
+        return WALLY_EINVAL;
 
     if (n > len) {
         *written = n;
