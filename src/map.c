@@ -597,7 +597,7 @@ static int keypath_key_verify(const unsigned char *key, size_t key_len, struct e
     } else if (key_len == EC_PUBLIC_KEY_LEN ||
                key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN) {
         /* Compressed or uncompressed pubkey */
-        ret = wally_ec_public_key_verify(key, key_len);
+        ret = wally_ec_public_key_strict_verify(key, key_len);
     } else if (key_len == BIP32_SERIALIZED_LEN) {
         /* BIP32 extended pubkey */
         ret = bip32_key_unserialize(key, key_len, key_out);

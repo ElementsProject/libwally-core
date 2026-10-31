@@ -539,7 +539,7 @@ static int der_sig_verify(const unsigned char *der, size_t der_len)
 static int pubkey_sig_verify(const unsigned char *key, size_t key_len,
                              const unsigned char *val, size_t val_len)
 {
-    int ret = wally_ec_public_key_verify(key, key_len);
+    int ret = wally_ec_public_key_strict_verify(key, key_len);
     if (ret == WALLY_OK)
         ret = der_sig_verify(val, val_len);
     return ret;
@@ -725,7 +725,7 @@ static int pset_output_field_verify(uint32_t field_type,
         /* 33 byte compressed pubkeys */
         if (val_len != EC_PUBLIC_KEY_LEN)
             return WALLY_EINVAL; /* Uncompressed keys are not allowed */
-        return wally_ec_public_key_verify(val, val_len);
+        return wally_ec_public_key_strict_verify(val, val_len);
         break;
     case PSET_OUT_VALUE_RANGEPROOF:
     case PSET_OUT_ASSET_SURJECTION_PROOF:
@@ -1028,7 +1028,7 @@ static int psbt_output_get_blinding_state(const struct wally_psbt_output *output
             if ((p = wally_map_get_integer(&output->pset_fields, ft))) {
                 *written |= PSET_FT(ft);
                 if ((ft == PSET_OUT_BLINDING_PUBKEY || ft == PSET_OUT_ECDH_PUBKEY) &&
-                    wally_ec_public_key_verify(p->value, p->value_len) != WALLY_OK)
+                    wally_ec_public_key_strict_verify(p->value, p->value_len) != WALLY_OK)
                     return WALLY_ERROR; /* Invalid */
             }
         }
