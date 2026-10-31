@@ -1674,7 +1674,7 @@ static int generate_multi(ms_ctx *ctx, ms_node *node,
     if (!(sorted = wally_malloc(count * sizeof(struct multisig_sort_data_t))))
         return WALLY_ENOMEM;
 
-    pk_verify_fn = is_tapscript ? wally_ec_xonly_public_key_verify : wally_ec_public_key_verify;
+    pk_verify_fn = is_tapscript ? wally_ec_xonly_public_key_verify : wally_ec_public_key_strict_verify;
     child = child->next; /* Skip threshold */
     for (i = 0; ret == WALLY_OK && i < count; ++i) {
         struct multisig_sort_data_t *item = sorted + i;
@@ -2771,7 +2771,7 @@ static int analyze_key_hex(ms_ctx *ctx, ms_node *node,
             goto cleanup; /* Not a valid x-only key */
     } else if (key_len == EC_PUBLIC_KEY_LEN ||
                key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN) {
-        if (wally_ec_public_key_verify(key, key_len) != WALLY_OK)
+        if (wally_ec_public_key_strict_verify(key, key_len) != WALLY_OK)
             goto cleanup; /* Not a valid compressed/uncompressed pubkey */
     } else
         goto cleanup; /* Not a pubkey */
