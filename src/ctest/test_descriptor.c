@@ -1047,6 +1047,26 @@ static const descriptor_test g_descriptor_cases[] = {
         NULL,
         "", VARS_STD
     }, {
+        "miniscript - older too small",
+        "older(0)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        /* Note that core accepts invalid older values with a warning,
+         * likey for back-compat. Wally rejects them as dangerous. */
+        "miniscript - older too large (blocks)",
+        "older(65536)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
+        "miniscript - older too large (time)",
+        "older(4259840)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        "", VARS_STD
+    }, {
         "miniscript - Rust-miniscript context test",
         "or_i(pk(uncompressed),pk(uncompressed))",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,

@@ -79,8 +79,9 @@
 #define MULTI_A_NUM_KEYS_MAX    999 /* BIP-342: stack limited to 1000 elements, one used by the threshold */
 #define REDEEM_SCRIPT_MAX_SIZE  520
 #define WITNESS_SCRIPT_MAX_SIZE 10000
-#define DESCRIPTOR_SEQUENCE_LOCKTIME_TYPE_FLAG 0x00400000
-#define DESCRIPTOR_LOCKTIME_THRESHOLD          500000000
+#define DESCRIPTOR_SEQ_LOCKTIME_TYPE_FLAG 0x00400000
+#define DESCRIPTOR_SEQ_LOCKTIME_MASK_BITS 0x0000ffff
+#define DESCRIPTOR_LOCKTIME_THRESHOLD     500000000
 #define DESCRIPTOR_CHECKSUM_LENGTH 8
 
 /* output descriptor */
@@ -978,7 +979,10 @@ static int verify_delay(ms_ctx *ctx, ms_node *node)
 
     node->type_properties = builtin_get(node)->type_properties;
     if (builtin_get(node)->kind == KIND_MINISCRIPT_OLDER) {
-        if (node->child->number & DESCRIPTOR_SEQUENCE_LOCKTIME_TYPE_FLAG)
+        const uint64_t value = node->child->number & ~DESCRIPTOR_SEQ_LOCKTIME_TYPE_FLAG;
+        if (value > DESCRIPTOR_SEQ_LOCKTIME_MASK_BITS)
+            return WALLY_EINVAL; /* invalid blocks/timesteps */
+        if (node->child->number & DESCRIPTOR_SEQ_LOCKTIME_TYPE_FLAG)
             node->type_properties |= PROP_G;
         else
             node->type_properties |= PROP_H;
