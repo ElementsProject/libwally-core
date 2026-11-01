@@ -2766,6 +2766,7 @@ static int analyze_key_hex(ms_ctx *ctx, ms_node *node,
     if (!*is_hex)
         goto cleanup; /* Not a hex string, or too long to be a key */
 
+    ret = WALLY_EINVAL; /* Any failure during validation is an error */
     if (key_len == EC_PRIVATE_KEY_LEN && is_ct_key) {
         if (wally_ec_private_key_verify(key, key_len) != WALLY_OK)
             goto cleanup; /* Not a valid private key */
@@ -2789,7 +2790,7 @@ static int analyze_key_hex(ms_ctx *ctx, ms_node *node,
             goto cleanup; /* Uncompressed key not allowed here */
         if (key_len == EC_XONLY_PUBLIC_KEY_LEN && !allow_xonly)
             goto cleanup; /* X-only not allowed here */
-        if (key_len != EC_XONLY_PUBLIC_KEY_LEN) {
+        if (key_len == EC_PUBLIC_KEY_LEN) {
             if (flags & WALLY_MINISCRIPT_TAPSCRIPT) {
                 /* In tapscript, compressed keys are accepted and stripped to x-only */
                 make_xonly = true;
@@ -2801,6 +2802,7 @@ static int analyze_key_hex(ms_ctx *ctx, ms_node *node,
             }
         }
     }
+    ret = WALLY_OK; /* Validation complete */
 
     if (!clone_bytes((unsigned char **)&node->data, key_p, key_len)) {
         ret = WALLY_ENOMEM;
