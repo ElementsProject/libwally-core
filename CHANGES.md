@@ -1,5 +1,86 @@
 # Changes
 
+## Version 1.6.0
+
+This release contains ABI changes; it is not ABI compatible with prior versions.
+Principally the ABI changes involve increased validation on library input
+parameters, particularly for PSBT and descriptor inputs and transaction signing.
+Please ensure you test this version thoroughly before upgrading.
+
+The authors would like to thank @odudex, @kkdao, Bruno Garcia, Guillermo Rodas,
+ 0xaudron, @habakan, Moin, and Efstratios Kaplanellis (@5tratan) of Almamater Technologies
+for their help investigating, fixing issues, testing and contributing features to
+this release.
+
+### Added
+- descriptor: Add taproot tapscript descriptor support.
+- descriptor: Add descriptor_derive_bip32_key() to derive a given descriptor key.
+- psbt: Add WALLY_PSBT_PARSE_FLAG_COMPLETE to reject trailing data when parsing.
+- psbt: Add psbt_has_input_amount() to determine if an input amount is present.
+- crypto: Add ec_public_key_compress() to produce a compressed pubkey.
+- crypto: Add ec_public_key_strict_verify() to verify a non-hybrid pubkey.
+- tests: Add a large number of exhaustive memory clearing/allocation failure tests.
+- sha256/sha512: Add support for the mbed-tls PSA crypto interface.
+
+### Changed
+- ABI: The library is more careful to reject output buffers that are not either
+  NULL and empty (NULL pointer plus 0 length), or non-NULL with a provided length.
+  Callers should check their code to ensure these invariants hold when calling.
+- ABI: The library is more careful to return WALLY_OK and return the required
+  buffer length when fetching data into a variable length buffer that is too short.
+- descriptor: Reject non-sane descriptors by default unless parsed
+  with WALLY_MINISCRIPT_ALLOW_NON_SANE. This is an ABI change.
+- descriptor: Policies are now always checked for sanity and key uniqueness
+  checks cannot be disabled for policies. This is an ABI change.
+- descriptor: WALLY_MINISCRIPT_UNIQUE_KEYPATHS is now deprecated as it
+  has no effect. This is an ABI change.
+- descriptor: Reject un-derivable keys at parse instead of generation time.
+- descriptor: Ensure accepted descriptors are compatible with Bitcoin core.
+- crypto: Allow no-op calls to ec_public_key_compress/decompress.
+- cmake: Add WALLYCORE_ENABLE_MBED_TLS rather than auto-enabling based on
+  the presence of include headers. This is an ABI change.
+- tx: Ignore pre-bip144 serialization for Elements transactions rather than
+  returning an error.
+- psbt: Don't require a witness utxo to sign segwit inputs.
+- psbt: Ensure witness and non-witness utxos are consistent before signing.
+- psbt: Increase the number of tapleaf hashes allowed to 512. This is an ABI change.
+- psbt: Update modifiable flags after signing.
+- python: Allow None to be passed for output buffers where the C API allows
+  NULL and zero-length buffers.
+- docker: Migrate to trixie-slim for a smaller docker image.
+- deps: Bump libsecp256k1-zkp to current master branch, update wasm deps,
+  nodejs, include libmbedtls for docker builds.
+
+### Fixed
+- java: Fix various wrapper issues.
+- python: Fixes for new Python versions and Apple builds.
+- cmake: Multiple fixes to reflect recent library changes.
+- descriptor: Respect script limits when generating.
+- descriptor: Reject confidential descriptors/fragments for Bitcoin descriptors.
+- descriptor: Many fixes to input validation to reject invalid descriptors.
+- psbt: Fix taproot finalization to remove non-final fields.
+- psbt: Add missing output taproot tree validation.
+- sign: Disallow overlong DER encoding/invalid signatures early.
+- sign: Fix several instances where invalid sigs might be created.
+- bip32: Fix bip32_key_with_tweak_from_parent_path incorrect tweaking,
+  disallow tweaking for non-elements builds.
+- bip32: Fix detection of various invalid BIP32 path constructs.
+- bech32: Require an exact witness program in addr_segwit_from_bytes().
+- taproot: Fix enforcing the BIP-341 merkle path depth limit.
+- aes: Parameter validation fixes.
+- sha256: Fix for sha256_midstate() under mbed-tls for some hardware variants.
+- memory: Fixes to ensure memory is cleared in more error paths.
+- memory: Improve attempts to prevent the compiler eliding memory clearing
+  and spilling secret data through registers.
+- general: Ensure overflow conditions from excessively large inputs are handled.
+- general: Ensure underlying memory allocation errors are propagated to the
+  caller as WALLY_ENOMEM errors rather than returned as a different error code.
+- general: Fix a number of missing parameter validation checks.
+- general: Fix a number of places where output parameters were not wiped or
+  initialized when an error occurred.
+- general: Fix a large number of miscellaneous bugs and build warnings.
+- build: Don't require overriding CFLAGS when building debug versions.
+
 ## Version 1.5.6
 
 ### Fixed
@@ -27,7 +108,7 @@
 ### Fixed
 - python: Remove internal dependency on distutils (which is now deprecated).
 - descriptor: Disallow leading zero in numbers/policy key indices.
-- descriptor: Return WALLY_ENONMEM correctly on out-of-memory errors.
+- descriptor: Return WALLY_ENOMEM correctly on out-of-memory errors.
 - elements: Align unblinding behaviour with elements-core.
 - build: Add missing cmake defines.
 - build: Various build and test fixes.
