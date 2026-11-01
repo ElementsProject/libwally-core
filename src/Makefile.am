@@ -200,16 +200,16 @@ libwallycore_la_INCLUDES = \
 
 if SHARED_BUILD_ENABLED
 # Increment at every ABI change (whether breaking or non-breaking)
-LT_VER_CURRENT = 9
+LT_VER_CURRENT = 10
 # Increment at every release, but reset to 0 at every ABI change
-LT_VER_REVISION = 1
+LT_VER_REVISION = 0
 # Increment at every ABI change, but reset to 0 if breaking
-LT_VER_AGE = 3
+LT_VER_AGE = 0
 # The library filename will be "libwallycore.so.$((current-age)).$((age)).$((revision))",
 # and the soname will be "libwallycore.so.$((current-age))".
 # Do NOT try to make the library version-info follow the project release version number!
 # Only follow the rules above, explained more fully at:
-# https://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
+# https://www.gnu.org/software/libtool/manual/html_node/Manual-version-info-update.html
 libwallycore_la_LDFLAGS = -version-info $(LT_VER_CURRENT):$(LT_VER_REVISION):$(LT_VER_AGE)
 if IS_MINGW
 libwallycore_la_LDFLAGS += -no-undefined
