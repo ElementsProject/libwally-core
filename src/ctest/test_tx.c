@@ -251,6 +251,47 @@ static bool test_tx_get_witness(void)
     return true;
 }
 
+/* Test the weight and vsize of txs without inputs or outputs, as when
+ * estimating fees while building a tx */
+static bool test_tx_partial_weight(void)
+{
+    static const unsigned char txhash[WALLY_TXHASH_LEN] = { 1 };
+    static const unsigned char script[] = { 0x51 };
+    static const struct {
+        size_t num_inputs;
+        size_t num_outputs;
+        size_t weight;
+    } cases[] = {
+        { 0, 0, 40 },  /* Version, counts and locktime only */
+        { 1, 0, 204 }, /* Plus a 41 byte input */
+        { 0, 1, 80 },  /* Plus a 10 byte output */
+    };
+    size_t i, weight, vsize;
+    int ret;
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+        struct wally_tx *tx;
+        ret = wally_tx_init_alloc(2, 0, 1, 1, &tx);
+        check_ret(ret);
+        if (cases[i].num_inputs)
+            ret = wally_tx_add_raw_input(tx, txhash, sizeof(txhash), 0,
+                                         0xffffffff, NULL, 0, NULL, 0);
+        if (ret == WALLY_OK && cases[i].num_outputs)
+            ret = wally_tx_add_raw_output(tx, 1000, script, sizeof(script), 0);
+        if (ret == WALLY_OK)
+            ret = wally_tx_get_weight(tx, &weight);
+        if (ret == WALLY_OK)
+            ret = wally_tx_get_vsize(tx, &vsize);
+        wally_tx_free(tx);
+        if (ret != WALLY_OK || weight != cases[i].weight ||
+            vsize != cases[i].weight / 4) {
+            printf("partial weight case %d failed\n", (int)i);
+            return false;
+        }
+    }
+    return true;
+}
+
 int main(void)
 {
     bool tests_ok = true;
@@ -260,6 +301,7 @@ int main(void)
     RUN(test_tx_parse);
     RUN(test_tx_add_aliased);
     RUN(test_tx_get_witness);
+    RUN(test_tx_partial_weight);
 
     return tests_ok ? 0 : 1;
 }

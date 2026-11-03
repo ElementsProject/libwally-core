@@ -1746,7 +1746,7 @@ static int tx_get_lengths(const struct wally_tx *tx,
     *witness_size = 0;
     *witness_count = 0;
 
-    if (!tx_check_args(tx, &flags, is_elements))
+    if (!is_valid_tx(tx) || (flags & ~WALLY_TX_ALL_FLAGS))
         return WALLY_EINVAL;
 
     if ((flags & WALLY_TX_FLAG_USE_WITNESS) &&
@@ -1845,7 +1845,7 @@ static int tx_get_length(const struct wally_tx *tx,
 
     if (written)
         *written = 0;
-    if (!written)
+    if (!written || !tx_check_args(tx, &flags, is_elements))
         return WALLY_EINVAL;
     ret = tx_get_lengths(tx, flags, &base_size, &witness_size,
                          &witness_count, is_elements);
