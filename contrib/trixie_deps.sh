@@ -3,20 +3,23 @@
 # Options:
 # -e : Don't install emsdk (used for JS builds)
 # -j : Don't install Java SDK (used for Java builds)
+# -m : Don't install mbedtls libraries (used for testing)
 # -n : Don't install Android NDK (used for Android builds)
 # -w : Don't install MinGW (used for Windows cross compiles)
 set -e
 
 skip_emsdk=
-skip_ndk=
 skip_java=
+skip_mbedtls=
+skip_ndk=
 skip_windows=
-while getopts enjw name
+while getopts ejmnw name
 do
     case $name in
     e)   skip_emsdk=1;;
-    n)   skip_ndk=1;;
     j)   skip_java=1;;
+    m)   skip_mbedtls=1;;
+    n)   skip_ndk=1;;
     w)   skip_windows=1;;
     *)   echo "Invalid flag"; exit 1;;
     esac
@@ -36,7 +39,11 @@ windows_packages=
 if [ -z "$skip_windows" ]; then
     windows_packages="g++-mingw-w64-x86-64"
 fi
-apt install --no-install-recommends unzip autoconf automake autotools-dev pkg-config build-essential libtool python3{,-dev,-pip,-virtualenv} python{,-dev}-is-python3 clang{,-format,-tidy} git swig curl cmake libssl-dev libtool-bin $jdk_package $jre_package $windows_packages valgrind jq libmbedtls21 libmbedtls-dev -yqq
+mbedtls_packages=
+if [ -z "$skip_mbedtls" ]; then
+    mbedtls_packages="libmbedtls21 libmbedtls-dev"
+fi
+apt install --no-install-recommends unzip autoconf automake autotools-dev pkg-config build-essential libtool python3{,-dev,-pip,-virtualenv} python{,-dev}-is-python3 clang{,-format,-tidy} git swig curl cmake libssl-dev libtool-bin $jdk_package $jre_package $windows_packages valgrind jq $mbedtls_packages -yqq
 
 # Note --break-system-packages to allow installing our requirements system-wide
 pip install valgrind-codequality gcovr -r contrib/requirements.txt --break-system-packages
