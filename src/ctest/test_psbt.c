@@ -3,6 +3,7 @@
 #include <wally_address.h>
 #include <wally_crypto.h>
 #include <wally_psbt.h>
+#include <wally_script.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -143,6 +144,122 @@ static void check_signer_modifiable_flags(void)
         fail("Signing a v0 PSBT set modifiable flags");
     wally_psbt_free(psbt);
     wally_bzero(priv_key, sizeof(priv_key));
+}
+
+/* Finalizing a legacy multisig input gives OP_0 <sig>..., followed by the
+ * redeem script push for P2SH only */
+static void check_finalize_legacy_multisig(void)
+{
+    static const struct {
+        uint32_t threshold;
+        size_t n_keys;
+        bool is_p2sh;
+    } cases[] = {
+        { 15, 15, true }, /* The largest P2SH multisig scriptSig */
+        { 2, 3, false }, /* Bare multisig */
+    };
+    unsigned char priv_keys[15][EC_PRIVATE_KEY_LEN];
+    unsigned char pub_keys[15 * EC_PUBLIC_KEY_LEN];
+    unsigned char multisig[3 + 15 * (EC_PUBLIC_KEY_LEN + 1)];
+    unsigned char p2sh[WALLY_SCRIPTPUBKEY_P2SH_LEN], txhash[WALLY_TXHASH_LEN];
+    unsigned char expected[1650]; /* MAX_STANDARD_SCRIPTSIG_SIZE */
+    const unsigned char fingerprint[4] = { 0 };
+    size_t i, j;
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+        const uint32_t threshold = cases[i].threshold;
+        const size_t n_keys = cases[i].n_keys;
+        const unsigned char *spk = multisig;
+        size_t multisig_len, spk_len, expected_len = 1, written, is_finalized;
+        struct wally_tx *utxo = NULL, *tx = NULL, *final_tx = NULL;
+        struct wally_psbt *psbt = NULL;
+
+        for (j = 0; j < n_keys; ++j) {
+            memset(priv_keys[j], (int)j + 1, EC_PRIVATE_KEY_LEN);
+            if (wally_ec_public_key_from_private_key(priv_keys[j], EC_PRIVATE_KEY_LEN,
+                                                     pub_keys + j * EC_PUBLIC_KEY_LEN,
+                                                     EC_PUBLIC_KEY_LEN) != WALLY_OK)
+                fail("Failed to create public key");
+        }
+        if (wally_scriptpubkey_multisig_from_bytes(pub_keys, n_keys * EC_PUBLIC_KEY_LEN,
+                                                   threshold, 0, multisig, sizeof(multisig),
+                                                   &multisig_len) != WALLY_OK)
+            fail("Failed to create %u-of-%zu multisig script", threshold, n_keys);
+        spk_len = multisig_len;
+        if (cases[i].is_p2sh) {
+            if (wally_scriptpubkey_p2sh_from_bytes(multisig, multisig_len, WALLY_SCRIPT_HASH160,
+                                                   p2sh, sizeof(p2sh), &spk_len) != WALLY_OK)
+                fail("Failed to create p2sh script");
+            spk = p2sh;
+        }
+
+        memset(txhash, 0x11, sizeof(txhash));
+        if (wally_tx_init_alloc(WALLY_TX_VERSION_2, 0, 1, 1, &utxo) != WALLY_OK ||
+            wally_tx_add_raw_input(utxo, txhash, sizeof(txhash), 0, 0xffffffff,
+                                   NULL, 0, NULL, 0) != WALLY_OK ||
+            wally_tx_add_raw_output(utxo, 100000, spk, spk_len, 0) != WALLY_OK ||
+            wally_tx_get_txid(utxo, txhash, sizeof(txhash)) != WALLY_OK ||
+            wally_tx_init_alloc(WALLY_TX_VERSION_2, 0, 1, 1, &tx) != WALLY_OK ||
+            wally_tx_add_raw_input(tx, txhash, sizeof(txhash), 0, 0xffffffff,
+                                   NULL, 0, NULL, 0) != WALLY_OK ||
+            wally_tx_add_raw_output(tx, 90000, spk, spk_len, 0) != WALLY_OK ||
+            wally_psbt_from_tx(tx, WALLY_PSBT_VERSION_0, 0, &psbt) != WALLY_OK ||
+            wally_psbt_input_set_utxo(&psbt->inputs[0], utxo) != WALLY_OK ||
+            (cases[i].is_p2sh &&
+             wally_psbt_input_set_redeem_script(&psbt->inputs[0], multisig,
+                                                multisig_len) != WALLY_OK))
+            fail("Failed to create %u-of-%zu psbt", threshold, n_keys);
+        for (j = 0; j < n_keys; ++j)
+            if (wally_psbt_add_input_keypath(psbt, 0, pub_keys + j * EC_PUBLIC_KEY_LEN,
+                                             EC_PUBLIC_KEY_LEN, fingerprint,
+                                             sizeof(fingerprint), NULL, 0) != WALLY_OK)
+                fail("Failed to add keypath");
+        for (j = 0; j < threshold; ++j)
+            if (wally_psbt_sign(psbt, priv_keys[j], EC_PRIVATE_KEY_LEN, 0) != WALLY_OK)
+                fail("Failed to sign %u-of-%zu psbt", threshold, n_keys);
+        if (psbt->inputs[0].signatures.num_items != threshold)
+            fail("%u-of-%zu psbt has %zu signatures", threshold, n_keys,
+                 psbt->inputs[0].signatures.num_items);
+
+        /* The signatures in key order, then the redeem script for P2SH */
+        expected[0] = OP_0;
+        for (j = 0; j <= threshold; ++j) {
+            const unsigned char *push = multisig;
+            size_t push_len = multisig_len;
+            if (j < threshold) {
+                const struct wally_map_item *sig;
+                sig = wally_map_get(&psbt->inputs[0].signatures,
+                                    pub_keys + j * EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_LEN);
+                if (!sig)
+                    fail("Missing signature %zu", j);
+                push = sig->value;
+                push_len = sig->value_len;
+            } else if (!cases[i].is_p2sh)
+                break;
+            if (wally_script_push_from_bytes(push, push_len, 0, expected + expected_len,
+                                             sizeof(expected) - expected_len,
+                                             &written) != WALLY_OK ||
+                written > sizeof(expected) - expected_len)
+                fail("Failed to build the expected scriptSig");
+            expected_len += written;
+        }
+
+        if (wally_psbt_finalize(psbt, 0) != WALLY_OK ||
+            wally_psbt_is_finalized(psbt, &is_finalized) != WALLY_OK || !is_finalized)
+            fail("%u-of-%zu %s psbt was not finalized", threshold, n_keys,
+                 cases[i].is_p2sh ? "p2sh" : "bare");
+        if (wally_psbt_extract(psbt, 0, &final_tx) != WALLY_OK ||
+            final_tx->inputs[0].script_len != expected_len ||
+            memcmp(final_tx->inputs[0].script, expected, expected_len))
+            fail("%u-of-%zu %s psbt has the wrong scriptSig", threshold, n_keys,
+                 cases[i].is_p2sh ? "p2sh" : "bare");
+
+        wally_psbt_free(psbt);
+        wally_tx_free(final_tx);
+        wally_tx_free(tx);
+        wally_tx_free(utxo);
+    }
+    wally_bzero(priv_keys, sizeof(priv_keys));
 }
 
 int main(void)
@@ -296,6 +413,7 @@ int main(void)
     }
 
     check_signer_modifiable_flags();
+    check_finalize_legacy_multisig();
 
     wally_cleanup(0);
     return 0;

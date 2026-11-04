@@ -5155,15 +5155,25 @@ static bool finalize_multisig(struct wally_psbt_input *input,
         if (is_p2sh && !finalize_p2sh_wrapped(input))
             goto fail;
     } else {
-        unsigned char script[WALLY_SCRIPTSIG_MAX_LEN];
+        /* OP_0 <sig>... <script>. This can be larger than
+         * WALLY_SCRIPTSIG_MAX_LEN, which limits a single push */
+        const size_t push_len = script_get_push_size(out_script_len);
+        const size_t max_len = 1 + n_found * (EC_SIGNATURE_DER_MAX_LEN + 2) + push_len;
+        unsigned char *script = wally_malloc(max_len);
         size_t script_len;
+        bool ok;
 
-        if (wally_scriptsig_multisig_from_bytes(out_script, out_script_len,
-                                                sigs, n_found * EC_SIGNATURE_LEN,
-                                                sighashes, n_found, 0,
-                                                script, sizeof(script), &script_len) != WALLY_OK ||
-            script_len > sizeof(script) ||
-            wally_psbt_input_set_final_scriptsig(input, script, script_len) != WALLY_OK)
+        ok = script &&
+             wally_scriptsig_multisig_from_bytes(out_script, out_script_len,
+                                                 sigs, n_found * EC_SIGNATURE_LEN,
+                                                 sighashes, n_found, 0,
+                                                 script, max_len, &script_len) == WALLY_OK &&
+             script_len <= max_len;
+        if (ok && !is_p2sh)
+            script_len -= push_len; /* Bare multisig: don't push the script */
+        ok = ok && wally_psbt_input_set_final_scriptsig(input, script, script_len) == WALLY_OK;
+        clear_and_free(script, max_len);
+        if (!ok)
             goto fail;
     }
     ret = true;
