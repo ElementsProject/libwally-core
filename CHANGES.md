@@ -2,6 +2,9 @@
 
 ## Version 1.6.0
 
+This release contains important bug and security fixes; users are advised
+to update as soon as possible.
+
 This release contains ABI changes; it is not ABI compatible with prior versions.
 Principally the ABI changes involve increased validation on library input
 parameters, particularly for PSBT and descriptor inputs and transaction signing.
