@@ -2060,6 +2060,37 @@ WALLY_CORE_API int wally_psbt_compute_sp_scripts(
     uint32_t flags);
 
 /**
+ * Add BIP-375 ECDH shares and DLEQ proofs for silent payment outputs.
+ *
+ * Given the private keys of the inputs the caller holds, adds an ECDH share
+ * and DLEQ proof for every distinct scan key of the PSBT's silent payment
+ * outputs. If the keys cover every eligible input, one global share per scan
+ * key is added; otherwise a share per held input. Call
+ * `wally_psbt_compute_sp_scripts` afterwards to set the output scripts.
+ *
+ * :param psbt: The PSBTv2 to update.
+ * :param priv_keys: One private key per input, in input order. For each
+ *|    eligible input held, the key for its BIP-352 public key: the output
+ *|    (tweaked) key for taproot, of either parity. All zero for inputs not
+ *|    held; keys for ineligible inputs are ignored.
+ * :param priv_keys_len: Length of ``priv_keys`` in bytes. Must be the number
+ *|    of inputs times `EC_PRIVATE_KEY_LEN`.
+ * :param aux_rand: Fresh random data for the DLEQ proofs.
+ * :param aux_rand_len: Length of ``aux_rand`` in bytes. Must be 32.
+ * :param flags: For future use. Must be 0.
+ *
+ * .. note:: Returns `WALLY_EINVAL` if a key does not match its input. The PSBT
+ *|    is unchanged if any step fails.
+ */
+WALLY_CORE_API int wally_psbt_add_sp_ecdh_shares(
+    struct wally_psbt *psbt,
+    const unsigned char *priv_keys,
+    size_t priv_keys_len,
+    const unsigned char *aux_rand,
+    size_t aux_rand_len,
+    uint32_t flags);
+
+/**
  * Return the calculated transaction lock time of a PSBT.
  *
  * :param psbt: The PSBT to compute the lock time of. Must be a v2 PSBT.

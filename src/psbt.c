@@ -5087,6 +5087,158 @@ done:
     return ret;
 }
 
+#define sp_swap_maps(a, b) do { struct wally_map _t = a; a = b; b = _t; } while (0)
+
+/* Add an ECDH share and its DLEQ proof for scan_key to the given maps */
+static int sp_add_ecdh_share(struct wally_map *shares, struct wally_map *proofs,
+                             const unsigned char *scan_key, const unsigned char *priv_key,
+                             const unsigned char *aux_rand, size_t aux_rand_len)
+{
+    unsigned char share[EC_PUBLIC_KEY_LEN], proof[WALLY_DLEQ_PROOF_LEN];
+    int ret = WALLY_OK;
+
+    if (!ec_public_key_mul_secret(scan_key, priv_key, share))
+        ret = WALLY_EINVAL;
+    if (ret == WALLY_OK)
+        ret = wally_dleq_proof_generate(priv_key, EC_PRIVATE_KEY_LEN,
+                                        scan_key, EC_PUBLIC_KEY_LEN,
+                                        aux_rand, aux_rand_len, NULL, 0, NULL, 0, 0,
+                                        proof, sizeof(proof));
+    if (ret == WALLY_OK)
+        ret = wally_map_replace(shares, scan_key, EC_PUBLIC_KEY_LEN, share, sizeof(share));
+    if (ret == WALLY_OK)
+        ret = wally_map_replace(proofs, scan_key, EC_PUBLIC_KEY_LEN, proof, sizeof(proof));
+    wally_clear_2(share, sizeof(share), proof, sizeof(proof));
+    return ret;
+}
+
+int wally_psbt_add_sp_ecdh_shares(struct wally_psbt *psbt,
+                                  const unsigned char *priv_keys, size_t priv_keys_len,
+                                  const unsigned char *aux_rand, size_t aux_rand_len,
+                                  uint32_t flags)
+{
+    unsigned char *keys = NULL, pub_key[EC_PUBLIC_KEY_LEN], key_sum[EC_PRIVATE_KEY_LEN];
+    const unsigned char **scan_keys = NULL;
+    struct wally_psbt *clone = NULL;
+    bool *held = NULL, is_eligible;
+    size_t i, j, num_scan_keys = 0, num_eligible = 0, num_held = 0, is_pset;
+    int ret = WALLY_OK;
+
+    if (!psbt_is_valid(psbt) || psbt->version != PSBT_2 || !psbt->num_inputs ||
+        !priv_keys || priv_keys_len != psbt->num_inputs * EC_PRIVATE_KEY_LEN ||
+        !aux_rand || aux_rand_len != SHA256_LEN || flags ||
+        wally_psbt_is_elements(psbt, &is_pset) != WALLY_OK || is_pset)
+        return WALLY_EINVAL;
+
+    if (!secp_ctx())
+        return WALLY_ENOMEM;
+
+    /* The distinct scan keys of the silent payment outputs */
+    scan_keys = wally_calloc(psbt->num_outputs * sizeof(*scan_keys) + 1);
+    keys = wally_calloc(psbt->num_inputs * EC_PRIVATE_KEY_LEN);
+    held = wally_calloc(psbt->num_inputs * sizeof(*held));
+    if (!scan_keys || !keys || !held) {
+        ret = WALLY_ENOMEM;
+        goto done;
+    }
+    for (i = 0; i < psbt->num_outputs; ++i) {
+        const struct wally_map_item *info;
+        info = wally_map_get_integer(&psbt->outputs[i].psbt_fields, PSBT_OUT_SP_V0_INFO);
+        for (j = 0; info && j < num_scan_keys; ++j)
+            if (!memcmp(scan_keys[j], info->value, EC_PUBLIC_KEY_LEN))
+                info = NULL; /* Already have this scan key */
+        if (info)
+            scan_keys[num_scan_keys++] = info->value;
+    }
+    if (!num_scan_keys)
+        goto done; /* No silent payment outputs */
+
+    /* Match each given key to its eligible input, normalizing taproot keys */
+    for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i) {
+        const unsigned char *priv_key = priv_keys + i * EC_PRIVATE_KEY_LEN;
+        unsigned char *key = keys + i * EC_PRIVATE_KEY_LEN;
+        unsigned char given_pub[EC_PUBLIC_KEY_LEN];
+        const unsigned char *script;
+        size_t script_len;
+
+        ret = sp_input_pubkey(psbt->inputs + i, &is_eligible, pub_key);
+        if (ret != WALLY_OK || !is_eligible)
+            continue; /* Keys for ineligible inputs are ignored */
+        ++num_eligible;
+        if (mem_is_zero(priv_key, EC_PRIVATE_KEY_LEN))
+            continue; /* Not held */
+        memcpy(key, priv_key, EC_PRIVATE_KEY_LEN);
+        ret = wally_ec_public_key_from_private_key(key, EC_PRIVATE_KEY_LEN,
+                                                   given_pub, sizeof(given_pub));
+        if (ret == WALLY_OK)
+            ret = sp_input_prevout_script(psbt->inputs + i, &script, &script_len);
+        if (ret == WALLY_OK && script_len == WALLY_SCRIPTPUBKEY_P2TR_LEN &&
+            script[0] == OP_1 && given_pub[0] == 0x03 &&
+            !memcmp(given_pub + 1, pub_key + 1, EC_XONLY_PUBLIC_KEY_LEN)) {
+            /* Taproot: use the key for the even-y output key */
+            if (!seckey_negate(key))
+                ret = WALLY_EINVAL;
+            else
+                given_pub[0] = 0x02;
+        }
+        if (ret == WALLY_OK && memcmp(given_pub, pub_key, EC_PUBLIC_KEY_LEN))
+            ret = WALLY_EINVAL; /* Key does not belong to this input */
+        if (ret == WALLY_OK) {
+            held[i] = true;
+            ++num_held;
+        }
+        wally_clear(given_pub, sizeof(given_pub));
+    }
+
+    if (ret != WALLY_OK || !num_held)
+        goto done;
+
+    /* Add to a copy, as a failed allocation must not leave some shares behind */
+    if ((ret = wally_psbt_clone_alloc(psbt, 0, &clone)) != WALLY_OK)
+        goto done;
+
+    if (num_held == num_eligible) {
+        /* We hold every eligible input: add a global share per scan key */
+        wally_clear(key_sum, sizeof(key_sum));
+        for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i)
+            if (held[i])
+                ret = wally_ec_scalar_add_to(key_sum, sizeof(key_sum),
+                                             keys + i * EC_PRIVATE_KEY_LEN, EC_PRIVATE_KEY_LEN);
+        if (ret == WALLY_OK && !seckey_verify(key_sum))
+            ret = WALLY_EINVAL; /* Keys sum to zero; only the final sum counts */
+        for (j = 0; ret == WALLY_OK && j < num_scan_keys; ++j)
+            ret = sp_add_ecdh_share(&clone->sp_ecdh_shares, &clone->sp_dleq_proofs,
+                                    scan_keys[j], key_sum, aux_rand, aux_rand_len);
+    } else {
+        /* Add a share per held input and scan key */
+        for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i) {
+            struct wally_psbt_input *input = clone->inputs + i;
+            for (j = 0; held[i] && ret == WALLY_OK && j < num_scan_keys; ++j)
+                ret = sp_add_ecdh_share(&input->sp_ecdh_shares, &input->sp_dleq_proofs,
+                                        scan_keys[j], keys + i * EC_PRIVATE_KEY_LEN,
+                                        aux_rand, aux_rand_len);
+        }
+    }
+
+    if (ret == WALLY_OK) {
+        /* Everything succeeded: take the new maps, which cannot fail */
+        sp_swap_maps(psbt->sp_ecdh_shares, clone->sp_ecdh_shares);
+        sp_swap_maps(psbt->sp_dleq_proofs, clone->sp_dleq_proofs);
+        for (i = 0; i < psbt->num_inputs; ++i) {
+            sp_swap_maps(psbt->inputs[i].sp_ecdh_shares, clone->inputs[i].sp_ecdh_shares);
+            sp_swap_maps(psbt->inputs[i].sp_dleq_proofs, clone->inputs[i].sp_dleq_proofs);
+        }
+    }
+
+done:
+    wally_psbt_free(clone);
+    wally_free(scan_keys);
+    clear_and_free(keys, psbt->num_inputs * EC_PRIVATE_KEY_LEN);
+    wally_free(held);
+    wally_clear_2(pub_key, sizeof(pub_key), key_sum, sizeof(key_sum));
+    return ret;
+}
+
 int wally_psbt_get_id(const struct wally_psbt *psbt, uint32_t flags, unsigned char *bytes_out, size_t len)
 {
     struct wally_tx *tx;

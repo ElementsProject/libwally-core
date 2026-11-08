@@ -254,6 +254,7 @@ export function psbt_add_input_signature(psbt: Ref_wally_psbt, index: number, pu
 export function psbt_add_input_taproot_keypath(psbt: Ref_wally_psbt, index: number, flags: number, pub_key: Buffer|Uint8Array|null, tapleaf_hashes: Buffer|Uint8Array|null, fingerprint: Buffer|Uint8Array|null, child_path: Uint32Array|number[]): void;
 export function psbt_add_output_keypath(psbt: Ref_wally_psbt, index: number, pub_key: Buffer|Uint8Array|null, fingerprint: Buffer|Uint8Array|null, child_path: Uint32Array|number[]): void;
 export function psbt_add_output_taproot_keypath(psbt: Ref_wally_psbt, index: number, flags: number, pub_key: Buffer|Uint8Array|null, tapleaf_hashes: Buffer|Uint8Array|null, fingerprint: Buffer|Uint8Array|null, child_path: Uint32Array|number[]): void;
+export function psbt_add_sp_ecdh_shares(psbt: Ref_wally_psbt, priv_keys: Buffer|Uint8Array|null, aux_rand: Buffer|Uint8Array|null, flags: number): void;
 export function psbt_add_tx_input_at(psbt: Ref_wally_psbt, index: number, flags: number, input: Ref_wally_tx_input): void;
 export function psbt_add_tx_output_at(psbt: Ref_wally_psbt, index: number, flags: number, output: Ref_wally_tx_output): void;
 export function psbt_blind(psbt: Ref_wally_psbt, values: Ref_wally_map, vbfs: Ref_wally_map, assets: Ref_wally_map, abfs: Ref_wally_map, entropy: Buffer|Uint8Array|null, output_index: number, flags: number): Ref_wally_map;

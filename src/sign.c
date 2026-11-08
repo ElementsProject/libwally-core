@@ -817,6 +817,16 @@ static bool dleq_point_mul_secret(const secp256k1_pubkey *point, const unsigned 
     return ok;
 }
 
+bool ec_public_key_mul_secret(const unsigned char *pub_key, const unsigned char *priv_key,
+                              unsigned char *bytes_out)
+{
+    secp256k1_pubkey point;
+    bool ok = secp_ctx() && pubkey_parse(&point, pub_key, EC_PUBLIC_KEY_LEN) &&
+              secp256k1_ecdh(secp_ctx(), bytes_out, &point, priv_key, dleq_ecdh_point, NULL);
+    wally_clear(&point, sizeof(point));
+    return ok;
+}
+
 /* p = s*X - e*Y */
 static bool dleq_point_sub_mul(const unsigned char *s, const secp256k1_pubkey *x,
                                const unsigned char *e, const secp256k1_pubkey *y,

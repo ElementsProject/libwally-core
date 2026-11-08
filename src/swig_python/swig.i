@@ -379,6 +379,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char* parent160, size_t parent160_len);
 %pybuffer_nullable_binary(const unsigned char* pass, size_t pass_len);
 %pybuffer_nullable_binary(const unsigned char* priv_key, size_t priv_key_len);
+%pybuffer_nullable_binary(const unsigned char* priv_keys, size_t priv_keys_len);
 %pybuffer_nullable_binary(const unsigned char* proof, size_t proof_len);
 %pybuffer_nullable_binary(const unsigned char* pub_key, size_t pub_key_len);
 %pybuffer_nullable_binary(const unsigned char* pub_key_a, size_t pub_key_a_len);
