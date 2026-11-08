@@ -216,6 +216,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_add_input_taproot_keypath' \
 ,'_wally_psbt_add_output_keypath' \
 ,'_wally_psbt_add_output_taproot_keypath' \
+,'_wally_psbt_add_sp_ecdh_shares' \
 ,'_wally_psbt_add_tx_input_at' \
 ,'_wally_psbt_add_tx_output_at' \
 ,'_wally_psbt_clear_fallback_locktime' \

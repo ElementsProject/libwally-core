@@ -299,6 +299,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* parent160, size_t parent160_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* pass, size_t pass_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* priv_key, size_t priv_key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* priv_keys, size_t priv_keys_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* proof, size_t proof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* pub_key, size_t pub_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* pub_key_a, size_t pub_key_a_len) };
@@ -723,6 +724,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_psbt_add_output_taproot_keypath);
 %returns_void__(wally_psbt_add_tx_output_at);
 %returns_void__(wally_psbt_add_global_scalar);
+%returns_void__(wally_psbt_add_sp_ecdh_shares);
 %returns_struct(wally_psbt_blind_alloc, wally_map);
 %rename("psbt_blind") wally_psbt_blind_alloc;
 %returns_void__(wally_psbt_compute_sp_scripts);

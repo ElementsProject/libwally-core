@@ -1306,6 +1306,12 @@ inline int psbt_add_output_taproot_keypath(const PSBT& psbt, uint32_t index, uin
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class PSBT, class PRIV_KEYS, class AUX_RAND>
+inline int psbt_add_sp_ecdh_shares(const PSBT& psbt, const PRIV_KEYS& priv_keys, const AUX_RAND& aux_rand, uint32_t flags) {
+    int ret = ::wally_psbt_add_sp_ecdh_shares(detail::get_p(psbt), priv_keys.data(), priv_keys.size(), aux_rand.data(), aux_rand.size(), flags);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class PSBT>
 inline int psbt_add_tx_input_at(const PSBT& psbt, uint32_t index, uint32_t flags, const struct wally_tx_input* input) {
     int ret = ::wally_psbt_add_tx_input_at(detail::get_p(psbt), index, flags, input);
