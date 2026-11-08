@@ -652,6 +652,14 @@ static bool psbt_has_sp_outputs(const struct wally_psbt *psbt)
 
 static int sp_input_prevout_script(const struct wally_psbt_input *input,
                                    const unsigned char **script, size_t *script_len);
+static int psbt_sp_scripts(struct wally_psbt *psbt, bool verify_only);
+
+/* Before any signature: a silent payment output's script must be the one its
+ * code derives, or a signature could pay anyone. Every signing call checks this */
+static int psbt_check_sp_scripts(struct wally_psbt *psbt)
+{
+    return psbt_has_sp_outputs(psbt) ? psbt_sp_scripts(psbt, true) : WALLY_OK;
+}
 
 /* An ECDSA signature does not commit to the prevout scripts of the other
  * inputs, so a false witness utxo on any of them could change the key sum and
@@ -5746,11 +5754,11 @@ static int get_signing_data(const struct wally_psbt *psbt,
     return ret;
 }
 
-int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
-                                        const struct wally_tx *tx,
-                                        const unsigned char *script, size_t script_len,
-                                        uint32_t flags,
-                                        unsigned char *bytes_out, size_t len)
+static int psbt_input_signature_hash(struct wally_psbt *psbt, size_t index,
+                                     const struct wally_tx *tx,
+                                     const unsigned char *script, size_t script_len,
+                                     uint32_t flags,
+                                     unsigned char *bytes_out, size_t len)
 {
     struct wally_map scripts, assets, values, *assets_p;
     size_t is_pset;
@@ -5796,13 +5804,60 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
                 NULL, 0,
 #endif
                 sighash, sighash_type,
-                psbt->signing_cache, bytes_out, len);
+                /* The cache is not tied to a transaction, so it could hold
+                 * parts of one that the silent payment checks never saw */
+                psbt_has_sp_outputs(psbt) ? NULL : psbt->signing_cache,
+                bytes_out, len);
 
     wally_free(scripts.items); /* No need to clear the value pointers */
     wally_free(values.items);
     if (assets_p)
         wally_free(assets_p->items);
     return ret;
+}
+
+/* Whether tx is the unsigned transaction that psbt describes */
+static int sp_tx_is_psbt_tx(const struct wally_psbt *psbt, const struct wally_tx *tx)
+{
+    struct wally_tx *own;
+    bool is_pset, same;
+    size_t i;
+    int ret = psbt_build_tx(psbt, &own, &is_pset, false, false);
+
+    if (ret != WALLY_OK)
+        return ret;
+    same = tx->version == own->version && tx->locktime == own->locktime &&
+           tx->num_inputs == own->num_inputs && tx->num_outputs == own->num_outputs;
+    for (i = 0; same && i < own->num_inputs; ++i) {
+        const struct wally_tx_input *a = tx->inputs + i, *b = own->inputs + i;
+        same = !memcmp(a->txhash, b->txhash, sizeof(a->txhash)) &&
+               a->index == b->index && a->sequence == b->sequence;
+    }
+    for (i = 0; same && i < own->num_outputs; ++i) {
+        const struct wally_tx_output *a = tx->outputs + i, *b = own->outputs + i;
+        same = a->satoshi == b->satoshi && a->script_len == b->script_len &&
+               (!a->script_len || !memcmp(a->script, b->script, a->script_len));
+    }
+    wally_tx_free(own);
+    return same ? WALLY_OK : WALLY_EINVAL;
+}
+
+int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
+                                        const struct wally_tx *tx,
+                                        const unsigned char *script, size_t script_len,
+                                        uint32_t flags,
+                                        unsigned char *bytes_out, size_t len)
+{
+    if (psbt_is_valid(psbt) && tx && psbt_has_sp_outputs(psbt)) {
+        /* A hash is only useful for signing: tie it to verified outputs */
+        int ret = psbt_check_sp_scripts(psbt);
+        if (ret == WALLY_OK)
+            ret = sp_tx_is_psbt_tx(psbt, tx);
+        if (ret != WALLY_OK)
+            return ret;
+    }
+    return psbt_input_signature_hash(psbt, index, tx, script, script_len, flags,
+                                     bytes_out, len);
 }
 
 static int psbt_sign_input_impl(struct wally_psbt *psbt,
@@ -5890,11 +5945,30 @@ done:
     return ret;
 }
 
-/* Before any signature: a silent payment output's script must be the one its
- * code derives, or a signature could pay anyone. Every signing call checks this */
-static int psbt_check_sp_scripts(struct wally_psbt *psbt)
+/* The hash an input's signature must commit to, over the transaction tx */
+static int psbt_input_own_hash(struct wally_psbt *psbt, size_t index,
+                               const struct wally_tx *tx,
+                               unsigned char *txhash, size_t txhash_len)
 {
-    return psbt_has_sp_outputs(psbt) ? psbt_sp_scripts(psbt, true) : WALLY_OK;
+    unsigned char p2pkh[WALLY_SCRIPTPUBKEY_P2PKH_LEN];
+    const unsigned char *script, *scriptcode;
+    size_t script_len, scriptcode_len;
+
+    /* Get the scriptpubkey or redeemscript */
+    int ret = get_signing_script(psbt, index, &script, &script_len);
+
+    /* Get the actual script to sign with */
+    if (ret == WALLY_OK)
+        ret = get_scriptcode(psbt, index, p2pkh, sizeof(p2pkh),
+                             script, script_len,
+                             &scriptcode, &scriptcode_len);
+
+    /* Get the hash to sign */
+    if (ret == WALLY_OK)
+        ret = psbt_input_signature_hash(psbt, index, tx,
+                                        scriptcode, scriptcode_len,
+                                        0, txhash, txhash_len);
+    return ret;
 }
 
 int wally_psbt_sign_input_bip32(struct wally_psbt *psbt,
@@ -5904,6 +5978,24 @@ int wally_psbt_sign_input_bip32(struct wally_psbt *psbt,
                                 uint32_t flags)
 {
     int ret = psbt_is_valid(psbt) ? psbt_check_sp_scripts(psbt) : WALLY_OK;
+
+    if (ret == WALLY_OK && psbt_is_valid(psbt) && psbt_has_sp_outputs(psbt)) {
+        /* The hash comes from the caller: it must be for this PSBT's transaction */
+        unsigned char own_hash[SHA256_LEN];
+        struct wally_tx *tx;
+        bool is_pset;
+
+        if (!txhash || txhash_len != sizeof(own_hash) || index >= psbt->num_inputs)
+            return WALLY_EINVAL;
+        if ((ret = psbt_build_tx(psbt, &tx, &is_pset, false, false)) != WALLY_OK)
+            return ret;
+        ret = psbt_input_own_hash(psbt, index, tx, own_hash, sizeof(own_hash));
+        wally_tx_free(tx);
+        if (ret == WALLY_OK && memcmp(own_hash, txhash, sizeof(own_hash)))
+            ret = WALLY_EINVAL;
+        if (ret != WALLY_OK)
+            return ret;
+    }
     if (ret == WALLY_OK)
         ret = psbt_sign_input_impl(psbt, index, subindex, txhash, txhash_len, hdkey, flags);
     return ret;
@@ -5912,7 +6004,6 @@ int wally_psbt_sign_input_bip32(struct wally_psbt *psbt,
 int wally_psbt_sign_bip32(struct wally_psbt *psbt,
                           const struct ext_key *hdkey, uint32_t flags)
 {
-    unsigned char p2pkh[WALLY_SCRIPTPUBKEY_P2PKH_LEN];
     size_t i;
     bool is_pset;
     int ret;
@@ -5939,8 +6030,7 @@ int wally_psbt_sign_bip32(struct wally_psbt *psbt,
     /* Go through each of the inputs */
     for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i) {
         unsigned char txhash[WALLY_TXHASH_LEN];
-        const unsigned char *script, *scriptcode;
-        size_t script_len, scriptcode_len, subindex = 0;
+        size_t subindex = 0;
         struct ext_key derived;
         bool found;
 
@@ -5953,21 +6043,10 @@ int wally_psbt_sign_bip32(struct wally_psbt *psbt,
         if (ret == WALLY_OK && !found)
             continue; /* No key to sign with */
 
-        /* Get the scriptpubkey or redeemscript */
-        if (ret == WALLY_OK)
-            ret = get_signing_script(psbt, i, &script, &script_len);
-
-        /* Get the actual script to sign with */
-        if (ret == WALLY_OK)
-            ret = get_scriptcode(psbt, i, p2pkh, sizeof(p2pkh),
-                                 script, script_len,
-                                 &scriptcode, &scriptcode_len);
-
         /* Get the hash to sign */
         if (ret == WALLY_OK)
-            ret = wally_psbt_get_input_signature_hash(psbt, i, tx,
-                                                      scriptcode, scriptcode_len,
-                                                      0, txhash, sizeof(txhash));
+            ret = psbt_input_own_hash(psbt, i, tx, txhash, sizeof(txhash));
+
         /* Sign the input */
         if (ret == WALLY_OK)
             ret = psbt_sign_input_impl(psbt, i, subindex,

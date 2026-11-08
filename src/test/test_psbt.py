@@ -1300,6 +1300,90 @@ class PSBTTests(unittest.TestCase):
         wally_tx_free(tx)
         wally_psbt_free(psbt)
 
+        # A hash is only given for, and a signature only made over, the
+        # transaction the PSBT describes
+        def get_own_hash(psbt, tx):
+            pub, pub_len = make_cbuffer('00' * 33)
+            self.assertEqual(wally_ec_public_key_from_private_key(keys[0], 32, pub, pub_len), WALLY_OK)
+            h160, h160_len = make_cbuffer('00' * 20)
+            self.assertEqual(wally_hash160(pub, pub_len, h160, h160_len), WALLY_OK)
+            scriptcode = b'\x76\xa9\x14' + bytes(h160) + b'\x88\xac'
+            out, out_len = make_cbuffer('00' * 32)
+            ret = wally_psbt_get_input_signature_hash(psbt, 0, tx, scriptcode, len(scriptcode), 0, out, out_len)
+            return ret, bytes(out)
+
+        def get_hdkey():
+            pub, pub_len = make_cbuffer('00' * 33)
+            self.assertEqual(wally_ec_public_key_from_private_key(keys[0], 32, pub, pub_len), WALLY_OK)
+            hdkey = pointer(ext_key())
+            ret = bip32_key_init_alloc(0x0488ADE4, 0, 0, bytes(32), 32, pub, pub_len, keys[0], 32,
+                                       None, 0, None, 0, hdkey) # Mainnet private
+            self.assertEqual(ret, WALLY_OK)
+            return hdkey
+
+        def check_sig(psbt, want):
+            """Whether the signature made for input 0 verifies over the hash want"""
+            pub, pub_len = make_cbuffer('00' * 33)
+            self.assertEqual(wally_ec_public_key_from_private_key(keys[0], 32, pub, pub_len), WALLY_OK)
+            item = psbt.contents.inputs[0].signatures.items[0]
+            der = string_at(item.value, item.value_len)
+            sig, sig_len = make_cbuffer('00' * 64)
+            self.assertEqual(wally_ec_sig_from_der(der, len(der) - 1, sig, sig_len), WALLY_OK)
+            return wally_ec_sig_verify(pub, pub_len, want, 32, 0x1, sig, sig_len) # EC_FLAG_ECDSA
+
+        psbt = get_psbt()
+        tx = pointer(wally_tx())
+        self.assertEqual(wally_psbt_extract(psbt, WALLY_PSBT_EXTRACT_NON_FINAL, tx), WALLY_OK)
+        ret, good_hash = get_own_hash(psbt, tx)
+        self.assertEqual(ret, WALLY_OK)
+        # Any change to the caller's transaction is refused
+        output = tx.contents.outputs[0]
+        good_script = string_at(output.script, output.script_len)
+        good_amount = output.satoshi
+        self.assertEqual(wally_tx_set_output_script(tx, 0, attacker, len(attacker)), WALLY_OK)
+        self.assertEqual(get_own_hash(psbt, tx)[0], WALLY_EINVAL)
+        self.assertEqual(wally_tx_set_output_script(tx, 0, good_script, len(good_script)), WALLY_OK)
+        self.assertEqual(wally_tx_set_output_satoshi(tx, 0, good_amount - 1), WALLY_OK)
+        self.assertEqual(get_own_hash(psbt, tx)[0], WALLY_EINVAL)
+        self.assertEqual(wally_tx_set_output_satoshi(tx, 0, good_amount), WALLY_OK)
+        tx.contents.locktime += 1
+        self.assertEqual(get_own_hash(psbt, tx)[0], WALLY_EINVAL)
+        tx.contents.locktime -= 1
+        tx.contents.inputs[0].sequence ^= 1
+        self.assertEqual(get_own_hash(psbt, tx)[0], WALLY_EINVAL)
+        tx.contents.inputs[0].sequence ^= 1
+        self.assertEqual(get_own_hash(psbt, tx), (WALLY_OK, good_hash))
+        # A hash of anything else is not signed, while the PSBT's own is
+        hdkey = get_hdkey()
+        for bad in [bytes(32), bytes(reversed(good_hash))]:
+            ret = wally_psbt_sign_input_bip32(psbt, 0, 0, bad, 32, hdkey, 0)
+            self.assertEqual(ret, WALLY_EINVAL)
+        self.assertEqual(num_sigs(psbt), 0)
+        self.assertEqual(wally_psbt_sign_input_bip32(psbt, 0, 0, good_hash, 32, hdkey, 0), WALLY_OK)
+        self.assertEqual(num_sigs(psbt), 1)
+        self.assertEqual(check_sig(psbt, good_hash), WALLY_OK)
+        bip32_key_free(hdkey)
+        wally_psbt_free(psbt)
+
+        # The signing cache cannot carry in parts of a transaction the checks never saw.
+        # Filling it while the output has no code, then restoring the code, changes nothing
+        psbt = get_psbt()
+        info = bytearray(66)
+        out = byref(psbt.contents.outputs[0])
+        ret, written = wally_psbt_output_get_sp_v0_info(out, (c_ubyte * 66).from_buffer(info), 66)
+        self.assertEqual((ret, written), (WALLY_OK, 66))
+        self.assertEqual(wally_psbt_signing_cache_enable(psbt, 0), WALLY_OK)
+        self.assertEqual(wally_psbt_output_clear_sp_v0_info(out), WALLY_OK)
+        self.assertEqual(wally_tx_set_output_script(tx, 0, attacker, len(attacker)), WALLY_OK)
+        self.assertEqual(get_own_hash(psbt, tx)[0], WALLY_OK) # Plain output: not checked
+        self.assertEqual(wally_tx_set_output_script(tx, 0, good_script, len(good_script)), WALLY_OK)
+        self.assertEqual(wally_psbt_output_set_sp_v0_info(out, bytes(info), 66), WALLY_OK)
+        self.assertEqual(wally_psbt_sign(psbt, keys[0], 32, 0), WALLY_OK)
+        self.assertEqual(num_sigs(psbt), 1)
+        self.assertEqual(check_sig(psbt, good_hash), WALLY_OK)
+        wally_tx_free(tx)
+        wally_psbt_free(psbt)
+
         # An ECDSA signature does not commit to the other inputs' prevout scripts,
         # so a false witness utxo could leave the payment unfindable. Without
         # non-witness utxos proving every prevout, nothing can be signed
