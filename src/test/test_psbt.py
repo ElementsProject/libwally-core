@@ -1196,11 +1196,39 @@ class PSBTTests(unittest.TestCase):
             for i in self.get_sp_scripts(psbt):
                 self.assertEqual(wally_psbt_output_set_script(byref(psbt.contents.outputs[i]), None, 0), WALLY_OK)
 
-        def get_psbt(script=None):
+        def prove_prevouts(psbt):
+            """Give each input a non-witness utxo. These change its outpoint,
+            so the shares and scripts have to be made again.
+            """
+            for i in range(2):
+                inp = psbt.contents.inputs[i]
+                utxo = inp.witness_utxo.contents
+                script = string_at(utxo.script, utxo.script_len)
+                tx = pointer(wally_tx())
+                self.assertEqual(wally_tx_init_alloc(2, 0, 1, inp.index + 1, tx), WALLY_OK)
+                self.assertEqual(wally_tx_add_raw_input(tx, bytes([i + 1]) * 32, 32, 0, 0, None, 0, None, 0), WALLY_OK)
+                for _ in range(inp.index + 1):
+                    self.assertEqual(wally_tx_add_raw_output(tx, utxo.satoshi, script, len(script), 0), WALLY_OK)
+                txid, txid_len = make_cbuffer('00' * 32)
+                self.assertEqual(wally_tx_get_txid(tx, txid, txid_len), WALLY_OK)
+                self.assertEqual(wally_psbt_input_set_previous_txid(byref(inp), txid, txid_len), WALLY_OK)
+                self.assertEqual(wally_psbt_input_set_utxo(byref(inp), tx), WALLY_OK)
+                wally_tx_free(tx)
+            clear_sp_data(psbt)
+            ret = wally_psbt_add_sp_ecdh_shares(psbt, keys[0] + keys[1], 64, b'\x07' * 32, 32, 0)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(wally_psbt_compute_sp_scripts(psbt, 0), WALLY_OK)
+
+        def get_unproven_psbt():
             psbt = self.parse_base64(case['psbt'])
             self.fix_sp_prevouts(psbt)
             for i in range(2):
                 wally_map_clear(byref(psbt.contents.inputs[i].signatures))
+            return psbt
+
+        def get_psbt(script=None):
+            psbt = get_unproven_psbt()
+            prove_prevouts(psbt)
             if script:
                 out = byref(psbt.contents.outputs[0])
                 self.assertEqual(wally_psbt_output_set_script(out, script, len(script)), WALLY_OK)
@@ -1234,6 +1262,80 @@ class PSBTTests(unittest.TestCase):
         for key in keys:
             self.assertEqual(wally_psbt_sign(psbt, key, 32, 0), WALLY_OK)
         self.assertEqual(num_sigs(psbt), 2)
+        wally_psbt_free(psbt)
+
+        # A taproot signature commits to every prevout script, so a witness utxo is enough
+        tr_case = [c for c in cases['valid'] if 'one P2TR input / one sp output with no' in c['description']][0]
+        psbt = self.parse_base64(tr_case['psbt'])
+        inp = byref(psbt.contents.inputs[0])
+        internal_pub, output_pub = [make_cbuffer('00' * 33)[0] for _ in range(2)]
+        output_key = make_cbuffer('00' * 32)[0]
+        self.assertEqual(wally_ec_public_key_from_private_key(keys[0], 32, internal_pub, 33), WALLY_OK)
+        self.assertEqual(wally_ec_public_key_bip341_tweak(internal_pub, 33, None, 0, 0, output_pub, 33), WALLY_OK)
+        self.assertEqual(wally_ec_private_key_bip341_tweak(keys[0], 32, None, 0, 0, output_key, 32), WALLY_OK)
+        script = b'\x51\x20' + bytes(output_pub)[1:]
+        tx_out = pointer(wally_tx_output())
+        self.assertEqual(wally_tx_output_init_alloc(100000, script, len(script), tx_out), WALLY_OK)
+        self.assertEqual(wally_psbt_input_set_witness_utxo(inp, tx_out), WALLY_OK)
+        wally_tx_output_free(tx_out)
+        internal_x = bytes(internal_pub)[1:]
+        self.assertEqual(wally_psbt_input_set_taproot_internal_key(inp, internal_x, 32), WALLY_OK)
+        self.assertEqual(wally_psbt_input_taproot_keypath_add(inp, internal_x, 32, None, 0, bytes(4), 4, None, 0), WALLY_OK)
+        self.assertEqual(wally_psbt_add_sp_ecdh_shares(psbt, output_key, 32, b'\x07' * 32, 32, 0), WALLY_OK)
+        self.assertEqual(wally_psbt_compute_sp_scripts(psbt, 0), WALLY_OK)
+        self.assertFalse(psbt.contents.inputs[0].utxo)
+        self.assertEqual(wally_psbt_sign(psbt, keys[0], 32, 0), WALLY_OK)
+        fields = psbt.contents.inputs[0].psbt_fields
+        item = [fields.items[i] for i in range(fields.num_items) if fields.items[i].key_len == 0x13][0]
+        sig = string_at(item.value, item.value_len)
+        self.assertEqual((len(sig), sig[64]), (65, 1)) # SIGHASH_ALL
+        tx = pointer(wally_tx())
+        self.assertEqual(wally_psbt_extract(psbt, WALLY_PSBT_EXTRACT_NON_FINAL, tx), WALLY_OK)
+        tr_hash, tr_hash_len = make_cbuffer('00' * 32)
+        ret = wally_psbt_get_input_signature_hash(psbt, 0, tx, None, 0, 0, tr_hash, tr_hash_len)
+        self.assertEqual(ret, WALLY_OK)
+        # The signature is for the key the prevout actually pays
+        ret = wally_ec_sig_verify(bytes(output_pub)[1:], 32, tr_hash, 32, 0x2, sig[:64], 64) # EC_FLAG_SCHNORR
+        self.assertEqual(ret, WALLY_OK)
+        wally_tx_free(tx)
+        wally_psbt_free(psbt)
+
+        # An ECDSA signature does not commit to the other inputs' prevout scripts,
+        # so a false witness utxo could leave the payment unfindable. Without
+        # non-witness utxos proving every prevout, nothing can be signed
+        psbt = get_unproven_psbt()
+        self.assertEqual(wally_psbt_compute_sp_scripts(psbt, 0), WALLY_OK)
+        assert_no_signature(psbt)
+        tx = pointer(wally_tx())
+        self.assertEqual(wally_psbt_extract(psbt, WALLY_PSBT_EXTRACT_NON_FINAL, tx), WALLY_OK)
+        self.assertEqual(get_input_hash(psbt, tx), WALLY_EINVAL)
+        wally_tx_free(tx)
+        wally_psbt_free(psbt)
+
+        # The attack: the signer proves its own input, while a co-signer claims
+        # its real P2WPKH input is a P2WSH, which BIP-352 leaves out of the sum
+        psbt = get_psbt()
+        forged = b'\x00\x20' + bytes(32)
+        tx_out = pointer(wally_tx_output())
+        self.assertEqual(wally_tx_output_init_alloc(1000, forged, len(forged), tx_out), WALLY_OK)
+        self.assertEqual(wally_psbt_input_set_witness_utxo(byref(psbt.contents.inputs[1]), tx_out), WALLY_OK)
+        # A real non-witness utxo beside it exposes the lie
+        self.assertEqual(wally_psbt_compute_sp_scripts(psbt, 0), WALLY_EINVAL)
+        assert_no_signature(psbt)
+        # So the attacker leaves it out, and supplies a share as the only eligible input's owner
+        self.assertEqual(wally_psbt_input_set_utxo(byref(psbt.contents.inputs[1]), None), WALLY_OK)
+        clear_sp_data(psbt)
+        self.assertEqual(wally_psbt_add_sp_ecdh_shares(psbt, keys[0] + bytes(32), 64, b'\x07' * 32, 32, 0), WALLY_OK)
+        self.assertEqual(wally_psbt_compute_sp_scripts(psbt, 0), WALLY_OK)
+        assert_no_signature(psbt)
+        wally_tx_output_free(tx_out)
+        wally_psbt_free(psbt)
+
+        # A non-witness utxo for another transaction proves nothing
+        psbt = get_psbt()
+        txid = bytes(reversed(bytes(psbt.contents.inputs[1].txhash)))
+        self.assertEqual(wally_psbt_input_set_previous_txid(byref(psbt.contents.inputs[1]), txid, 32), WALLY_OK)
+        assert_no_signature(psbt)
         wally_psbt_free(psbt)
 
         # Converting to v0 cannot switch the checks off: the conversion fails...

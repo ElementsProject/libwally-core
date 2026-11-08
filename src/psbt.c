@@ -650,6 +650,28 @@ static bool psbt_has_sp_outputs(const struct wally_psbt *psbt)
     return false;
 }
 
+static int sp_input_prevout_script(const struct wally_psbt_input *input,
+                                   const unsigned char **script, size_t *script_len);
+
+/* An ECDSA signature does not commit to the prevout scripts of the other
+ * inputs, so a false witness utxo on any of them could change the key sum and
+ * leave a payment its receiver cannot find. Every prevout must be proven by a
+ * non-witness utxo. A taproot signature commits to all of them */
+static int sp_check_prevouts_proven(const struct wally_psbt *psbt)
+{
+    const unsigned char *script;
+    size_t i, script_len;
+
+    for (i = 0; i < psbt->num_inputs; ++i) {
+        int ret = sp_input_prevout_script(&psbt->inputs[i], &script, &script_len);
+        if (ret != WALLY_OK)
+            return ret;
+        if (!psbt->inputs[i].utxo)
+            return WALLY_EINVAL;
+    }
+    return WALLY_OK;
+}
+
 /* Get the sighash to sign an input with. BIP-375: with silent payment
  * outputs present, only SIGHASH_ALL may be used, including for taproot */
 static int psbt_input_get_sighash(const struct wally_psbt *psbt,
@@ -659,6 +681,8 @@ static int psbt_input_get_sighash(const struct wally_psbt *psbt,
     *sighash = inp->sighash;
     if (psbt_has_sp_outputs(psbt)) {
         if (psbt->version != PSBT_2 || (*sighash && *sighash != WALLY_SIGHASH_ALL))
+            return WALLY_EINVAL;
+        if (!is_taproot && sp_check_prevouts_proven(psbt) != WALLY_OK)
             return WALLY_EINVAL;
         *sighash = WALLY_SIGHASH_ALL;
     } else if (!*sighash)

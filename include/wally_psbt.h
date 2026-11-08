@@ -2052,8 +2052,9 @@ WALLY_CORE_API int wally_psbt_get_id(
  *
  * .. note:: An input's prevout script comes from its witness or non-witness
  *|    utxo. A non-witness utxo is checked against the input, but a witness utxo
- *|    alone cannot be: the caller must trust it or check it, for example
- *|    against the keys it holds, as a false script can change the key sum.
+ *|    alone cannot be, and a false script can change the key sum. Signing a
+ *|    non-taproot input therefore requires a non-witness utxo on every input,
+ *|    and a taproot signature commits to all of the prevout scripts.
  */
 WALLY_CORE_API int wally_psbt_compute_sp_scripts(
     struct wally_psbt *psbt,
@@ -2470,6 +2471,10 @@ WALLY_CORE_API int wally_psbt_get_input_scriptcode(
  * .. note:: This does not check BIP-375 silent payment output scripts. A caller
  *|    signing the hash with its own key must first check them by calling
  *|    `wally_psbt_compute_sp_scripts`, or the signature could pay anyone.
+ *
+ * .. note:: With silent payment outputs, fails unless only SIGHASH_ALL is used
+ *|    and, for a non-taproot input, every input has a non-witness utxo. See
+ *|    `wally_psbt_sign_bip32`.
  */
 WALLY_CORE_API int wally_psbt_get_input_signature_hash(
     struct wally_psbt *psbt,
@@ -2800,7 +2805,10 @@ WALLY_CORE_API int wally_psbt_sign(
  *
  * .. note:: Fails unless every BIP-375 silent payment output script is present
  *|    and verifies as in `wally_psbt_compute_sp_scripts`, and only SIGHASH_ALL
- *|    is used with such outputs.
+ *|    is used with such outputs. To sign a non-taproot input with such outputs,
+ *|    every input must also have a non-witness utxo: an ECDSA signature does
+ *|    not commit to the prevout scripts of the other inputs, so a false witness
+ *|    utxo could otherwise leave a payment its receiver cannot find.
  */
 WALLY_CORE_API int wally_psbt_sign_bip32(
     struct wally_psbt *psbt,
@@ -2825,7 +2833,10 @@ WALLY_CORE_API int wally_psbt_sign_bip32(
  *
  * .. note:: Fails unless every BIP-375 silent payment output script is present
  *|    and verifies as in `wally_psbt_compute_sp_scripts`, and only SIGHASH_ALL
- *|    is used with such outputs.
+ *|    is used with such outputs. To sign a non-taproot input with such outputs,
+ *|    every input must also have a non-witness utxo: an ECDSA signature does
+ *|    not commit to the prevout scripts of the other inputs, so a false witness
+ *|    utxo could otherwise leave a payment its receiver cannot find.
  */
 WALLY_CORE_API int wally_psbt_sign_input_bip32(
     struct wally_psbt *psbt,
