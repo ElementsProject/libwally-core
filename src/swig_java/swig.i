@@ -286,6 +286,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* mainchain_script, size_t mainchain_script_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* merkle_hashes, size_t merkle_hashes_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* merkle_root, size_t merkle_root_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* msg, size_t msg_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* nonce, size_t nonce_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* nonce_hash, size_t nonce_hash_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* offline_keys, size_t offline_keys_len) };
@@ -300,6 +301,9 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* priv_key, size_t priv_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* proof, size_t proof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* pub_key, size_t pub_key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* pub_key_a, size_t pub_key_a_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* pub_key_b, size_t pub_key_b_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* pub_key_c, size_t pub_key_c_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* rangeproof, size_t rangeproof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* redeem_script, size_t redeem_script_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* s2c_data, size_t s2c_data_len) };
@@ -613,6 +617,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_sarray(wally_descriptor_to_addresses);
 %returns_size_t(wally_descriptor_to_script);
 %returns_size_t(wally_descriptor_to_script_get_maximum_length);
+%returns_array_(wally_dleq_proof_generate, 12, 13, WALLY_DLEQ_PROOF_LEN);
+%returns_void__(wally_dleq_proof_verify);
 %returns_array_(wally_ec_private_key_bip341_tweak, 6, 7, EC_PRIVATE_KEY_LEN);
 %returns_void__(wally_ec_private_key_verify);
 %returns_array_(wally_ec_public_key_bip341_tweak, 6, 7, EC_PUBLIC_KEY_LEN);

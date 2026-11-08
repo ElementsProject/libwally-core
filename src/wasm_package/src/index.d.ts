@@ -153,6 +153,8 @@ export function descriptor_set_network(descriptor: Ref_wally_descriptor, network
 export function descriptor_to_address(descriptor: Ref_wally_descriptor, variant: number, multi_index: number, child_num: number, flags: number): string;
 export function descriptor_to_addresses(descriptor: Ref_wally_descriptor, variant: number, multi_index: number, child_num: number, flags: number, out_len: number): string;
 export function descriptor_to_script_get_maximum_length(descriptor: Ref_wally_descriptor, depth: number, index: number, variant: number, multi_index: number, child_num: number, flags: number): number;
+export function dleq_proof_generate(priv_key: Buffer|Uint8Array|null, pub_key: Buffer|Uint8Array|null, aux_rand: Buffer|Uint8Array|null, generator: Buffer|Uint8Array|null, msg: Buffer|Uint8Array|null, flags: number): Buffer;
+export function dleq_proof_verify(pub_key_a: Buffer|Uint8Array|null, pub_key_b: Buffer|Uint8Array|null, pub_key_c: Buffer|Uint8Array|null, proof: Buffer|Uint8Array|null, generator: Buffer|Uint8Array|null, msg: Buffer|Uint8Array|null, flags: number): void;
 export function ec_private_key_bip341_tweak(priv_key: Buffer|Uint8Array|null, merkle_root: Buffer|Uint8Array|null, flags: number): Buffer;
 export function ec_private_key_verify(priv_key: Buffer|Uint8Array|null): void;
 export function ec_public_key_bip341_tweak(pub_key: Buffer|Uint8Array|null, merkle_root: Buffer|Uint8Array|null, flags: number): Buffer;

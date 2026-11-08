@@ -737,6 +737,18 @@ inline int descriptor_to_script_get_maximum_length(const DESCRIPTOR& descriptor,
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class PRIV_KEY, class PUB_KEY, class AUX_RAND, class GENERATOR, class MSG, class BYTES_OUT>
+inline int dleq_proof_generate(const PRIV_KEY& priv_key, const PUB_KEY& pub_key, const AUX_RAND& aux_rand, const GENERATOR& generator, const MSG& msg, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_dleq_proof_generate(priv_key.data(), priv_key.size(), pub_key.data(), pub_key.size(), aux_rand.data(), aux_rand.size(), generator.data(), generator.size(), msg.data(), msg.size(), flags, bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PUB_KEY_A, class PUB_KEY_B, class PUB_KEY_C, class PROOF, class GENERATOR, class MSG>
+inline bool dleq_proof_verify(const PUB_KEY_A& pub_key_a, const PUB_KEY_B& pub_key_b, const PUB_KEY_C& pub_key_c, const PROOF& proof, const GENERATOR& generator, const MSG& msg, uint32_t flags) {
+    int ret = ::wally_dleq_proof_verify(pub_key_a.data(), pub_key_a.size(), pub_key_b.data(), pub_key_b.size(), pub_key_c.data(), pub_key_c.size(), proof.data(), proof.size(), generator.data(), generator.size(), msg.data(), msg.size(), flags);
+    return ret == WALLY_OK;
+}
+
 template <class PRIV_KEY, class MERKLE_ROOT, class BYTES_OUT>
 inline int ec_private_key_bip341_tweak(const PRIV_KEY& priv_key, const MERKLE_ROOT& merkle_root, uint32_t flags, BYTES_OUT& bytes_out) {
     int ret = ::wally_ec_private_key_bip341_tweak(priv_key.data(), priv_key.size(), merkle_root.data(), merkle_root.size(), flags, bytes_out.data(), bytes_out.size());

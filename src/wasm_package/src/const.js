@@ -115,6 +115,7 @@ export const WALLY_CA_PREFIX_LIQUID_REGTEST = 0x04; /** Liquid v1 confidential a
 export const WALLY_CA_PREFIX_LIQUID_TESTNET = 0x17; /** Liquid v1 confidential address prefix for testnet */
 export const WALLY_CS_MAX_ASSETS = 256;
 export const WALLY_DESCRIPTOR_TAPTREE_MAX_DEPTH = 128; /* BIP-341: maximum taptree depth */
+export const WALLY_DLEQ_PROOF_LEN = 64; /** The length of a BIP-374 DLEQ proof */
 export const WALLY_EINVAL = -2; /** Invalid argument */
 export const WALLY_ENOMEM = -3; /** malloc() failed */
 export const WALLY_ERROR = -1; /** General error */
