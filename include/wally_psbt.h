@@ -2466,6 +2466,10 @@ WALLY_CORE_API int wally_psbt_get_input_scriptcode(
  * :param flags: Flags controlling signature hash generation. Must be 0.
  * :param bytes_out: Destination for the signature hash.
  * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
+ *
+ * .. note:: This does not check BIP-375 silent payment output scripts. A caller
+ *|    signing the hash with its own key must first check them by calling
+ *|    `wally_psbt_compute_sp_scripts`, or the signature could pay anyone.
  */
 WALLY_CORE_API int wally_psbt_get_input_signature_hash(
     struct wally_psbt *psbt,
@@ -2794,7 +2798,9 @@ WALLY_CORE_API int wally_psbt_sign(
  *|    or SIGHASH_ALL/SIGHASH_DEFAULT if not present. The caller should ensure
  *|    that each input sighash is acceptable before signing.
  *
- * .. note:: Only SIGHASH_ALL is used with BIP-375 silent payment outputs.
+ * .. note:: Fails unless every BIP-375 silent payment output script is present
+ *|    and verifies as in `wally_psbt_compute_sp_scripts`, and only SIGHASH_ALL
+ *|    is used with such outputs.
  */
 WALLY_CORE_API int wally_psbt_sign_bip32(
     struct wally_psbt *psbt,
@@ -2817,7 +2823,9 @@ WALLY_CORE_API int wally_psbt_sign_bip32(
  *|    or SIGHASH_ALL/SIGHASH_DEFAULT if not present. The caller should ensure
  *|    that the sighash is acceptable before signing.
  *
- * .. note:: Only SIGHASH_ALL is used with BIP-375 silent payment outputs.
+ * .. note:: Fails unless every BIP-375 silent payment output script is present
+ *|    and verifies as in `wally_psbt_compute_sp_scripts`, and only SIGHASH_ALL
+ *|    is used with such outputs.
  */
 WALLY_CORE_API int wally_psbt_sign_input_bip32(
     struct wally_psbt *psbt,
@@ -2864,6 +2872,9 @@ WALLY_CORE_API int wally_psbt_finalize_input(
  * :param psbt: PSBT to extract from.
  * :param flags: :ref:`psbt-extract` controlling extraction.
  * :param output: Destination for the resulting transaction.
+ *
+ * .. note:: Fails unless every BIP-375 silent payment output script is present
+ *|    and verifies as in `wally_psbt_compute_sp_scripts`.
  */
 WALLY_CORE_API int wally_psbt_extract(
     const struct wally_psbt *psbt,
