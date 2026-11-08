@@ -625,6 +625,22 @@ static int sp_dleq_proof_verify(const unsigned char *key, size_t key_len,
     return WALLY_OK;
 }
 
+/* BIP-375: Once a silent payment output's script is set, the inputs and
+ * outputs must no longer be modifiable */
+static bool sp_script_is_modifiable(const struct wally_psbt *psbt)
+{
+    size_t i;
+
+    if (!(psbt->tx_modifiable_flags & (WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_OUTPUTS)))
+        return false;
+    for (i = 0; i < psbt->num_outputs; ++i) {
+        const struct wally_psbt_output *out = psbt->outputs + i;
+        if (out->script && wally_map_get_integer(&out->psbt_fields, PSBT_OUT_SP_V0_INFO))
+            return true;
+    }
+    return false;
+}
+
 static int psbt_input_field_verify(uint32_t field_type,
                                    const unsigned char *val, size_t val_len)
 {
@@ -2980,6 +2996,10 @@ unknown:
         ret = pull_psbt_output(*output, cursor, max, tx_flags, flags,
                                (*output)->outputs + i);
 
+    if (ret == WALLY_OK && !(flags & WALLY_PSBT_PARSE_FLAG_LOOSE) &&
+        sp_script_is_modifiable(*output))
+        ret = WALLY_EINVAL; /* Modifiable after a silent payment script is set */
+
     if (ret == WALLY_OK && !*cursor)
         ret = WALLY_EINVAL; /* Ran out of data */
     else if (ret == WALLY_OK && *max && (flags & WALLY_PSBT_PARSE_FLAG_COMPLETE))
@@ -4474,6 +4494,597 @@ int wally_psbt_set_version(struct wally_psbt *psbt,
         return WALLY_EINVAL; /* PSET only supports v2 */
 
     return psbt->version == PSBT_0 ? psbt_v0_to_v2(psbt) : psbt_v2_to_v0(psbt);
+}
+
+/* BIP-352/BIP-375 silent payment output script computation */
+#define SP_TAG_INPUTS "BIP0352/Inputs"
+#define SP_TAG_SHARED_SECRET "BIP0352/SharedSecret"
+#define SP_OUTPOINT_LEN (WALLY_TXHASH_LEN + sizeof(uint32_t))
+#define SP_K_MAX 2323 /* BIP-352: The most outputs per scan key */
+
+/* BIP-341 NUMS point H: inputs using it as their internal key are skipped */
+static const unsigned char SP_NUMS_H[EC_XONLY_PUBLIC_KEY_LEN] = {
+    0x50, 0x92, 0x9b, 0x74, 0xc1, 0xa0, 0x49, 0x54,
+    0xb7, 0x8b, 0x4b, 0x60, 0x35, 0xe9, 0x7a, 0x5e,
+    0x07, 0x8a, 0x5a, 0x0f, 0x28, 0xec, 0x96, 0xd5,
+    0x47, 0xbf, 0xee, 0x9a, 0xce, 0x80, 0x3a, 0xc0
+};
+
+/* A silent payment output: its index and code */
+struct sp_output {
+    size_t index;
+    const unsigned char *code; /* Scan key followed by spend key */
+};
+
+static int sp_output_cmp(const struct sp_output *a, const struct sp_output *b)
+{
+    /* BIP-375: Order by code, then by output index */
+    int cmp = memcmp(a->code, b->code, WALLY_SILENT_PAYMENT_KEYS_LEN);
+    if (cmp)
+        return cmp;
+    return a->index < b->index ? -1 : a->index > b->index;
+}
+
+/* Get the script an input spends. The non-witness utxo is the one source that
+ * can be verified, so it must match the input, and any witness utxo must agree */
+static int sp_input_prevout_script(const struct wally_psbt_input *input,
+                                   const unsigned char **script, size_t *script_len)
+{
+    if (input->utxo) {
+        const struct wally_tx_output *out;
+        int ret = is_matching_txid(input->utxo, input->txhash, WALLY_TXHASH_LEN);
+        if (ret != WALLY_OK)
+            return ret;
+        if (input->index >= input->utxo->num_outputs)
+            return WALLY_EINVAL;
+        out = input->utxo->outputs + input->index;
+        if (input->witness_utxo &&
+            (input->witness_utxo->script_len != out->script_len ||
+             memcmp(input->witness_utxo->script, out->script, out->script_len)))
+            return WALLY_EINVAL; /* Inconsistent utxos */
+        *script = out->script;
+        *script_len = out->script_len;
+        return WALLY_OK;
+    }
+    if (!input->witness_utxo)
+        return WALLY_EINVAL; /* Need the prevout to know if it is eligible */
+    *script = input->witness_utxo->script;
+    *script_len = input->witness_utxo->script_len;
+    return WALLY_OK;
+}
+
+/* Results of looking for the public key behind a hash160 */
+#define SP_KEY_NONE 0         /* Not found */
+#define SP_KEY_COMPRESSED 1   /* Found: the input is eligible */
+#define SP_KEY_UNCOMPRESSED 2 /* Found, uncompressed: BIP-352 skips the input */
+
+/* Check one candidate key against hash160 */
+static bool sp_match_key(const unsigned char *key, size_t key_len,
+                         const unsigned char *hash160, unsigned char *pub_key, int *found)
+{
+    unsigned char h[HASH160_LEN];
+
+    if ((key_len != EC_PUBLIC_KEY_LEN && key_len != EC_PUBLIC_KEY_UNCOMPRESSED_LEN) ||
+        wally_hash160(key, key_len, h, sizeof(h)) != WALLY_OK ||
+        memcmp(h, hash160, HASH160_LEN))
+        return false;
+    if (key_len == EC_PUBLIC_KEY_LEN) {
+        memcpy(pub_key, key, EC_PUBLIC_KEY_LEN);
+        *found = SP_KEY_COMPRESSED;
+    } else
+        *found = SP_KEY_UNCOMPRESSED;
+    return true;
+}
+
+/* Find the public key in an input that hashes to hash160 */
+static int sp_find_hashed_pubkey(const struct wally_psbt_input *input,
+                                 const unsigned char *hash160, unsigned char *pub_key)
+{
+    const struct wally_map *maps[2] = { &input->keypaths, &input->signatures };
+    const size_t lens[2] = { EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_UNCOMPRESSED_LEN };
+    const struct wally_map_item *item;
+    int found = SP_KEY_NONE;
+    size_t i, j;
+
+    for (i = 0; i < 2; ++i)
+        for (j = 0; j < maps[i]->num_items; ++j)
+            if (sp_match_key(maps[i]->items[j].key, maps[i]->items[j].key_len,
+                             hash160, pub_key, &found))
+                return found;
+    if (input->final_witness && input->final_witness->num_items) {
+        const struct wally_tx_witness_stack *stack = input->final_witness;
+        const struct wally_tx_witness_item *wit = stack->items + stack->num_items - 1;
+        if (sp_match_key(wit->witness, wit->witness_len, hash160, pub_key, &found))
+            return found;
+    }
+    item = wally_map_get_integer(&input->psbt_fields, PSBT_IN_FINAL_SCRIPTSIG);
+    if (item) {
+        /* P2PKH: As in BIP-352, search from the end of the scriptSig, as a
+         * malleated scriptSig may not end with the key. Compressed keys first,
+         * since BIP-352 only looks for those */
+        for (i = 0; i < 2; ++i)
+            for (j = item->value_len; j >= lens[i]; --j)
+                if (sp_match_key(item->value + j - lens[i], lens[i],
+                                 hash160, pub_key, &found))
+                    return found;
+    }
+    return SP_KEY_NONE;
+}
+
+/* A key must hash to the prevout, also for a finalized input: if nothing does,
+ * the input data does not spend the prevout. BIP-352 only skips uncompressed keys */
+static int sp_key_result(int found, bool *is_eligible)
+{
+    *is_eligible = found == SP_KEY_COMPRESSED;
+    return found == SP_KEY_NONE ? WALLY_EINVAL : WALLY_OK;
+}
+
+/* Get the last push of a script made only of pushes, as a P2SH scriptSig must be */
+static bool sp_script_last_push(const unsigned char *script, size_t script_len,
+                                const unsigned char **push, size_t *push_len)
+{
+    size_t i = 0, n;
+
+    *push = NULL;
+    *push_len = 0;
+    while (i < script_len) {
+        const unsigned char op = script[i++];
+        size_t num_len_bytes = op == 0x4c ? 1 : op == 0x4d ? 2 : op == 0x4e ? 4 : 0;
+        if (op > 0x4e)
+            return false; /* Not a data push */
+        n = op;
+        if (num_len_bytes) {
+            size_t b;
+            if (script_len - i < num_len_bytes)
+                return false;
+            for (b = 0, n = 0; b < num_len_bytes; ++b)
+                n |= (size_t)script[i + b] << (8 * b);
+            i += num_len_bytes;
+        }
+        if (n > script_len - i)
+            return false;
+        *push = script + i;
+        *push_len = n;
+        i += n;
+    }
+    return *push != NULL;
+}
+
+/* Whether a taproot output key commits to the NUMS key H, so that it cannot be
+ * spent by key path. An output key of H itself has no known private key either */
+static int sp_commits_to_nums(const unsigned char *output_key,
+                              const unsigned char *merkle_root, size_t merkle_root_len,
+                              bool *commits)
+{
+    unsigned char tweaked[EC_PUBLIC_KEY_LEN];
+    int ret;
+
+    *commits = !merkle_root && !memcmp(output_key, SP_NUMS_H, sizeof(SP_NUMS_H));
+    if (*commits)
+        return WALLY_OK;
+    ret = wally_ec_public_key_bip341_tweak(SP_NUMS_H, sizeof(SP_NUMS_H),
+                                           merkle_root, merkle_root_len, 0,
+                                           tweaked, sizeof(tweaked));
+    if (ret == WALLY_OK)
+        *commits = !memcmp(tweaked + 1, output_key, EC_XONLY_PUBLIC_KEY_LEN);
+    return ret;
+}
+
+/* Compute the merkle root a script path spend commits to */
+static int sp_control_block_merkle_root(const struct wally_tx_witness_item *leaf,
+                                        const struct wally_tx_witness_item *control,
+                                        unsigned char *root)
+{
+    unsigned char *buf, branch[2 * SHA256_LEN];
+    size_t i, buf_len = 1 + varint_get_length(leaf->witness_len) + leaf->witness_len;
+    int ret;
+
+    if (!(buf = wally_malloc(buf_len)))
+        return WALLY_ENOMEM;
+    buf[0] = control->witness[0] & 0xfe; /* Leaf version */
+    buf_len = 1 + varint_to_bytes(leaf->witness_len, buf + 1);
+    if (leaf->witness_len)
+        memcpy(buf + buf_len, leaf->witness, leaf->witness_len);
+    buf_len += leaf->witness_len;
+    ret = wally_bip340_tagged_hash(buf, buf_len, "TapLeaf", root, SHA256_LEN);
+    clear_and_free(buf, buf_len);
+
+    for (i = 1 + SHA256_LEN; ret == WALLY_OK && i < control->witness_len; i += SHA256_LEN) {
+        /* The two child hashes are hashed in sorted order */
+        const unsigned char *node = control->witness + i;
+        const bool root_first = memcmp(root, node, SHA256_LEN) < 0;
+        memcpy(branch, root_first ? root : node, SHA256_LEN);
+        memcpy(branch + SHA256_LEN, root_first ? node : root, SHA256_LEN);
+        ret = wally_bip340_tagged_hash(branch, sizeof(branch), "TapBranch", root, SHA256_LEN);
+    }
+    return ret;
+}
+
+/* Whether a taproot input is skipped for spending from the NUMS key. The claim
+ * must match the output key, or a key path input could be left out of the sum,
+ * giving a script the receiver cannot find. Fails if the claim does not match */
+static int sp_taproot_is_nums(const struct wally_psbt_input *input,
+                              const unsigned char *output_key, bool *is_nums)
+{
+    const struct wally_tx_witness_stack *stack = input->final_witness;
+    const struct wally_map_item *item;
+    bool commits = false;
+    int ret;
+
+    *is_nums = false;
+    if (stack) {
+        /* Finalized: the witness says how the output is spent */
+        const struct wally_tx_witness_item *control;
+        unsigned char root[SHA256_LEN];
+        size_t num_items = stack->num_items;
+
+        if (!num_items)
+            return WALLY_EINVAL; /* Does not spend the prevout */
+        if (num_items > 1 && stack->items[num_items - 1].witness_len &&
+            stack->items[num_items - 1].witness[0] == 0x50)
+            --num_items; /* The last item is an annex */
+        if (num_items < 2)
+            return WALLY_OK; /* Key path spend */
+        control = stack->items + num_items - 1;
+        if (control->witness_len < 1 + SHA256_LEN ||
+            (control->witness_len - 1) % SHA256_LEN)
+            return WALLY_EINVAL; /* Not a control block */
+        if (memcmp(control->witness + 1, SP_NUMS_H, sizeof(SP_NUMS_H)))
+            return WALLY_OK; /* Script path spend from another internal key */
+        ret = sp_control_block_merkle_root(stack->items + num_items - 2, control, root);
+        if (ret == WALLY_OK)
+            ret = sp_commits_to_nums(output_key, root, sizeof(root), &commits);
+    } else {
+        const struct wally_map_item *root_item;
+        item = wally_map_get_integer(&input->psbt_fields, PSBT_IN_TAP_INTERNAL_KEY);
+        if (!item || item->value_len != sizeof(SP_NUMS_H) ||
+            memcmp(item->value, SP_NUMS_H, sizeof(SP_NUMS_H)))
+            return WALLY_OK;
+        root_item = wally_map_get_integer(&input->psbt_fields, PSBT_IN_TAP_MERKLE_ROOT);
+        ret = sp_commits_to_nums(output_key, root_item ? root_item->value : NULL,
+                                 root_item ? root_item->value_len : 0, &commits);
+    }
+    if (ret != WALLY_OK)
+        return ret;
+    if (!commits)
+        return WALLY_EINVAL; /* Claims the NUMS key, but the output key does not commit to it */
+    *is_nums = true;
+    return WALLY_OK;
+}
+
+/* Get the BIP-352 public key of an input, if it is eligible.
+ * Returns WALLY_EINVAL if an input is not usable with silent payments. */
+static int sp_input_pubkey(const struct wally_psbt_input *input,
+                           bool *is_eligible, unsigned char *pub_key)
+{
+    const struct wally_map_item *item;
+    const unsigned char *script;
+    size_t script_len, type, witver;
+    bool is_nums;
+    int ret;
+
+    *is_eligible = false;
+    if ((ret = sp_input_prevout_script(input, &script, &script_len)) != WALLY_OK)
+        return ret;
+
+    if (scriptpubkey_is_witness_program(script, script_len, &witver) && witver > 1)
+        return WALLY_EINVAL; /* BIP-375: No segwit v2+ inputs */
+
+    if (wally_scriptpubkey_get_type(script, script_len, &type) != WALLY_OK)
+        return WALLY_OK; /* Unknown scripts are not eligible */
+
+    switch (type) {
+    case WALLY_SCRIPT_TYPE_P2TR:
+        if ((ret = sp_taproot_is_nums(input, script + 2, &is_nums)) != WALLY_OK || is_nums)
+            return ret;
+        pub_key[0] = 0x02; /* The x-only output key, lifted to even y */
+        memcpy(pub_key + 1, script + 2, EC_XONLY_PUBLIC_KEY_LEN);
+        *is_eligible = true;
+        break;
+    case WALLY_SCRIPT_TYPE_P2WPKH:
+        ret = sp_key_result(sp_find_hashed_pubkey(input, script + 2, pub_key), is_eligible);
+        break;
+    case WALLY_SCRIPT_TYPE_P2PKH:
+        ret = sp_key_result(sp_find_hashed_pubkey(input, script + 3, pub_key), is_eligible);
+        break;
+    case WALLY_SCRIPT_TYPE_P2SH: {
+        /* Only P2SH-P2WPKH is eligible, so the redeem script is needed to
+         * decide. Once finalized, it is the scriptSig's last push */
+        const unsigned char *redeem = NULL;
+        unsigned char h[HASH160_LEN];
+        size_t redeem_len = 0;
+        bool only_push = false;
+        item = wally_map_get_integer(&input->psbt_fields, PSBT_IN_REDEEM_SCRIPT);
+        if (item) {
+            redeem = item->value;
+            redeem_len = item->value_len;
+            only_push = true;
+        } else if ((item = wally_map_get_integer(&input->psbt_fields,
+                                                 PSBT_IN_FINAL_SCRIPTSIG))) {
+            if (!sp_script_last_push(item->value, item->value_len, &redeem, &redeem_len))
+                return WALLY_EINVAL;
+            only_push = redeem_len + 1 == item->value_len;
+        }
+        if (!redeem || wally_hash160(redeem, redeem_len, h, sizeof(h)) != WALLY_OK ||
+            memcmp(h, script + 2, HASH160_LEN))
+            return WALLY_EINVAL; /* Missing, or not the prevout's redeem script */
+        if (wally_scriptpubkey_get_type(redeem, redeem_len, &type) != WALLY_OK ||
+            type != WALLY_SCRIPT_TYPE_P2WPKH)
+            return WALLY_OK; /* Some other P2SH spend: not eligible */
+        if (!only_push)
+            return WALLY_EINVAL; /* Not a valid P2SH-P2WPKH spend */
+        ret = sp_key_result(sp_find_hashed_pubkey(input, redeem + 2, pub_key), is_eligible);
+        break;
+    }
+    default:
+        return WALLY_OK;
+    }
+    /* BIP-352 skips an input whose key is not a valid point */
+    if (ret != WALLY_OK ||
+        (*is_eligible && wally_ec_public_key_verify(pub_key, EC_PUBLIC_KEY_LEN) != WALLY_OK))
+        *is_eligible = false;
+    return ret;
+}
+
+/* Sum points, serializing the result compressed */
+static int sp_pubkey_sum(const unsigned char *keys, size_t num_keys, unsigned char *sum)
+{
+    secp256k1_pubkey *points, result;
+    const secp256k1_pubkey **ptrs;
+    size_t i, len = EC_PUBLIC_KEY_LEN;
+    bool ok;
+
+    if (!num_keys)
+        return WALLY_EINVAL;
+    points = wally_malloc(num_keys * sizeof(*points));
+    ptrs = wally_malloc(num_keys * sizeof(*ptrs));
+    ok = points && ptrs;
+    for (i = 0; ok && i < num_keys; ++i) {
+        ok = pubkey_parse(&points[i], keys + i * EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_LEN);
+        ptrs[i] = &points[i];
+    }
+    /* Fails if the keys sum to infinity */
+    ok = ok && pubkey_combine(&result, ptrs, num_keys) &&
+         pubkey_serialize(sum, &len, &result, PUBKEY_COMPRESSED) &&
+         len == EC_PUBLIC_KEY_LEN;
+    wally_free(points);
+    wally_free(ptrs);
+    if (!points || !ptrs)
+        return WALLY_ENOMEM;
+    return ok ? WALLY_OK : WALLY_EINVAL;
+}
+
+/* Get the ECDH share for scan_key, verifying its DLEQ proof(s).
+ * keys holds the eligible inputs' public keys in input order, then their sum. */
+static int sp_get_ecdh_share(const struct wally_psbt *psbt, const unsigned char *scan_key,
+                             const unsigned char *keys, const bool *eligible,
+                             unsigned char *share)
+{
+    const struct wally_map_item *g_share, *g_proof, *in_share, *in_proof;
+    const unsigned char *pub_key = keys;
+    unsigned char *shares = NULL;
+    size_t i, num_shares = 0, num_eligible = 0;
+    int ret = WALLY_OK;
+
+    for (i = 0; i < psbt->num_inputs; ++i)
+        num_eligible += eligible[i] ? 1 : 0;
+
+    g_share = wally_map_get(&psbt->sp_ecdh_shares, scan_key, EC_PUBLIC_KEY_LEN);
+    g_proof = wally_map_get(&psbt->sp_dleq_proofs, scan_key, EC_PUBLIC_KEY_LEN);
+    if (g_share || g_proof) {
+        if (!g_share || !g_proof ||
+            wally_dleq_proof_verify(keys + num_eligible * EC_PUBLIC_KEY_LEN,
+                                    EC_PUBLIC_KEY_LEN, scan_key, EC_PUBLIC_KEY_LEN,
+                                    g_share->value, g_share->value_len,
+                                    g_proof->value, g_proof->value_len,
+                                    NULL, 0, NULL, 0, 0) != WALLY_OK)
+            return WALLY_EINVAL; /* Global share without a valid proof */
+    }
+
+    /* Verify every per-input share given for an eligible input */
+    if (!(shares = wally_malloc(num_eligible * EC_PUBLIC_KEY_LEN)))
+        return WALLY_ENOMEM;
+    for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i) {
+        const struct wally_psbt_input *input = psbt->inputs + i;
+        if (!eligible[i])
+            continue; /* Shares of ineligible inputs do not contribute */
+        in_share = wally_map_get(&input->sp_ecdh_shares, scan_key, EC_PUBLIC_KEY_LEN);
+        in_proof = wally_map_get(&input->sp_dleq_proofs, scan_key, EC_PUBLIC_KEY_LEN);
+        if (in_share || in_proof) {
+            if (!in_share || !in_proof ||
+                wally_dleq_proof_verify(pub_key, EC_PUBLIC_KEY_LEN,
+                                        scan_key, EC_PUBLIC_KEY_LEN,
+                                        in_share->value, in_share->value_len,
+                                        in_proof->value, in_proof->value_len,
+                                        NULL, 0, NULL, 0, 0) != WALLY_OK)
+                ret = WALLY_EINVAL; /* Input share without a valid proof */
+            else
+                memcpy(shares + num_shares++ * EC_PUBLIC_KEY_LEN,
+                       in_share->value, EC_PUBLIC_KEY_LEN);
+        }
+        pub_key += EC_PUBLIC_KEY_LEN;
+    }
+
+    if (ret == WALLY_OK) {
+        if (g_share)
+            memcpy(share, g_share->value, EC_PUBLIC_KEY_LEN);
+        else if (num_shares != num_eligible)
+            ret = WALLY_EINVAL; /* Not every eligible input has a share */
+        else
+            ret = sp_pubkey_sum(shares, num_shares, share);
+    }
+    wally_free(shares);
+    return ret;
+}
+
+/* Compute the output script for silent payment code k of a shared secret */
+static int sp_output_script(const unsigned char *shared_secret, uint32_t k,
+                            const unsigned char *spend_key, unsigned char *script)
+{
+    unsigned char buf[EC_PUBLIC_KEY_LEN + sizeof(uint32_t)], t_k[SHA256_LEN];
+    unsigned char out_key[EC_PUBLIC_KEY_LEN];
+    int ret;
+
+    memcpy(buf, shared_secret, EC_PUBLIC_KEY_LEN);
+    uint32_to_be_bytes(k, buf + EC_PUBLIC_KEY_LEN);
+    ret = wally_bip340_tagged_hash(buf, sizeof(buf), SP_TAG_SHARED_SECRET,
+                                   t_k, sizeof(t_k));
+    if (ret == WALLY_OK) /* P_k = B_spend + t_k*G */
+        ret = wally_ec_public_key_tweak(spend_key, EC_PUBLIC_KEY_LEN,
+                                        t_k, sizeof(t_k), out_key, sizeof(out_key));
+    if (ret == WALLY_OK) {
+        script[0] = OP_1;
+        script[1] = EC_XONLY_PUBLIC_KEY_LEN;
+        memcpy(script + 2, out_key + 1, EC_XONLY_PUBLIC_KEY_LEN);
+    }
+    wally_clear_3(buf, sizeof(buf), t_k, sizeof(t_k), out_key, sizeof(out_key));
+    return ret;
+}
+
+int wally_psbt_compute_sp_scripts(struct wally_psbt *psbt, uint32_t flags)
+{
+    struct sp_output *outs = NULL, tmp;
+    unsigned char *keys = NULL, *scripts = NULL, **new_scripts = NULL;
+    unsigned char outpoint[SP_OUTPOINT_LEN], min_outpoint[SP_OUTPOINT_LEN];
+    unsigned char hash_in[SP_OUTPOINT_LEN + EC_PUBLIC_KEY_LEN];
+    unsigned char input_hash[SHA256_LEN], share[EC_PUBLIC_KEY_LEN];
+    unsigned char shared_secret[EC_PUBLIC_KEY_LEN];
+    bool *eligible = NULL, set_any = false;
+    size_t i, j, num_outs = 0, num_eligible = 0, len;
+    size_t is_pset;
+    uint32_t k = 0;
+    int ret = WALLY_OK;
+
+    if (!psbt_is_valid(psbt) || psbt->version != PSBT_2 || flags ||
+        wally_psbt_is_elements(psbt, &is_pset) != WALLY_OK || is_pset)
+        return WALLY_EINVAL;
+
+    /* Gather the silent payment outputs */
+    for (i = 0; i < psbt->num_outputs; ++i)
+        if (wally_map_get_integer(&psbt->outputs[i].psbt_fields, PSBT_OUT_SP_V0_INFO))
+            ++num_outs;
+    if (!num_outs)
+        return WALLY_OK; /* Nothing to do */
+    if (!psbt->num_inputs || sp_script_is_modifiable(psbt))
+        return WALLY_EINVAL;
+
+    outs = wally_calloc(num_outs * sizeof(*outs));
+    scripts = wally_calloc(num_outs * WALLY_SCRIPTPUBKEY_P2TR_LEN);
+    keys = wally_calloc((psbt->num_inputs + 1) * EC_PUBLIC_KEY_LEN);
+    eligible = wally_calloc(psbt->num_inputs * sizeof(*eligible));
+    new_scripts = wally_calloc(num_outs * sizeof(*new_scripts));
+    if (!outs || !scripts || !keys || !eligible || !new_scripts) {
+        ret = WALLY_ENOMEM;
+        goto done;
+    }
+    for (i = 0, j = 0; i < psbt->num_outputs; ++i) {
+        const struct wally_map_item *info;
+        info = wally_map_get_integer(&psbt->outputs[i].psbt_fields, PSBT_OUT_SP_V0_INFO);
+        if (info) {
+            outs[j].index = i;
+            outs[j++].code = info->value;
+        }
+    }
+    /* Insertion sort: BIP-375 orders by code, then output index */
+    for (i = 1; i < num_outs; ++i) {
+        tmp = outs[i];
+        for (j = i; j && sp_output_cmp(&outs[j - 1], &tmp) > 0; --j)
+            outs[j] = outs[j - 1];
+        outs[j] = tmp;
+    }
+
+    /* Eligible input keys, their sum A, and the smallest outpoint */
+    for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i) {
+        const struct wally_psbt_input *input = psbt->inputs + i;
+        ret = sp_input_pubkey(input, &eligible[i], keys + num_eligible * EC_PUBLIC_KEY_LEN);
+        if (ret == WALLY_OK && eligible[i])
+            ++num_eligible;
+        memcpy(outpoint, input->txhash, WALLY_TXHASH_LEN);
+        uint32_to_le_bytes(input->index, outpoint + WALLY_TXHASH_LEN);
+        if (!i || memcmp(outpoint, min_outpoint, sizeof(outpoint)) < 0)
+            memcpy(min_outpoint, outpoint, sizeof(outpoint));
+    }
+    if (ret == WALLY_OK) /* Fails with no eligible inputs, or if their keys cancel out */
+        ret = sp_pubkey_sum(keys, num_eligible, keys + num_eligible * EC_PUBLIC_KEY_LEN);
+
+    /* input_hash = hash_BIP0352/Inputs(outpoint_L || A) */
+    if (ret == WALLY_OK) {
+        memcpy(hash_in, min_outpoint, SP_OUTPOINT_LEN);
+        memcpy(hash_in + SP_OUTPOINT_LEN, keys + num_eligible * EC_PUBLIC_KEY_LEN,
+               EC_PUBLIC_KEY_LEN);
+        ret = wally_bip340_tagged_hash(hash_in, sizeof(hash_in), SP_TAG_INPUTS,
+                                       input_hash, sizeof(input_hash));
+        if (ret == WALLY_OK && wally_ec_scalar_verify(input_hash, sizeof(input_hash)) != WALLY_OK)
+            ret = WALLY_EINVAL;
+    }
+
+    /* Compute each output's script, restarting k for every new scan key */
+    for (i = 0; ret == WALLY_OK && i < num_outs; ++i) {
+        if (!i || memcmp(outs[i].code, outs[i - 1].code, EC_PUBLIC_KEY_LEN)) {
+            secp256k1_pubkey s;
+            /* ecdh_shared_secret = input_hash * share */
+            ret = sp_get_ecdh_share(psbt, outs[i].code, keys, eligible, share);
+            len = EC_PUBLIC_KEY_LEN;
+            if (ret == WALLY_OK &&
+                (!pubkey_parse(&s, share, sizeof(share)) ||
+                 !secp256k1_ec_pubkey_tweak_mul(secp_ctx(), &s, input_hash) ||
+                 !pubkey_serialize(shared_secret, &len, &s, PUBKEY_COMPRESSED)))
+                ret = WALLY_EINVAL;
+            wally_clear(&s, sizeof(s));
+            k = 0;
+        }
+        if (ret == WALLY_OK && k >= SP_K_MAX)
+            ret = WALLY_EINVAL; /* Too many outputs for this scan key */
+        if (ret == WALLY_OK)
+            ret = sp_output_script(shared_secret, k++,
+                                   outs[i].code + EC_PUBLIC_KEY_LEN,
+                                   scripts + i * WALLY_SCRIPTPUBKEY_P2TR_LEN);
+        if (ret == WALLY_OK) {
+            /* A script already present must be the one we computed */
+            const struct wally_psbt_output *out = psbt->outputs + outs[i].index;
+            if (out->script && (out->script_len != WALLY_SCRIPTPUBKEY_P2TR_LEN ||
+                memcmp(out->script, scripts + i * WALLY_SCRIPTPUBKEY_P2TR_LEN,
+                       WALLY_SCRIPTPUBKEY_P2TR_LEN)))
+                ret = WALLY_EINVAL;
+        }
+    }
+
+    /* Only change the PSBT once every script has been computed and checked,
+     * and every missing one allocated, so that a failure changes nothing */
+    for (i = 0; ret == WALLY_OK && i < num_outs; ++i) {
+        if (psbt->outputs[outs[i].index].script)
+            continue;
+        if (!(new_scripts[i] = wally_malloc(WALLY_SCRIPTPUBKEY_P2TR_LEN)))
+            ret = WALLY_ENOMEM;
+        else
+            memcpy(new_scripts[i], scripts + i * WALLY_SCRIPTPUBKEY_P2TR_LEN,
+                   WALLY_SCRIPTPUBKEY_P2TR_LEN);
+    }
+    for (i = 0; ret == WALLY_OK && i < num_outs; ++i) {
+        struct wally_psbt_output *out = psbt->outputs + outs[i].index;
+        if (new_scripts[i]) {
+            out->script = new_scripts[i];
+            out->script_len = WALLY_SCRIPTPUBKEY_P2TR_LEN;
+            new_scripts[i] = NULL;
+            set_any = true;
+        }
+    }
+    if (ret == WALLY_OK && set_any) /* BIP-375: No further changes once set */
+        psbt->tx_modifiable_flags &= ~(WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_OUTPUTS);
+
+done:
+    if (new_scripts) {
+        for (i = 0; i < num_outs; ++i)
+            wally_free(new_scripts[i]);
+        wally_free(new_scripts);
+    }
+    wally_free(outs);
+    clear_and_free(scripts, num_outs * WALLY_SCRIPTPUBKEY_P2TR_LEN);
+    clear_and_free(keys, (psbt->num_inputs + 1) * EC_PUBLIC_KEY_LEN);
+    wally_free(eligible);
+    wally_clear_4(input_hash, sizeof(input_hash), share, sizeof(share),
+                  shared_secret, sizeof(shared_secret), hash_in, sizeof(hash_in));
+    return ret;
 }
 
 int wally_psbt_get_id(const struct wally_psbt *psbt, uint32_t flags, unsigned char *bytes_out, size_t len)

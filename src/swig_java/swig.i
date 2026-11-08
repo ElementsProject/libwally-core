@@ -725,6 +725,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_psbt_add_global_scalar);
 %returns_struct(wally_psbt_blind_alloc, wally_map);
 %rename("psbt_blind") wally_psbt_blind_alloc;
+%returns_void__(wally_psbt_compute_sp_scripts);
 %returns_void__(wally_psbt_clear_fallback_locktime);
 %returns_void__(wally_psbt_clear_input_amount);
 %returns_void__(wally_psbt_clear_input_amount_rangeproof);
