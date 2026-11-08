@@ -1342,6 +1342,12 @@ inline int psbt_combine_ex(const PSBT& psbt, uint32_t flags, const struct wally_
 }
 
 template <class PSBT>
+inline int psbt_compute_sp_scripts(const PSBT& psbt, uint32_t flags) {
+    int ret = ::wally_psbt_compute_sp_scripts(detail::get_p(psbt), flags);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PSBT>
 inline int psbt_extract(const PSBT& psbt, uint32_t flags, struct wally_tx** output) {
     int ret = ::wally_psbt_extract(detail::get_p(psbt), flags, output);
     return detail::check_ret(__FUNCTION__, ret);

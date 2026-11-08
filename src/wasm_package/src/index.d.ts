@@ -292,6 +292,7 @@ export function psbt_clear_output_value_rangeproof(psbt: Ref_wally_psbt, index: 
 export function psbt_clone(psbt: Ref_wally_psbt, flags: number): Ref_wally_psbt;
 export function psbt_combine(psbt: Ref_wally_psbt, source: Ref_wally_psbt): void;
 export function psbt_combine_ex(psbt: Ref_wally_psbt, flags: number, source: Ref_wally_psbt): void;
+export function psbt_compute_sp_scripts(psbt: Ref_wally_psbt, flags: number): void;
 export function psbt_extract(psbt: Ref_wally_psbt, flags: number): Ref_wally_tx;
 export function psbt_finalize(psbt: Ref_wally_psbt, flags: number): void;
 export function psbt_finalize_input(psbt: Ref_wally_psbt, index: number, flags: number): void;

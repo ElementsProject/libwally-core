@@ -2032,6 +2032,34 @@ WALLY_CORE_API int wally_psbt_get_id(
     size_t len);
 
 /**
+ * Compute and check the scripts of BIP-375 silent payment outputs.
+ *
+ * Each output with a silent payment code has its script derived from the
+ * BIP-375 ECDH shares in the PSBT, after every DLEQ proof present for an
+ * eligible input, or for the whole transaction, is verified against the
+ * input public keys. Missing scripts are set, and scripts already present
+ * must match. If any script is set, the PSBT's inputs and outputs modifiable
+ * flags are cleared. The PSBT is unchanged if any step fails.
+ *
+ * :param psbt: The PSBTv2 to update.
+ * :param flags: For future use. Must be 0.
+ *
+ * .. note:: Returns `WALLY_EINVAL` if an input spends a segwit v2 or later
+ *|    output, an eligible input's public key or a share or proof is missing,
+ *|    a proof does not verify, a present script does not match, or an input
+ *|    claims to be skipped (a finalized input or the NUMS internal key) without
+ *|    the data to show that BIP-352 skips it.
+ *
+ * .. note:: An input's prevout script comes from its witness or non-witness
+ *|    utxo. A non-witness utxo is checked against the input, but a witness utxo
+ *|    alone cannot be: the caller must trust it or check it, for example
+ *|    against the keys it holds, as a false script can change the key sum.
+ */
+WALLY_CORE_API int wally_psbt_compute_sp_scripts(
+    struct wally_psbt *psbt,
+    uint32_t flags);
+
+/**
  * Return the calculated transaction lock time of a PSBT.
  *
  * :param psbt: The PSBT to compute the lock time of. Must be a v2 PSBT.
