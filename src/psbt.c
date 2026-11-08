@@ -1,6 +1,7 @@
 #include "internal.h"
 
 #include <include/wally_address.h>
+#include <include/wally_crypto.h>
 #include <include/wally_descriptor.h>
 #include <include/wally_elements.h>
 #include <include/wally_script.h>
@@ -599,6 +600,31 @@ static int taproot_tree_verify(const unsigned char *key, size_t key_len,
     return taproot_tree_value_verify(val, val_len);
 }
 
+/* BIP-375: An ECDH share or DLEQ proof keyed by a 33 byte scan key */
+static int sp_scan_key_verify(const unsigned char *key, size_t key_len)
+{
+    return key && key_len == EC_PUBLIC_KEY_LEN ?
+        wally_ec_public_key_verify(key, key_len) : WALLY_EINVAL;
+}
+
+static int sp_ecdh_share_verify(const unsigned char *key, size_t key_len,
+                                const unsigned char *val, size_t val_len)
+{
+    if (sp_scan_key_verify(key, key_len) != WALLY_OK || !val ||
+        val_len != EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+    return wally_ec_public_key_verify(val, val_len);
+}
+
+static int sp_dleq_proof_verify(const unsigned char *key, size_t key_len,
+                                const unsigned char *val, size_t val_len)
+{
+    if (sp_scan_key_verify(key, key_len) != WALLY_OK || !val ||
+        val_len != WALLY_DLEQ_PROOF_LEN)
+        return WALLY_EINVAL;
+    return WALLY_OK;
+}
+
 static int psbt_input_field_verify(uint32_t field_type,
                                    const unsigned char *val, size_t val_len)
 {
@@ -915,6 +941,8 @@ static void psbt_input_init(struct wally_psbt_input *input)
     wally_map_init(0, NULL /* FIXME */, &input->taproot_leaf_scripts);
     wally_map_init(0, map_leaf_hashes_verify, &input->taproot_leaf_hashes);
     wally_map_init(0, wally_keypath_xonly_public_key_verify, &input->taproot_leaf_paths);
+    wally_map_init(0, sp_ecdh_share_verify, &input->sp_ecdh_shares);
+    wally_map_init(0, sp_dleq_proof_verify, &input->sp_dleq_proofs);
 #ifdef BUILD_ELEMENTS
     wally_map_init(0, pset_map_input_field_verify, &input->pset_fields);
 #endif /* BUILD_ELEMENTS */
@@ -935,6 +963,8 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
         wally_map_clear(&input->taproot_leaf_scripts);
         wally_map_clear(&input->taproot_leaf_hashes);
         wally_map_clear(&input->taproot_leaf_paths);
+        wally_map_clear(&input->sp_ecdh_shares);
+        wally_map_clear(&input->sp_dleq_proofs);
 #ifdef BUILD_ELEMENTS
         wally_tx_free(input->pegin_tx);
         wally_tx_witness_stack_free(input->pegin_witness);
@@ -1285,6 +1315,10 @@ static int psbt_init(uint32_t version, size_t num_inputs, size_t num_outputs,
     ret = wally_map_init(num_unknowns, NULL, &psbt_out->unknowns);
     if (ret == WALLY_OK)
         ret = wally_map_init(0, wally_keypath_bip32_verify, &psbt_out->global_xpubs);
+    if (ret == WALLY_OK)
+        ret = wally_map_init(0, sp_ecdh_share_verify, &psbt_out->sp_ecdh_shares);
+    if (ret == WALLY_OK)
+        ret = wally_map_init(0, sp_dleq_proof_verify, &psbt_out->sp_dleq_proofs);
 #ifdef BUILD_ELEMENTS
     if (ret == WALLY_OK)
         ret = wally_map_init(0, scalar_verify, &psbt_out->global_scalars);
@@ -1398,6 +1432,8 @@ int wally_psbt_free(struct wally_psbt *psbt)
 
         wally_map_clear(&psbt->unknowns);
         wally_map_clear(&psbt->global_xpubs);
+        wally_map_clear(&psbt->sp_ecdh_shares);
+        wally_map_clear(&psbt->sp_dleq_proofs);
 #ifdef BUILD_ELEMENTS
         wally_map_clear(&psbt->global_scalars);
 #endif /* BUILD_ELEMENTS */
@@ -2421,7 +2457,9 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                 field_bit = field_type;
             }
         } else {
-            is_known = field_type <= PSBT_IN_MAX;
+            is_known = field_type <= PSBT_IN_MAX &&
+                       !(PSBT_FT(field_type) & PSBT_IN_UNPARSED) &&
+                       !(is_pset && (PSBT_FT(field_type) & PSBT_IN_SP_FIELDS));
             if (is_known)
                 field_bit = PSBT_FT(field_type);
         }
@@ -2506,6 +2544,12 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                 ret = pull_taproot_derivation(cursor, max, &key, &key_len,
                                               &result->taproot_leaf_hashes,
                                               &result->taproot_leaf_paths);
+                break;
+            case PSBT_IN_SP_ECDH_SHARE:
+                ret = pull_map_item(cursor, max, key, key_len, &result->sp_ecdh_shares);
+                break;
+            case PSBT_IN_SP_DLEQ:
+                ret = pull_map_item(cursor, max, key, key_len, &result->sp_dleq_proofs);
                 break;
 #ifdef BUILD_ELEMENTS
             case PSET_FT(PSET_IN_EXPLICIT_VALUE):
@@ -2793,7 +2837,9 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
                 field_bit = field_type;
             }
         } else {
-            is_known = field_type <= PSBT_GLOBAL_MAX || field_type == PSBT_GLOBAL_VERSION;
+            is_known = (field_type <= PSBT_GLOBAL_MAX &&
+                        !(is_pset && (PSBT_FT(field_type) & PSBT_GLOBAL_SP_FIELDS))) ||
+                       field_type == PSBT_GLOBAL_VERSION;
             if (is_known) {
                 if (field_type == PSBT_GLOBAL_VERSION)
                     field_bit = PSBT_GLOBAL_VERSION_BIT;
@@ -2848,6 +2894,12 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
                 (*output)->tx_modifiable_flags = pull_u8_subfield(cursor, max);
                 if ((*output)->tx_modifiable_flags & ~PSBT_TXMOD_ALL_FLAGS)
                     ret = WALLY_EINVAL; /* Invalid flags */
+                break;
+            case PSBT_GLOBAL_SP_ECDH_SHARE:
+                ret = pull_map_item(cursor, max, key, key_len, &(*output)->sp_ecdh_shares);
+                break;
+            case PSBT_GLOBAL_SP_DLEQ:
+                ret = pull_map_item(cursor, max, key, key_len, &(*output)->sp_dleq_proofs);
                 break;
 #ifdef BUILD_ELEMENTS
             case PSET_FT(PSET_GLOBAL_SCALAR): {
@@ -3327,6 +3379,11 @@ static int push_psbt_input(const struct wally_psbt *psbt,
                                      false, &input->psbt_fields)) != WALLY_OK)
         return ret;
 
+    if (!is_pset && psbt->version == PSBT_2) {
+        push_psbt_map(cursor, max, PSBT_IN_SP_ECDH_SHARE, false, &input->sp_ecdh_shares);
+        push_psbt_map(cursor, max, PSBT_IN_SP_DLEQ, false, &input->sp_dleq_proofs);
+    }
+
 #ifdef BUILD_ELEMENTS
     if (is_pset && psbt->version == PSBT_2) {
         uint32_t ft;
@@ -3575,6 +3632,10 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
             push_varint(&cursor, &max, sizeof(uint8_t));
             push_u8(&cursor, &max, psbt->tx_modifiable_flags & 0xff);
         }
+        if (!is_pset) {
+            push_psbt_map(&cursor, &max, PSBT_GLOBAL_SP_ECDH_SHARE, false, &psbt->sp_ecdh_shares);
+            push_psbt_map(&cursor, &max, PSBT_GLOBAL_SP_DLEQ, false, &psbt->sp_dleq_proofs);
+        }
 #ifdef BUILD_ELEMENTS
         push_psbt_map(&cursor, &max, PSET_GLOBAL_SCALAR, true, &psbt->global_scalars);
 
@@ -3800,6 +3861,10 @@ static int combine_input(struct wally_psbt_input *dst,
         return ret;
     if ((ret = wally_map_combine(&dst->psbt_fields, &src->psbt_fields)) != WALLY_OK)
         return ret;
+    if ((ret = wally_map_combine(&dst->sp_ecdh_shares, &src->sp_ecdh_shares)) != WALLY_OK)
+        return ret;
+    if ((ret = wally_map_combine(&dst->sp_dleq_proofs, &src->sp_dleq_proofs)) != WALLY_OK)
+        return ret;
     if ((ret = combine_map_if_empty(&dst->taproot_leaf_signatures, &src->taproot_leaf_signatures)) != WALLY_OK)
         return ret;
     if ((ret = combine_map_if_empty(&dst->taproot_leaf_scripts, &src->taproot_leaf_scripts)) != WALLY_OK)
@@ -4008,6 +4073,10 @@ static int psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src,
 
     if (ret == WALLY_OK)
         ret = wally_map_combine(&psbt->global_xpubs, &src->global_xpubs);
+    if (ret == WALLY_OK)
+        ret = wally_map_combine(&psbt->sp_ecdh_shares, &src->sp_ecdh_shares);
+    if (ret == WALLY_OK)
+        ret = wally_map_combine(&psbt->sp_dleq_proofs, &src->sp_dleq_proofs);
 
 #ifdef BUILD_ELEMENTS
     if (ret == WALLY_OK && is_pset) {

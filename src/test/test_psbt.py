@@ -467,6 +467,131 @@ class PSBTTests(unittest.TestCase):
         for p in [resolved, as_scripts, other]:
             wally_psbt_free(p)
 
+    def get_map_value(self, map_ref, key):
+        ret, index = wally_map_find(map_ref, key, len(key))
+        self.assertEqual(ret, WALLY_OK)
+        if not index:
+            return None
+        buf, buf_len = make_cbuffer('00' * 64)
+        ret, written = wally_map_get_item(map_ref, index - 1, buf, buf_len)
+        self.assertEqual(ret, WALLY_OK)
+        return bytes(buf)[:written]
+
+    def test_silent_payment_shares(self):
+        """Test BIP-375 ECDH share and DLEQ proof fields"""
+        # bip-0375/bip375_test_vectors.json from bitcoin/bips commit a34f044b
+        with open(root_dir + 'src/data/bip375_vectors.json', 'r') as f:
+            cases = json.load(f)
+
+        num_global, num_input = 0, 0
+        for case in cases['valid']:
+            psbt = self.parse_base64(case['psbt'])
+            b64 = self.to_base64(psbt)
+            psbt2 = self.parse_base64(b64)
+            self.assertEqual(self.to_base64(psbt2), b64)
+            wally_psbt_free(psbt2)
+            for proof in case['supplementary'].get('sp_proofs', []):
+                scan = bytes.fromhex(proof['scan_key'])
+                if 'input_index' in proof:
+                    p = psbt.contents.inputs[proof['input_index']]
+                    num_input += 1
+                else:
+                    p = psbt.contents
+                    num_global += 1
+                share = self.get_map_value(byref(p.sp_ecdh_shares), scan)
+                dleq = self.get_map_value(byref(p.sp_dleq_proofs), scan)
+                self.assertEqual(share, bytes.fromhex(proof['ecdh_share']))
+                self.assertEqual(dleq, bytes.fromhex(proof['dleq_proof']))
+            wally_psbt_free(psbt)
+        self.assertGreater(num_global, 0)
+        self.assertGreater(num_input, 0)
+
+        invalid = [
+            'psbt structure: incorrect byte length for PSBT_IN_SP_ECDH_SHARE field',
+            'psbt structure: incorrect byte length for PSBT_IN_SP_DLEQ field',
+        ]
+        for case in cases['invalid']:
+            if case['description'] in invalid:
+                self.parse_base64(case['psbt'], WALLY_EINVAL)
+                invalid.remove(case['description'])
+        self.assertEqual(invalid, [])
+
+        # The maps only accept valid scan keys, shares and proofs
+        psbt = pointer(wally_psbt())
+        self.assertEqual(wally_psbt_init_alloc(2, 1, 0, 0, 0, psbt), WALLY_OK)
+        scan = bytes.fromhex('027a487fc19fb769877b8742d6ea18118f3c4e72b1ea8c6de602a7ad4a41dbe068')
+        share = bytes.fromhex('02d3262723352607e84fcaf7651f8d2d637e020aea86dfad80d306cd4f48cfcc62')
+        shares, proofs = byref(psbt.contents.sp_ecdh_shares), byref(psbt.contents.sp_dleq_proofs)
+        for key, val in [(scan[:-1], share), (b'\x04' + scan[1:], share),
+                         (scan, share[:-1]), (scan, b'\x04' + share[1:])]:
+            self.assertEqual(wally_map_add(shares, key, len(key), val, len(val)), WALLY_EINVAL)
+        for key, val in [(scan[:-1], bytes(64)), (scan, bytes(63)), (scan, bytes(65))]:
+            self.assertEqual(wally_map_add(proofs, key, len(key), val, len(val)), WALLY_EINVAL)
+        self.assertEqual(wally_map_add(shares, scan, len(scan), share, len(share)), WALLY_OK)
+        self.assertEqual(wally_map_add(proofs, scan, len(scan), bytes(64), 64), WALLY_OK)
+        wally_psbt_free(psbt)
+
+        # Share and proof fields are v2 only; BIP-373 input fields stay unknown
+        def build(version, num_inputs):
+            psbt = pointer(wally_psbt())
+            self.assertEqual(wally_psbt_init_alloc(version, num_inputs, 0, 0, 0, psbt), WALLY_OK)
+            txhash = b'\x01' * 32 # A null prevout is refused
+            if version == 0:
+                tx = pointer(wally_tx())
+                self.assertEqual(wally_tx_init_alloc(2, 0, num_inputs, 0, tx), WALLY_OK)
+                for i in range(num_inputs):
+                    ret = wally_tx_add_raw_input(tx, txhash, 32, i, 0xffffffff, None, 0, None, 0)
+                    self.assertEqual(ret, WALLY_OK)
+                self.assertEqual(wally_psbt_set_global_tx(psbt, tx), WALLY_OK)
+                wally_tx_free(tx)
+            else:
+                for i in range(num_inputs):
+                    tx_in = pointer(wally_tx_input())
+                    ret = wally_tx_input_init_alloc(txhash, 32, i, 0xffffffff, None, 0, None, tx_in)
+                    self.assertEqual(ret, WALLY_OK)
+                    self.assertEqual(wally_psbt_add_tx_input_at(psbt, i, 0, tx_in), WALLY_OK)
+            ret, length = wally_psbt_get_length(psbt, 0)
+            self.assertEqual(ret, WALLY_OK)
+            buf, buf_len = make_cbuffer('00' * length)
+            self.assertEqual(wally_psbt_to_bytes(psbt, 0, buf, buf_len), (WALLY_OK, length))
+            wally_psbt_free(psbt)
+            return bytes(buf)
+
+        g_share = b'\x22\x07' + scan + b'\x21' + share
+        g_proof = b'\x22\x08' + scan + b'\x40' + bytes(64)
+        i_share = b'\x22\x1d' + scan + b'\x21' + share
+        i_proof = b'\x22\x1e' + scan + b'\x40' + bytes(64)
+        musig = b'\x22\x1b' + scan + b'\x21' + share # BIP-373 MuSig2 public nonce
+
+        # With one empty input and no outputs, a v0 PSBT ends with the global
+        # separator then the input separator. A v2 PSBT with no inputs ends with
+        # the global separator; with one input and no outputs, the input separator.
+        v0, v2_globals, v2_input = build(0, 1), build(2, 0), build(2, 1)
+        for raw, expected in [
+            (v0[:-2] + g_share + v0[-2:], WALLY_EINVAL),
+            (v0[:-2] + g_proof + v0[-2:], WALLY_EINVAL),
+            (v0[:-1] + i_share + v0[-1:], WALLY_EINVAL),
+            (v0[:-1] + i_proof + v0[-1:], WALLY_EINVAL),
+            (v0[:-1] + musig + v0[-1:], WALLY_OK),
+            (v2_globals[:-1] + g_share + g_proof + v2_globals[-1:], WALLY_OK),
+            (v2_input[:-1] + i_share + i_proof + musig + v2_input[-1:], WALLY_OK),
+            ]:
+            psbt = pointer(wally_psbt())
+            self.assertEqual(wally_psbt_from_bytes(raw, len(raw), 0, psbt), expected)
+            if expected != WALLY_OK:
+                continue
+            p = psbt.contents.inputs[0] if psbt.contents.num_inputs else psbt.contents
+            num_sp = 0 if raw.startswith(v0[:-2]) else 1
+            self.assertEqual((p.sp_ecdh_shares.num_items, p.sp_dleq_proofs.num_items),
+                             (num_sp, num_sp))
+            if psbt.contents.num_inputs:
+                self.assertEqual(p.unknowns.num_items, 1) # MuSig2 field
+            b64 = self.to_base64(psbt)
+            psbt2 = self.parse_base64(b64)
+            self.assertEqual(self.to_base64(psbt2), b64)
+            wally_psbt_free(psbt2)
+            wally_psbt_free(psbt)
+
     def test_silent_payment_outputs(self):
         """Test BIP-375 silent payment output fields"""
         # bip-0375/bip375_test_vectors.json from bitcoin/bips commit a34f044b

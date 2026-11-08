@@ -89,6 +89,9 @@ struct wally_psbt_input {
     /* Hashes and paths for taproot bip32 derivation path */
     struct wally_map taproot_leaf_hashes;
     struct wally_map taproot_leaf_paths;
+    /* BIP-375 ECDH shares and DLEQ proofs, keyed by silent payment scan key */
+    struct wally_map sp_ecdh_shares;
+    struct wally_map sp_dleq_proofs;
 #ifndef WALLY_ABI_NO_ELEMENTS
     uint64_t issuance_amount; /* Issuance amount, or 0 if not given */
     uint64_t inflation_keys; /* Number of reissuance tokens, or 0 if none given */
@@ -140,6 +143,9 @@ struct wally_psbt {
     uint32_t fallback_locktime;
     uint32_t has_fallback_locktime;
     uint32_t tx_modifiable_flags;
+    /* BIP-375 ECDH shares and DLEQ proofs, keyed by silent payment scan key */
+    struct wally_map sp_ecdh_shares;
+    struct wally_map sp_dleq_proofs;
 #ifndef WALLY_ABI_NO_ELEMENTS
     struct wally_map global_scalars;
     uint32_t pset_modifiable_flags;
