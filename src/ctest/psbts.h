@@ -537,6 +537,12 @@ static const struct psbt_test invalid_psbts[] =
 
     /* PSBT_IN_TAP_BIP32_DERIVATION too large (overflows) */
     {"cHNidP8BAKACAAAAAqsJSaCMWvfEm4IS9Bfi8Vqz9cM9zxU4IagTn4d6W3vkAAAAAAD+////qwlJoIxa98SbghL0F+LxWrP1wz3PFTghqBOfh3pbe+QBAAAAAP7///8CYDvqCwAAAAAZdqkUdopAu9dAy+gdmI5x3ipNXHE5ax2IrI4kAAAAAAAAGXapFG9GILVT+glechue4O/p+gOcykWXiKwAAAAAAAEHakcwRAIgR1lmF5fAGwNrJZKJSGhiGDR9iYZLcZ4ff89X0eURZYcCIFMJ6r9Wqk2Ikf/REf3xM286KdqGbX+EhtdVRs7tr5MZASEDXNxh/HupccC1AaZGoqg7ECy0OIEhfKaC3Ibi1z+ogpIAAQEgAOH1BQAAAAAXqRQ1RebjO4MsRwUPJNPuuTycA5SLx4cBBBYAFIXRNTfy4mVAWjTbr6nj3aAfuCMIIRYznOfhZeZ9k62z/viKbUvu0z8B+odvBaIlJCuCpjGrwBH/AAAAAAAAAAgAAAAAAAAAAAAAAA==", false, true},
+
+    /* PSBT v2 with global tx present (tx then psbt version) */
+    {"cHNidP8BAD0CAAAAARERERERERERERERERERERERERERERERERERERERERERAAAAAAD/////AQAAAAAAAAAAAVEAAAAAAfsEAgAAAAA=", false, true},
+
+    /* PSBT v2 with global tx present (psbt version then tx) */
+    {"cHNidP8B+wQCAAAAAQA9AgAAAAEREREREREREREREREREREREREREREREREREREREREREQAAAAAA/////wEAAAAAAAAAAAFRAAAAAAA=", false, true},
 };
 
 static const struct psbt_test valid_psbts[] =
