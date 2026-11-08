@@ -2793,6 +2793,8 @@ WALLY_CORE_API int wally_psbt_sign(
  * .. note:: Inputs are signed using the sighash stored for the input,
  *|    or SIGHASH_ALL/SIGHASH_DEFAULT if not present. The caller should ensure
  *|    that each input sighash is acceptable before signing.
+ *
+ * .. note:: Only SIGHASH_ALL is used with BIP-375 silent payment outputs.
  */
 WALLY_CORE_API int wally_psbt_sign_bip32(
     struct wally_psbt *psbt,
@@ -2814,6 +2816,8 @@ WALLY_CORE_API int wally_psbt_sign_bip32(
  * .. note:: Inputs are signed using the sighash stored for the input,
  *|    or SIGHASH_ALL/SIGHASH_DEFAULT if not present. The caller should ensure
  *|    that the sighash is acceptable before signing.
+ *
+ * .. note:: Only SIGHASH_ALL is used with BIP-375 silent payment outputs.
  */
 WALLY_CORE_API int wally_psbt_sign_input_bip32(
     struct wally_psbt *psbt,

@@ -641,6 +641,35 @@ static bool sp_script_is_modifiable(const struct wally_psbt *psbt)
     return false;
 }
 
+static bool psbt_has_sp_outputs(const struct wally_psbt *psbt)
+{
+    size_t i;
+    if (psbt->version != PSBT_2)
+        return false;
+    for (i = 0; i < psbt->num_outputs; ++i)
+        if (wally_map_get_integer(&psbt->outputs[i].psbt_fields, PSBT_OUT_SP_V0_INFO))
+            return true;
+    return false;
+}
+
+/* Get the sighash to sign an input with. BIP-375: with silent payment
+ * outputs present, only SIGHASH_ALL may be used, including for taproot */
+static int psbt_input_get_sighash(const struct wally_psbt *psbt,
+                                  const struct wally_psbt_input *inp,
+                                  bool is_taproot, uint32_t *sighash)
+{
+    *sighash = inp->sighash;
+    if (psbt_has_sp_outputs(psbt)) {
+        if (*sighash && *sighash != WALLY_SIGHASH_ALL)
+            return WALLY_EINVAL;
+        *sighash = WALLY_SIGHASH_ALL;
+    } else if (!*sighash)
+        *sighash = is_taproot ? WALLY_SIGHASH_DEFAULT : WALLY_SIGHASH_ALL;
+    else if (*sighash & 0xffffff00)
+        return WALLY_EINVAL;
+    return WALLY_OK;
+}
+
 static int psbt_input_field_verify(uint32_t field_type,
                                    const unsigned char *val, size_t val_len)
 {
@@ -4996,6 +5025,10 @@ int wally_psbt_compute_sp_scripts(struct wally_psbt *psbt, uint32_t flags)
     /* Eligible input keys, their sum A, and the smallest outpoint */
     for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i) {
         const struct wally_psbt_input *input = psbt->inputs + i;
+        if (input->sighash && input->sighash != WALLY_SIGHASH_ALL) {
+            ret = WALLY_EINVAL; /* BIP-375: SIGHASH_ALL only */
+            break;
+        }
         ret = sp_input_pubkey(input, &eligible[i], keys + num_eligible * EC_PUBLIC_KEY_LEN);
         if (ret == WALLY_OK && eligible[i])
             ++num_eligible;
@@ -5704,10 +5737,7 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
 #endif
     assets_p = is_pset ? &assets : NULL;
 
-    sighash = inp->sighash;
-    if (!sighash)
-        sighash = is_taproot ? WALLY_SIGHASH_DEFAULT : WALLY_SIGHASH_ALL;
-    else if (sighash & 0xffffff00)
+    if (psbt_input_get_sighash(psbt, inp, is_taproot, &sighash) != WALLY_OK)
         return WALLY_EINVAL;
 
     if (sighash_type == WALLY_SIGTYPE_PRE_SW &&
@@ -5793,10 +5823,7 @@ int wally_psbt_sign_input_bip32(struct wally_psbt *psbt,
         flags = EC_FLAG_SCHNORR | (flags & EC_FLAG_ELEMENTS);
     }
 
-    sighash = inp->sighash;
-    if (!sighash)
-        sighash = is_taproot ? WALLY_SIGHASH_DEFAULT : WALLY_SIGHASH_ALL;
-    else if (sighash & 0xffffff00) {
+    if (psbt_input_get_sighash(psbt, inp, is_taproot, &sighash) != WALLY_OK) {
         ret = WALLY_EINVAL;
         goto done;
     }
