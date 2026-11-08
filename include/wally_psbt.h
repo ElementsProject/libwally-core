@@ -2468,13 +2468,11 @@ WALLY_CORE_API int wally_psbt_get_input_scriptcode(
  * :param bytes_out: Destination for the signature hash.
  * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  *
- * .. note:: This does not check BIP-375 silent payment output scripts. A caller
- *|    signing the hash with its own key must first check them by calling
- *|    `wally_psbt_compute_sp_scripts`, or the signature could pay anyone.
- *
- * .. note:: With silent payment outputs, fails unless only SIGHASH_ALL is used
+ * .. note:: With BIP-375 silent payment outputs, fails unless ``tx`` is the
+ *|    unsigned transaction the PSBT describes, every silent payment script
+ *|    verifies as in `wally_psbt_compute_sp_scripts`, only SIGHASH_ALL is used
  *|    and, for a non-taproot input, every input has a non-witness utxo. See
- *|    `wally_psbt_sign_bip32`.
+ *|    `wally_psbt_sign_bip32`. The signing cache is not used with such outputs.
  */
 WALLY_CORE_API int wally_psbt_get_input_signature_hash(
     struct wally_psbt *psbt,
@@ -2837,6 +2835,9 @@ WALLY_CORE_API int wally_psbt_sign_bip32(
  *|    every input must also have a non-witness utxo: an ECDSA signature does
  *|    not commit to the prevout scripts of the other inputs, so a false witness
  *|    utxo could otherwise leave a payment its receiver cannot find.
+ *
+ * .. note:: With BIP-375 silent payment outputs, also fails unless ``txhash`` is
+ *|    the hash of the unsigned transaction the PSBT describes.
  */
 WALLY_CORE_API int wally_psbt_sign_input_bip32(
     struct wally_psbt *psbt,
