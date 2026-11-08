@@ -3876,11 +3876,19 @@ static int combine_output(struct wally_psbt_output *dst,
         }
 #endif
     } else {
+        /* A silent payment output's script may be computed on one side only;
+         * its code is part of the PSBT id so it is known to match */
+        const bool sp_unresolved = !is_pset && (!dst->script_len || !src->script_len) &&
+            wally_map_get_integer(&dst->psbt_fields, PSBT_OUT_SP_V0_INFO) &&
+            wally_map_get_integer(&src->psbt_fields, PSBT_OUT_SP_V0_INFO);
+
         /* Ensure amount, script (and asset, for elements) match */
         if (dst->has_amount != src->has_amount || dst->amount != src->amount ||
-            dst->script_len != src->script_len ||
-            (dst->script_len && memcmp(dst->script, src->script, src->script_len)))
+            (!sp_unresolved && (dst->script_len != src->script_len ||
+             (dst->script_len && memcmp(dst->script, src->script, src->script_len)))))
             ret = WALLY_EINVAL; /* Mismatched amount or script */
+        else if (sp_unresolved && !dst->script_len && src->script_len)
+            ret = wally_psbt_output_set_script(dst, src->script, src->script_len);
         else if (is_pset) {
 #ifdef BUILD_ELEMENTS
             const struct wally_map_item *src_p = src->pset_fields.items + src_asset - 1;
@@ -4186,8 +4194,11 @@ static int psbt_build_input(const struct wally_psbt_input *src,
 }
 
 static int psbt_build_output(const struct wally_psbt_output *src,
-                             bool is_pset, bool unblinded, struct wally_tx *tx)
+                             bool is_pset, bool unblinded, bool for_id,
+                             struct wally_tx *tx)
 {
+    const struct wally_map_item *sp_info;
+
     if (is_pset) {
 #ifndef BUILD_ELEMENTS
         (void)unblinded;
@@ -4242,13 +4253,23 @@ static int psbt_build_output(const struct wally_psbt_output *src,
     }
     if (!src->has_amount)
         return WALLY_EINVAL;
-    if (!src->script && wally_map_get_integer(&src->psbt_fields, PSBT_OUT_SP_V0_INFO))
+    sp_info = wally_map_get_integer(&src->psbt_fields, PSBT_OUT_SP_V0_INFO);
+    if (sp_info && for_id) {
+        /* BIP-375: Identify by the silent payment code, not the script */
+        unsigned char sp_script[1 + WALLY_SILENT_PAYMENT_KEYS_LEN];
+        if (sp_info->value_len != WALLY_SILENT_PAYMENT_KEYS_LEN)
+            return WALLY_EINVAL;
+        sp_script[0] = 0; /* Version 0 */
+        memcpy(sp_script + 1, sp_info->value, sp_info->value_len);
+        return wally_tx_add_raw_output(tx, src->amount, sp_script, sizeof(sp_script), 0);
+    }
+    if (sp_info && !src->script)
         return WALLY_EINVAL; /* Silent payment output script not computed yet */
     return wally_tx_add_raw_output(tx, src->amount, src->script, src->script_len, 0);
 }
 
 static int psbt_build_tx(const struct wally_psbt *psbt, struct wally_tx **tx,
-                         bool *is_pset, bool unblinded)
+                         bool *is_pset, bool unblinded, bool for_id)
 {
     size_t is_elements, locktime, i;
     int ret;
@@ -4274,7 +4295,7 @@ static int psbt_build_tx(const struct wally_psbt *psbt, struct wally_tx **tx,
         ret = psbt_build_input(psbt->inputs + i, *is_pset, unblinded, *tx);
 
     for (i = 0; ret == WALLY_OK && i < psbt->num_outputs; ++i)
-        ret = psbt_build_output(psbt->outputs + i, *is_pset, unblinded, *tx);
+        ret = psbt_build_output(psbt->outputs + i, *is_pset, unblinded, for_id, *tx);
 
     if (ret != WALLY_OK) {
         wally_tx_free(*tx);
@@ -4339,7 +4360,7 @@ static int psbt_v2_to_v0(struct wally_psbt *psbt)
         if (wally_map_get_integer(&psbt->outputs[i].psbt_fields, PSBT_OUT_SP_V0_INFO))
             return WALLY_EINVAL;
 
-    if ((ret = psbt_build_tx(psbt, &psbt->tx, &is_pset, false)) != WALLY_OK)
+    if ((ret = psbt_build_tx(psbt, &psbt->tx, &is_pset, false, false)) != WALLY_OK)
         return ret;
 
     for (i = 0; i < psbt->num_inputs; ++i) {
@@ -4396,7 +4417,7 @@ int wally_psbt_get_id(const struct wally_psbt *psbt, uint32_t flags, unsigned ch
     if ((flags & ~PSBT_ID_ALL_FLAGS) || !bytes_out || len != WALLY_TXHASH_LEN)
         return WALLY_EINVAL;
 
-    if ((ret = psbt_build_tx(psbt, &tx, &is_pset, true)) == WALLY_OK) {
+    if ((ret = psbt_build_tx(psbt, &tx, &is_pset, true, true)) == WALLY_OK) {
         if (!(flags & WALLY_PSBT_ID_USE_LOCKTIME)) {
             /* Set locktime to 0. This is what core/Elements do,
              * although the specs aren't fixed to describe this yet */
@@ -4990,7 +5011,7 @@ int wally_psbt_sign_bip32(struct wally_psbt *psbt,
         (flags & ~EC_FLAG_GRIND_R))
         return WALLY_EINVAL;
 
-    if ((ret = psbt_build_tx(psbt, &tx, &is_pset, false)) != WALLY_OK)
+    if ((ret = psbt_build_tx(psbt, &tx, &is_pset, false, false)) != WALLY_OK)
         return ret;
 
 #ifdef BUILD_ELEMENTS
@@ -5454,7 +5475,7 @@ int wally_psbt_extract(const struct wally_psbt *psbt, uint32_t flags, struct wal
         (flags & ALL_EXTRACT_FLAGS) == ALL_EXTRACT_FLAGS)
         return WALLY_EINVAL;
 
-    if ((ret = psbt_build_tx(psbt, &result, &is_pset, false)) != WALLY_OK)
+    if ((ret = psbt_build_tx(psbt, &result, &is_pset, false, false)) != WALLY_OK)
         return ret;
 
     for (i = 0; for_final && i < psbt->num_inputs; ++i) {

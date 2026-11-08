@@ -413,6 +413,60 @@ class PSBTTests(unittest.TestCase):
         self.assertEqual(ret, WALLY_EINVAL)
         wally_psbt_free(psbt)
 
+    def get_id(self, psbt):
+        buf, buf_len = make_cbuffer('00' * 32)
+        self.assertEqual(wally_psbt_get_id(psbt, 0, buf, buf_len), WALLY_OK)
+        return h(buf)
+
+    def check_silent_payment_id(self, psbt):
+        """Check the BIP-375 id of a PSBT with unresolved silent payment outputs"""
+        unresolved_id = self.get_id(psbt)
+
+        # The id does not change once the output scripts are computed
+        p2tr = b'\x51\x20' + b'\x01' * 32
+        resolved = pointer(wally_psbt())
+        self.assertEqual(wally_psbt_clone_alloc(psbt, 0, resolved), WALLY_OK)
+        # BIP-375 defines the id with each silent payment output's script
+        # replaced by a zero byte followed by its silent payment code
+        as_scripts = pointer(wally_psbt())
+        self.assertEqual(wally_psbt_clone_alloc(psbt, 0, as_scripts), WALLY_OK)
+        sp_outputs = []
+        for i in range(psbt.contents.num_outputs):
+            out = byref(psbt.contents.outputs[i])
+            keys, keys_len = make_cbuffer('00' * WALLY_SILENT_PAYMENT_KEYS_LEN)
+            ret, written = wally_psbt_output_get_sp_v0_info(out, keys, keys_len)
+            self.assertEqual(ret, WALLY_OK)
+            if written and not psbt.contents.outputs[i].script:
+                sp_outputs.append(i)
+                out = byref(resolved.contents.outputs[i])
+                self.assertEqual(wally_psbt_output_set_script(out, p2tr, len(p2tr)), WALLY_OK)
+                out = byref(as_scripts.contents.outputs[i])
+                script = b'\x00' + bytes(keys)
+                self.assertEqual(wally_psbt_output_set_script(out, script, len(script)), WALLY_OK)
+                self.assertEqual(wally_psbt_output_clear_sp_v0_info(out), WALLY_OK)
+        self.assertNotEqual(sp_outputs, [])
+        self.assertEqual(self.get_id(resolved), unresolved_id)
+        self.assertEqual(self.get_id(as_scripts), unresolved_id)
+
+        # Combining fills in the computed scripts, from either side
+        for dst, src in [(psbt, resolved), (resolved, psbt)]:
+            combined = pointer(wally_psbt())
+            self.assertEqual(wally_psbt_clone_alloc(dst, 0, combined), WALLY_OK)
+            self.assertEqual(wally_psbt_combine(combined, src), WALLY_OK)
+            self.assertEqual(self.to_base64(combined), self.to_base64(resolved))
+            wally_psbt_free(combined)
+
+        # Two different computed scripts cannot be combined
+        other = pointer(wally_psbt())
+        self.assertEqual(wally_psbt_clone_alloc(resolved, 0, other), WALLY_OK)
+        p2tr = b'\x51\x20' + b'\x02' * 32
+        out = byref(other.contents.outputs[sp_outputs[0]])
+        self.assertEqual(wally_psbt_output_set_script(out, p2tr, len(p2tr)), WALLY_OK)
+        self.assertEqual(self.get_id(other), unresolved_id)
+        self.assertEqual(wally_psbt_combine(other, resolved), WALLY_EINVAL)
+        for p in [resolved, as_scripts, other]:
+            wally_psbt_free(p)
+
     def test_silent_payment_outputs(self):
         """Test BIP-375 silent payment output fields"""
         # bip-0375/bip375_test_vectors.json from bitcoin/bips commit a34f044b
@@ -440,6 +494,7 @@ class PSBTTests(unittest.TestCase):
                 tx = pointer(wally_tx())
                 ret = wally_psbt_extract(psbt, WALLY_PSBT_EXTRACT_NON_FINAL, tx)
                 self.assertEqual(ret, WALLY_EINVAL)
+                self.check_silent_payment_id(psbt)
             wally_psbt_free(psbt)
         self.assertEqual(num_unresolved, 3)
 
