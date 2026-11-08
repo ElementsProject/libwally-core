@@ -265,6 +265,8 @@ for f in (
     ('wally_addr_segwit_n_get_version', c_int, [c_char_p, c_size_t, c_char_p, c_size_t, c_uint32, c_size_t_p]),
     ('wally_addr_segwit_n_to_bytes', c_int, [c_char_p, c_size_t, c_char_p, c_size_t, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_addr_segwit_to_bytes', c_int, [c_char_p, c_char_p, c_uint32, c_void_p, c_size_t, c_size_t_p]),
+    ('wally_addr_silent_payment_from_bytes', c_int, [c_void_p, c_size_t, c_char_p, c_uint32, c_char_p_p]),
+    ('wally_addr_silent_payment_to_bytes', c_int, [c_char_p, c_char_p, c_uint32, c_void_p, c_size_t]),
     ('wally_address_to_scriptpubkey', c_int, [c_char_p, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_ae_host_commit_from_bytes', c_int, [c_void_p, c_size_t, c_uint32, c_void_p, c_size_t]),
     ('wally_ae_sig_from_bytes', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_void_p, c_size_t]),

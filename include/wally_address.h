@@ -49,6 +49,8 @@ struct ext_key;
 #define WALLY_SEGWIT_V0_ADDRESS_PUBKEY_MAX_LEN 34 /** OP_0 OP_PUSH_{20,32} [20 bytes for wpkh, 32 for wsh] */
 #define WALLY_SEGWIT_V1_ADDRESS_PUBKEY_LEN 34 /** OP_1 OP_PUSH_32 [32-bytes x-only pubkey] */
 
+#define WALLY_SILENT_PAYMENT_KEYS_LEN 66 /** BIP-352 scan public key followed by spend public key */
+
 /**
  * Create a segwit native address from a v0 or later witness program.
  *
@@ -128,6 +130,43 @@ WALLY_CORE_API int wally_addr_segwit_n_get_version(
     size_t addr_family_len,
     uint32_t flags,
     size_t *written);
+
+/**
+ * Create a BIP-352 silent payment address from a scan and spend public key.
+ *
+ * :param bytes: The compressed scan public key followed by the compressed
+ *|    spend public key.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must be `WALLY_SILENT_PAYMENT_KEYS_LEN`.
+ * :param addr_family: Address family to generate, e.g. "sp" or "tsp".
+ * :param flags: For future use. Must be 0.
+ * :param output: Destination for the resulting version 0 silent payment address.
+ *|    The string returned should be freed using `wally_free_string`.
+ */
+WALLY_CORE_API int wally_addr_silent_payment_from_bytes(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    const char *addr_family,
+    uint32_t flags,
+    char **output);
+
+/**
+ * Get the scan and spend public keys from a BIP-352 silent payment address.
+ *
+ * Addresses of versions 1 to 30 are accepted and only their first
+ * `WALLY_SILENT_PAYMENT_KEYS_LEN` bytes are returned, as BIP-352 requires.
+ *
+ * :param addr: Silent payment address to decode.
+ * :param addr_family: Address family expected, e.g. "sp" or "tsp".
+ * :param flags: For future use. Must be 0.
+ * :param bytes_out: Destination for the scan public key followed by the spend public key.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_SILENT_PAYMENT_KEYS_LEN)
+ */
+WALLY_CORE_API int wally_addr_silent_payment_to_bytes(
+    const char *addr,
+    const char *addr_family,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len);
 
 /**
  * Infer a scriptPubKey from an address.

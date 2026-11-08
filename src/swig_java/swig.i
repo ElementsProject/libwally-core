@@ -531,6 +531,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_addr_segwit_n_get_version);
 %returns_size_t(wally_addr_segwit_n_to_bytes);
 %returns_size_t(wally_addr_segwit_to_bytes);
+%returns_string(wally_addr_silent_payment_from_bytes);
+%returns_array_(wally_addr_silent_payment_to_bytes, 4, 5, WALLY_SILENT_PAYMENT_KEYS_LEN);
 %returns_size_t(wally_address_to_scriptpubkey);
 %returns_array_(wally_aes, 6, 7, AES_BLOCK_LEN);
 %returns_size_t(wally_aes_len);

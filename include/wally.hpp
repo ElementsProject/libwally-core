@@ -367,6 +367,18 @@ inline int addr_segwit_to_bytes(const ADDR& addr, const ADDR_FAMILY& addr_family
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class BYTES, class ADDR_FAMILY>
+inline int addr_silent_payment_from_bytes(const BYTES& bytes, const ADDR_FAMILY& addr_family, uint32_t flags, char** output) {
+    int ret = ::wally_addr_silent_payment_from_bytes(bytes.data(), bytes.size(), detail::get_p(addr_family), flags, output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class ADDR, class ADDR_FAMILY, class BYTES_OUT>
+inline int addr_silent_payment_to_bytes(const ADDR& addr, const ADDR_FAMILY& addr_family, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_addr_silent_payment_to_bytes(detail::get_p(addr), detail::get_p(addr_family), flags, bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class ADDR, class BYTES_OUT>
 inline int address_to_scriptpubkey(const ADDR& addr, uint32_t network, BYTES_OUT& bytes_out, size_t* written) {
     int ret = ::wally_address_to_scriptpubkey(detail::get_p(addr), network, bytes_out.data(), bytes_out.size(), written);

@@ -234,6 +234,7 @@ export const WALLY_SIGTYPE_MASK = 0xf; /* Mask for signature type in flags */
 export const WALLY_SIGTYPE_PRE_SW = 0x1; /* Pre-segwit signature hash */
 export const WALLY_SIGTYPE_SW_V0 = 0x2; /* Segwit v0 signature hash */
 export const WALLY_SIGTYPE_SW_V1 = 0x3; /* Segwit v1 (taproot) signature hash */
+export const WALLY_SILENT_PAYMENT_KEYS_LEN = 66; /** BIP-352 scan public key followed by spend public key */
 export const WALLY_TXHASH_LEN = 32; /** Size of a transaction hash in bytes */
 export const WALLY_TX_ASSET_CT_ASSET_LEN = 33; /* version byte + 32 bytes */
 export const WALLY_TX_ASSET_CT_ASSET_PREFIX_A = 0x0a;

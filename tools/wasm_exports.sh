@@ -59,6 +59,8 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_addr_segwit_n_get_version' \
 ,'_wally_addr_segwit_n_to_bytes' \
 ,'_wally_addr_segwit_to_bytes' \
+,'_wally_addr_silent_payment_from_bytes' \
+,'_wally_addr_silent_payment_to_bytes' \
 ,'_wally_address_to_scriptpubkey' \
 ,'_wally_ae_host_commit_from_bytes' \
 ,'_wally_ae_sig_from_bytes' \

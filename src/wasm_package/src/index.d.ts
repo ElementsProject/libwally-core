@@ -25,6 +25,8 @@ export function addr_segwit_get_version(addr: string, addr_family: string, flags
 export function addr_segwit_n_get_version(addr: string, addr_len: number, addr_family: string, addr_family_len: number, flags: number): number;
 export function addr_segwit_n_to_bytes(addr: string, addr_len: number, addr_family: string, addr_family_len: number, flags: number): Buffer;
 export function addr_segwit_to_bytes(addr: string, addr_family: string, flags: number): Buffer;
+export function addr_silent_payment_from_bytes(bytes: Buffer|Uint8Array|null, addr_family: string, flags: number): string;
+export function addr_silent_payment_to_bytes(addr: string, addr_family: string, flags: number): Buffer;
 export function address_to_scriptpubkey(addr: string, network: number): Buffer;
 export function ae_host_commit_from_bytes(entropy: Buffer|Uint8Array|null, flags: number): Buffer;
 export function ae_sig_from_bytes(priv_key: Buffer|Uint8Array|null, bytes: Buffer|Uint8Array|null, entropy: Buffer|Uint8Array|null, flags: number): Buffer;
