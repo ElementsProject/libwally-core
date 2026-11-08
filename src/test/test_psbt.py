@@ -41,6 +41,26 @@ class PSBTTests(unittest.TestCase):
         for case in JSON['invalid']:
             wally_psbt_free(self.parse_base64(case['psbt'], WALLY_EINVAL))
 
+    def test_v2_global_tx_loose(self):
+        """A v2 PSBT cannot hold a global tx, even when parsing loosely"""
+        FLAG_LOOSE = 0x2 # WALLY_PSBT_PARSE_FLAG_LOOSE
+        version = '01fb0402000000'
+        tx = '0200000001' + '11' * 32 + '0000000000ffffffff01' + '00' * 8 + '015100000000'
+        global_tx = '0100' + '%02x' % (len(tx) // 2) + tx
+
+        def parse(globals_hex):
+            buf, buf_len = make_cbuffer('70736274ff' + globals_hex + '00')
+            psbt = pointer(wally_psbt())
+            ret = wally_psbt_from_bytes(buf, buf_len, FLAG_LOOSE, psbt)
+            if ret == WALLY_OK:
+                wally_psbt_free(psbt)
+            return ret
+
+        self.assertEqual(parse(version), WALLY_OK)
+        # The tx is refused wherever it appears relative to the version
+        self.assertEqual(parse(global_tx + version), WALLY_EINVAL)
+        self.assertEqual(parse(version + global_tx), WALLY_EINVAL)
+
     def test_valid(self):
         """Test deserializing and roundtripping valid PSBTs"""
         buf, buf_len = make_cbuffer('00' * 4096)

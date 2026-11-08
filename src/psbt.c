@@ -2877,7 +2877,9 @@ unknown:
     }
 
     if (ret == WALLY_OK && (*output)->version == PSBT_2) {
-        if ((*output)->tx_version < 2)
+        if ((*output)->tx)
+            ret = WALLY_EINVAL; /* v2 cannot have a tx, even when parsing loosely */
+        else if ((*output)->tx_version < 2)
             ret = WALLY_EINVAL; /* Tx version must be >= 2 */
         else {
             struct wally_psbt tmp;
