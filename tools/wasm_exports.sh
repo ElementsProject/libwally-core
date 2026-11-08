@@ -337,13 +337,17 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_is_finalized' \
 ,'_wally_psbt_is_input_finalized' \
 ,'_wally_psbt_output_clear_amount' \
+,'_wally_psbt_output_clear_sp_v0_info' \
 ,'_wally_psbt_output_find_keypath' \
 ,'_wally_psbt_output_find_unknown' \
+,'_wally_psbt_output_get_sp_v0_info' \
+,'_wally_psbt_output_get_sp_v0_info_len' \
 ,'_wally_psbt_output_keypath_add' \
 ,'_wally_psbt_output_set_amount' \
 ,'_wally_psbt_output_set_keypaths' \
 ,'_wally_psbt_output_set_redeem_script' \
 ,'_wally_psbt_output_set_script' \
+,'_wally_psbt_output_set_sp_v0_info' \
 ,'_wally_psbt_output_set_taproot_internal_key' \
 ,'_wally_psbt_output_set_unknowns' \
 ,'_wally_psbt_output_set_witness_script' \

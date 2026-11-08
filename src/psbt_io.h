@@ -224,7 +224,17 @@
 #define PSBT_OUT_TAP_INTERNAL_KEY 0x05
 #define PSBT_OUT_TAP_TREE 0x06
 #define PSBT_OUT_TAP_BIP32_DERIVATION 0x07
-#define PSBT_OUT_MAX PSBT_OUT_TAP_BIP32_DERIVATION
+#define PSBT_OUT_MUSIG2_PARTICIPANT_PUBKEYS 0x08
+#define PSBT_OUT_SP_V0_INFO 0x09
+#define PSBT_OUT_SP_V0_LABEL 0x0a
+#define PSBT_OUT_MAX PSBT_OUT_SP_V0_LABEL
+
+/* Output PSBT fields in range that we do not parse; kept as unknowns */
+#define PSBT_OUT_UNPARSED PSBT_FT(PSBT_OUT_MUSIG2_PARTICIPANT_PUBKEYS)
+
+/* BIP-375 silent payment output fields (not used in PSETs) */
+#define PSBT_OUT_SP_FIELDS (PSBT_FT(PSBT_OUT_SP_V0_INFO) | \
+                            PSBT_FT(PSBT_OUT_SP_V0_LABEL))
 
 /* Outputs: PSET */
 #define PSET_OUT_UNUSED_ZERO 0x00 /* Unused, WTF */
@@ -257,6 +267,7 @@
 /* Output PSBT/PSET fields that must *not* be present in v0 */
 #define PSBT_OUT_DISALLOWED_V0 (PSBT_FT(PSBT_OUT_AMOUNT) | \
                                 PSBT_FT(PSBT_OUT_SCRIPT) | \
+                                PSBT_OUT_SP_FIELDS | \
                                 PSET_FT(PSET_OUT_VALUE_COMMITMENT) | \
                                 PSET_FT(PSET_OUT_ASSET) | \
                                 PSET_FT(PSET_OUT_ASSET_COMMITMENT) | \

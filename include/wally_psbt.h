@@ -1451,6 +1451,56 @@ WALLY_CORE_API int wally_psbt_output_set_taproot_internal_key(
     const unsigned char *pub_key,
     size_t pub_key_len);
 
+/**
+ * Get the BIP-375 silent payment code from an output.
+ *
+ * :param output: The output to get from.
+ * :param bytes_out: Destination for the scan public key followed by the spend public key.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: This operates on the PSBT field ``PSBT_OUT_SP_V0_INFO``.
+ */
+WALLY_CORE_API int wally_psbt_output_get_sp_v0_info(
+    const struct wally_psbt_output *output,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the BIP-375 silent payment code from an output.
+ *
+ * :param output: The output to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_output_get_sp_v0_info_len(
+    const struct wally_psbt_output *output,
+    size_t *written);
+
+/**
+ * Set the BIP-375 silent payment code in an output.
+ *
+ * An output with a silent payment code does not need a script until the
+ * signer computes it.
+ *
+ * :param output: The output to update.
+ * :param keys: The scan public key followed by the spend public key.
+ * :param keys_len: Length of ``keys`` in bytes. Must be `WALLY_SILENT_PAYMENT_KEYS_LEN`.
+ */
+WALLY_CORE_API int wally_psbt_output_set_sp_v0_info(
+    struct wally_psbt_output *output,
+    const unsigned char *keys,
+    size_t keys_len);
+
+/**
+ * Clear the BIP-375 silent payment code from an output.
+ *
+ * :param output: The output to update.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_sp_v0_info(
+    struct wally_psbt_output *output);
+
 
 #ifndef WALLY_ABI_NO_ELEMENTS
 /**
@@ -1950,6 +2000,9 @@ WALLY_CORE_API int wally_psbt_free(
  *|    or ``WALLY_PSBT_VERSION_2``.
  *
  * .. note:: This call converts the PSBT in place to the specified version.
+ *
+ * .. note:: Converting to version 0 fails if any output has a BIP-375 silent
+ *|    payment code, as those fields are only valid in version 2.
  */
 WALLY_CORE_API int wally_psbt_set_version(
     struct wally_psbt *psbt,

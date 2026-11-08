@@ -5,6 +5,8 @@ from util import *
 FLAG_GRIND_R = 0x4
 MOD_NONE = 0
 INIT_PSET = 1
+WALLY_PSBT_EXTRACT_NON_FINAL = 0x1
+WALLY_SILENT_PAYMENT_KEYS_LEN = 66
 
 with open(root_dir + 'src/data/psbt.json', 'r') as f:
     JSON = json.load(f)
@@ -410,6 +412,139 @@ class PSBTTests(unittest.TestCase):
         ret = wally_psbt_from_bytes(invalid, len(invalid), 0, pointer(wally_psbt()))
         self.assertEqual(ret, WALLY_EINVAL)
         wally_psbt_free(psbt)
+
+    def test_silent_payment_outputs(self):
+        """Test BIP-375 silent payment output fields"""
+        # bip-0375/bip375_test_vectors.json from bitcoin/bips commit a34f044b
+        with open(root_dir + 'src/data/bip375_vectors.json', 'r') as f:
+            cases = json.load(f)
+
+        num_unresolved = 0
+        for case in cases['valid']:
+            psbt = self.parse_base64(case['psbt'])
+            b64 = self.to_base64(psbt)
+            psbt2 = self.parse_base64(b64)
+            self.assertEqual(self.to_base64(psbt2), b64)
+            wally_psbt_free(psbt2)
+            unresolved = False
+            for i in range(psbt.contents.num_outputs):
+                out = byref(psbt.contents.outputs[i])
+                ret, info_len = wally_psbt_output_get_sp_v0_info_len(out)
+                self.assertEqual(ret, WALLY_OK)
+                self.assertIn(info_len, [0, WALLY_SILENT_PAYMENT_KEYS_LEN])
+                if info_len and not psbt.contents.outputs[i].script:
+                    unresolved = True
+            if unresolved:
+                # No transaction can be built until every script is computed
+                num_unresolved += 1
+                tx = pointer(wally_tx())
+                ret = wally_psbt_extract(psbt, WALLY_PSBT_EXTRACT_NON_FINAL, tx)
+                self.assertEqual(ret, WALLY_EINVAL)
+            wally_psbt_free(psbt)
+        self.assertEqual(num_unresolved, 3)
+
+        invalid = [
+            'psbt structure: missing PSBT_OUT_SP_V0_INFO field when PSBT_OUT_SP_V0_LABEL set',
+            'psbt structure: incorrect byte length for PSBT_OUT_SP_V0_LABEL field',
+            'psbt structure: incorrect byte length for PSBT_OUT_SP_V0_INFO field',
+            'psbt structure: missing PSBT_OUT_SCRIPT field when sending to non-sp output',
+        ]
+        for case in cases['invalid']:
+            if case['description'] in invalid:
+                self.parse_base64(case['psbt'], WALLY_EINVAL)
+                invalid.remove(case['description'])
+        self.assertEqual(invalid, [])
+
+        # An output may omit its script only if it has a silent payment code
+        psbt = pointer(wally_psbt())
+        self.assertEqual(WALLY_OK, wally_psbt_init_alloc(2, 0, 1, 0, 0, psbt))
+        tx_out = pointer(wally_tx_output())
+        ret = wally_tx_output_init_alloc(1000, b'\x51', 1, tx_out)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_output_at(psbt, 0, 0, tx_out))
+        out = byref(psbt.contents.outputs[0])
+        keys = bytes.fromhex('0220bcfac5b99e04ad1a06ddfb016ee13582609d60b6291e98d01a9bc9a16c96d4'
+                             '025cc9856d6f8375350e123978daac200c260cb5b5ae83106cab90484dcd8fcf36')
+        for bad in [keys[:-1], keys + b'\x00', b'\x04' + keys[1:], keys[:33] + b'\x04' + keys[34:]]:
+            self.assertEqual(wally_psbt_output_set_sp_v0_info(out, bad, len(bad)), WALLY_EINVAL)
+        self.assertEqual(wally_psbt_output_set_sp_v0_info(out, keys, len(keys)), WALLY_OK)
+        buf, buf_len = make_cbuffer('00' * len(keys))
+        ret, written = wally_psbt_output_get_sp_v0_info(out, buf, buf_len)
+        self.assertEqual((ret, written, bytes(buf)), (WALLY_OK, len(keys), keys))
+
+        # BIP-375 fields are v2 only: a code must not survive a conversion to v0
+        self.assertEqual(wally_psbt_output_set_script(out, b'\x51', 1), WALLY_OK)
+        self.assertEqual(wally_psbt_set_version(psbt, 0, 0), WALLY_EINVAL)
+        self.assertEqual(psbt.contents.version, 2)
+
+        self.assertEqual(wally_psbt_output_set_script(out, None, 0), WALLY_OK)
+        b64 = self.to_base64(psbt)
+        psbt2 = self.parse_base64(b64)
+        self.assertEqual(self.to_base64(psbt2), b64)
+        self.assertEqual(psbt2.contents.outputs[0].script_len, 0)
+        wally_psbt_free(psbt2)
+
+        self.assertEqual(wally_psbt_output_clear_sp_v0_info(out), WALLY_OK)
+        ret, written = wally_psbt_output_get_sp_v0_info_len(out)
+        self.assertEqual((ret, written), (WALLY_OK, 0))
+        self.assertEqual(wally_psbt_to_base64(psbt, 0), (WALLY_EINVAL, None))
+        wally_psbt_free(psbt)
+
+        # Signing is refused while a silent payment script is missing
+        case = [c for c in cases['valid'] if c['description'].startswith('in progress: one P2TR')][0]
+        psbt = self.parse_base64(case['psbt'])
+        self.assertEqual(wally_psbt_sign(psbt, b'\x01' * 32, 32, 0), WALLY_EINVAL)
+        wally_psbt_free(psbt)
+
+        # Clearing the code of a labelled output cannot write a lone label
+        case = [c for c in cases['valid'] if 'label=0 convention' in c['description']][0]
+        psbt = self.parse_base64(case['psbt'])
+        self.assertEqual(wally_psbt_output_clear_sp_v0_info(byref(psbt.contents.outputs[1])), WALLY_OK)
+        self.assertEqual(wally_psbt_to_base64(psbt, 0), (WALLY_EINVAL, None))
+        wally_psbt_free(psbt)
+
+        # Silent payment fields are v2 only; BIP-373 field 0x08 stays unknown
+        def with_output_fields(version, fields):
+            psbt = pointer(wally_psbt())
+            self.assertEqual(wally_psbt_init_alloc(version, 0, 1, 0, 0, psbt), WALLY_OK)
+            if version == 0:
+                tx = pointer(wally_tx())
+                self.assertEqual(wally_tx_init_alloc(2, 0, 0, 1, tx), WALLY_OK)
+                self.assertEqual(wally_tx_add_raw_output(tx, 1000, b'\x51', 1, 0), WALLY_OK)
+                self.assertEqual(wally_psbt_set_global_tx(psbt, tx), WALLY_OK)
+                wally_tx_free(tx)
+            else:
+                tx_out = pointer(wally_tx_output())
+                self.assertEqual(wally_tx_output_init_alloc(1000, b'\x51', 1, tx_out), WALLY_OK)
+                self.assertEqual(wally_psbt_add_tx_output_at(psbt, 0, 0, tx_out), WALLY_OK)
+            ret, length = wally_psbt_get_length(psbt, 0)
+            self.assertEqual(ret, WALLY_OK)
+            buf, buf_len = make_cbuffer('00' * length)
+            self.assertEqual(wally_psbt_to_bytes(psbt, 0, buf, buf_len), (WALLY_OK, length))
+            wally_psbt_free(psbt)
+            return bytes(buf)[:-1] + b''.join(fields) + b'\x00' # Before the last separator
+
+        info = b'\x01\x09' + bytes([len(keys)]) + keys
+        label = b'\x01\x0a\x04' + bytes(4)
+        musig = [b'\x22\x08' + keys[:33] + bytes([len(keys)]) + keys,
+                 b'\x22\x08' + keys[33:] + bytes([len(keys)]) + keys]
+        for version, fields, expected, num_unknowns in [
+            (0, [info], WALLY_EINVAL, 0),
+            (0, [info, label], WALLY_EINVAL, 0),
+            (0, musig, WALLY_OK, 2),
+            (2, [info, label], WALLY_OK, 0),
+            (2, musig, WALLY_OK, 2),
+            ]:
+            raw = with_output_fields(version, fields)
+            psbt = pointer(wally_psbt())
+            self.assertEqual(wally_psbt_from_bytes(raw, len(raw), 0, psbt), expected)
+            if expected == WALLY_OK:
+                self.assertEqual(psbt.contents.outputs[0].unknowns.num_items, num_unknowns)
+                b64 = self.to_base64(psbt)
+                psbt2 = self.parse_base64(b64)
+                self.assertEqual(self.to_base64(psbt2), b64)
+                wally_psbt_free(psbt2)
+                wally_psbt_free(psbt)
 
     def test_psbt(self):
         """Test creating and modifying various PSBT fields"""

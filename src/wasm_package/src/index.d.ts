@@ -485,6 +485,7 @@ export function psbt_output_clear_asset_surjectionproof(output: Ref_wally_psbt_o
 export function psbt_output_clear_blinder_index(output: Ref_wally_psbt_output): void;
 export function psbt_output_clear_blinding_public_key(output: Ref_wally_psbt_output): void;
 export function psbt_output_clear_ecdh_public_key(output: Ref_wally_psbt_output): void;
+export function psbt_output_clear_sp_v0_info(output: Ref_wally_psbt_output): void;
 export function psbt_output_clear_value_blinding_rangeproof(output: Ref_wally_psbt_output): void;
 export function psbt_output_clear_value_commitment(output: Ref_wally_psbt_output): void;
 export function psbt_output_clear_value_rangeproof(output: Ref_wally_psbt_output): void;
@@ -497,6 +498,7 @@ export function psbt_output_get_asset_surjectionproof_len(output: Ref_wally_psbt
 export function psbt_output_get_blinding_public_key_len(output: Ref_wally_psbt_output): number;
 export function psbt_output_get_blinding_status(output: Ref_wally_psbt_output, flags: number): number;
 export function psbt_output_get_ecdh_public_key_len(output: Ref_wally_psbt_output): number;
+export function psbt_output_get_sp_v0_info_len(output: Ref_wally_psbt_output): number;
 export function psbt_output_get_value_blinding_rangeproof_len(output: Ref_wally_psbt_output): number;
 export function psbt_output_get_value_commitment_len(output: Ref_wally_psbt_output): number;
 export function psbt_output_get_value_rangeproof_len(output: Ref_wally_psbt_output): number;
@@ -512,6 +514,7 @@ export function psbt_output_set_ecdh_public_key(output: Ref_wally_psbt_output, p
 export function psbt_output_set_keypaths(output: Ref_wally_psbt_output, map_in: Ref_wally_map): void;
 export function psbt_output_set_redeem_script(output: Ref_wally_psbt_output, script: Buffer|Uint8Array|null): void;
 export function psbt_output_set_script(output: Ref_wally_psbt_output, script: Buffer|Uint8Array|null): void;
+export function psbt_output_set_sp_v0_info(output: Ref_wally_psbt_output, keys: Buffer|Uint8Array|null): void;
 export function psbt_output_set_taproot_internal_key(output: Ref_wally_psbt_output, pub_key: Buffer|Uint8Array|null): void;
 export function psbt_output_set_unknowns(output: Ref_wally_psbt_output, map_in: Ref_wally_map): void;
 export function psbt_output_set_value_blinding_rangeproof(output: Ref_wally_psbt_output, rangeproof: Buffer|Uint8Array|null): void;
@@ -861,6 +864,7 @@ export function psbt_output_get_asset_commitment(output: Ref_wally_psbt_output):
 export function psbt_output_get_asset_surjectionproof(output: Ref_wally_psbt_output): Buffer;
 export function psbt_output_get_blinding_public_key(output: Ref_wally_psbt_output): Buffer;
 export function psbt_output_get_ecdh_public_key(output: Ref_wally_psbt_output): Buffer;
+export function psbt_output_get_sp_v0_info(output: Ref_wally_psbt_output): Buffer;
 export function psbt_output_get_value_blinding_rangeproof(output: Ref_wally_psbt_output): Buffer;
 export function psbt_output_get_value_commitment(output: Ref_wally_psbt_output): Buffer;
 export function psbt_output_get_value_rangeproof(output: Ref_wally_psbt_output): Buffer;

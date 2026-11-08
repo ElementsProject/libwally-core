@@ -1635,6 +1635,11 @@ inline int psbt_output_clear_amount(struct wally_psbt_output* output) {
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+inline int psbt_output_clear_sp_v0_info(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_sp_v0_info(output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class OUTPUT, class PUB_KEY>
 inline int psbt_output_find_keypath(const OUTPUT& output, const PUB_KEY& pub_key, size_t* written) {
     int ret = ::wally_psbt_output_find_keypath(detail::get_p(output), pub_key.data(), pub_key.size(), written);
@@ -1644,6 +1649,18 @@ inline int psbt_output_find_keypath(const OUTPUT& output, const PUB_KEY& pub_key
 template <class OUTPUT, class KEY>
 inline int psbt_output_find_unknown(const OUTPUT& output, const KEY& key, size_t* written) {
     int ret = ::wally_psbt_output_find_unknown(detail::get_p(output), key.data(), key.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class OUTPUT, class BYTES_OUT>
+inline int psbt_output_get_sp_v0_info(const OUTPUT& output, BYTES_OUT& bytes_out, size_t* written) {
+    int ret = ::wally_psbt_output_get_sp_v0_info(detail::get_p(output), bytes_out.data(), bytes_out.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class OUTPUT>
+inline int psbt_output_get_sp_v0_info_len(const OUTPUT& output, size_t* written) {
+    int ret = ::wally_psbt_output_get_sp_v0_info_len(detail::get_p(output), written);
     return detail::check_ret(__FUNCTION__, ret);
 }
 
@@ -1674,6 +1691,12 @@ inline int psbt_output_set_redeem_script(const OUTPUT& output, const SCRIPT& scr
 template <class OUTPUT, class SCRIPT>
 inline int psbt_output_set_script(const OUTPUT& output, const SCRIPT& script) {
     int ret = ::wally_psbt_output_set_script(detail::get_p(output), script.data(), script.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class OUTPUT, class KEYS>
+inline int psbt_output_set_sp_v0_info(const OUTPUT& output, const KEYS& keys) {
+    int ret = ::wally_psbt_output_set_sp_v0_info(detail::get_p(output), keys.data(), keys.size());
     return detail::check_ret(__FUNCTION__, ret);
 }
 

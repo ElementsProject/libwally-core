@@ -1,5 +1,6 @@
 #include "internal.h"
 
+#include <include/wally_address.h>
 #include <include/wally_descriptor.h>
 #include <include/wally_elements.h>
 #include <include/wally_script.h>
@@ -642,6 +643,16 @@ static int psbt_output_field_verify(uint32_t field_type,
         return val && val_len == SHA256_LEN ? WALLY_OK : WALLY_EINVAL;
     case PSBT_OUT_TAP_TREE:
         return taproot_tree_value_verify(val, val_len);
+    case PSBT_OUT_SP_V0_INFO:
+        /* BIP-375: 33 byte scan key followed by 33 byte spend key */
+        if (!val || val_len != WALLY_SILENT_PAYMENT_KEYS_LEN ||
+            wally_ec_public_key_verify(val, EC_PUBLIC_KEY_LEN) != WALLY_OK ||
+            wally_ec_public_key_verify(val + EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_LEN) != WALLY_OK)
+            return WALLY_EINVAL;
+        return WALLY_OK;
+    case PSBT_OUT_SP_V0_LABEL:
+        /* BIP-375: 32 bit little endian label */
+        return val && val_len == sizeof(uint32_t) ? WALLY_OK : WALLY_EINVAL;
     default:
         break;
     }
@@ -948,6 +959,7 @@ static void psbt_inputs_free(struct wally_psbt_input *inputs, size_t num_inputs)
 MAP_INNER_FIELD(output, redeem_script, PSBT_OUT_REDEEM_SCRIPT, psbt_fields)
 MAP_INNER_FIELD(output, witness_script, PSBT_OUT_WITNESS_SCRIPT, psbt_fields)
 MAP_INNER_FIELD(output, taproot_internal_key, PSBT_OUT_TAP_INTERNAL_KEY, psbt_fields)
+MAP_INNER_FIELD(output, sp_v0_info, PSBT_OUT_SP_V0_INFO, psbt_fields)
 SET_MAP(wally_psbt_output, keypath,)
 ADD_KEYPATH(wally_psbt_output)
 ADD_TAP_KEYPATH(wally_psbt_output)
@@ -2619,7 +2631,9 @@ static int pull_psbt_output(const struct wally_psbt *psbt,
                 field_bit = field_type;
             }
         } else {
-            is_known = field_type <= PSBT_OUT_MAX;
+            is_known = field_type <= PSBT_OUT_MAX &&
+                       !(PSBT_FT(field_type) & PSBT_OUT_UNPARSED) &&
+                       !(is_pset && (PSBT_FT(field_type) & PSBT_OUT_SP_FIELDS));
             if (is_known)
                 field_bit = PSBT_FT(field_type);
         }
@@ -2650,6 +2664,8 @@ static int pull_psbt_output(const struct wally_psbt *psbt,
             case PSBT_OUT_REDEEM_SCRIPT:
             case PSBT_OUT_WITNESS_SCRIPT:
             case PSBT_OUT_TAP_INTERNAL_KEY:
+            case PSBT_OUT_SP_V0_INFO:
+            case PSBT_OUT_SP_V0_LABEL:
                 pull_varlength_buff(cursor, max, &val_p, &val_len);
                 ret = wally_map_add_integer(&result->psbt_fields, raw_field_type,
                                             val_p, val_len);
@@ -2701,12 +2717,18 @@ unknown:
         mandatory &= ~PSBT_FT(PSBT_OUT_AMOUNT);
     }
 #endif /* BUILD_ELEMENTS */
+    if (keyset & PSBT_FT(PSBT_OUT_SP_V0_INFO)) {
+        /* BIP-375: A silent payment output's script may not be computed yet */
+        mandatory &= ~PSBT_FT(PSBT_OUT_SCRIPT);
+    }
 
     if (ret == WALLY_OK && !(flags & WALLY_PSBT_PARSE_FLAG_LOOSE)) {
         if (mandatory && (keyset & mandatory) != mandatory)
             ret = WALLY_EINVAL; /* Mandatory field is missing*/
         else if (disallowed && (keyset & disallowed))
             ret = WALLY_EINVAL; /* Disallowed field present */
+        else if ((keyset & PSBT_OUT_SP_FIELDS) == PSBT_FT(PSBT_OUT_SP_V0_LABEL))
+            ret = WALLY_EINVAL; /* Label without a silent payment code */
     }
 #ifdef BUILD_ELEMENTS
     if (ret == WALLY_OK && is_pset) {
@@ -3379,16 +3401,22 @@ static int push_psbt_output(const struct wally_psbt *psbt,
     push_psbt_map(cursor, max, PSBT_OUT_BIP32_DERIVATION, false, &output->keypaths);
 
     if (psbt->version == PSBT_2) {
-        if (!is_pset && (!output->has_amount || !output->script || !output->script_len))
+        const bool is_sp = !is_pset &&
+            wally_map_get_integer(&output->psbt_fields, PSBT_OUT_SP_V0_INFO);
+
+        if (!is_pset && (!output->has_amount ||
+                         (!is_sp && (!output->script || !output->script_len))))
             return WALLY_EINVAL; /* Must be provided */
 
         if (output->has_amount)
             push_psbt_le64(cursor, max, PSBT_OUT_AMOUNT, false, output->amount);
 
-        /* Core/Elements always write the script; if missing its written as empty */
-        push_psbt_varbuff(cursor, max, PSBT_OUT_SCRIPT, false,
-                          output->script ? output->script : &dummy,
-                          output->script_len);
+        /* Core/Elements always write the script; if missing its written as empty.
+         * A silent payment output's script is omitted until it is computed. */
+        if (!is_sp || output->script)
+            push_psbt_varbuff(cursor, max, PSBT_OUT_SCRIPT, false,
+                              output->script ? output->script : &dummy,
+                              output->script_len);
     }
 
     if ((ret = push_varbuff_from_map(cursor, max, PSBT_OUT_TAP_INTERNAL_KEY,
@@ -3408,6 +3436,20 @@ static int push_psbt_output(const struct wally_psbt *psbt,
                                       &output->taproot_leaf_hashes,
                                       &output->taproot_leaf_paths);
         if (ret != WALLY_OK)
+            return ret;
+    }
+
+    if (!is_pset && psbt->version == PSBT_2) {
+        if (wally_map_get_integer(&output->psbt_fields, PSBT_OUT_SP_V0_LABEL) &&
+            !wally_map_get_integer(&output->psbt_fields, PSBT_OUT_SP_V0_INFO))
+            return WALLY_EINVAL; /* Label without a silent payment code */
+        if ((ret = push_varbuff_from_map(cursor, max, PSBT_OUT_SP_V0_INFO,
+                                         PSBT_OUT_SP_V0_INFO,
+                                         false, &output->psbt_fields)) != WALLY_OK)
+            return ret;
+        if ((ret = push_varbuff_from_map(cursor, max, PSBT_OUT_SP_V0_LABEL,
+                                         PSBT_OUT_SP_V0_LABEL,
+                                         false, &output->psbt_fields)) != WALLY_OK)
             return ret;
     }
 
@@ -4200,6 +4242,8 @@ static int psbt_build_output(const struct wally_psbt_output *src,
     }
     if (!src->has_amount)
         return WALLY_EINVAL;
+    if (!src->script && wally_map_get_integer(&src->psbt_fields, PSBT_OUT_SP_V0_INFO))
+        return WALLY_EINVAL; /* Silent payment output script not computed yet */
     return wally_tx_add_raw_output(tx, src->amount, src->script, src->script_len, 0);
 }
 
@@ -4288,9 +4332,14 @@ static int psbt_v2_to_v0(struct wally_psbt *psbt)
 {
     size_t i;
     bool is_pset;
-    int ret = psbt_build_tx(psbt, &psbt->tx, &is_pset, false);
+    int ret;
 
-    if (ret != WALLY_OK)
+    /* BIP-375 fields are v2 only, and v0 could not keep a code with its output */
+    for (i = 0; i < psbt->num_outputs; ++i)
+        if (wally_map_get_integer(&psbt->outputs[i].psbt_fields, PSBT_OUT_SP_V0_INFO))
+            return WALLY_EINVAL;
+
+    if ((ret = psbt_build_tx(psbt, &psbt->tx, &is_pset, false)) != WALLY_OK)
         return ret;
 
     for (i = 0; i < psbt->num_inputs; ++i) {

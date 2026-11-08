@@ -281,6 +281,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* iv, size_t iv_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* key, size_t key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* keys, size_t keys_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* label, size_t label_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* mainchain_script, size_t mainchain_script_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* merkle_hashes, size_t merkle_hashes_len) };
@@ -1402,6 +1403,10 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %ignore wally_psbt_output_get_blinding_status;
 %ignore wally_psbt_output_set_taproot_internal_key;
 %ignore wally_tx_elements_input_is_pegin;
+%ignore wally_psbt_output_get_sp_v0_info;
+%ignore wally_psbt_output_get_sp_v0_info_len;
+%ignore wally_psbt_output_set_sp_v0_info;
+%ignore wally_psbt_output_clear_sp_v0_info;
 
 %include "../include/wally_core.h"
 %include "../include/wally_address.h"
