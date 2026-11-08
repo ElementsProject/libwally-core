@@ -723,6 +723,36 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(self.get_sp_scripts(psbt), scripts)
             wally_psbt_free(psbt)
 
+        # Signing uses SIGHASH_ALL, also for taproot when no sighash is given,
+        # and refuses any other sighash
+        case = [c for c in cases['valid'] if 'two P2TR inputs, neither' in c['description']][0]
+        psbt = self.parse_base64(case['psbt'])
+        tx = pointer(wally_tx())
+        self.assertEqual(wally_psbt_extract(psbt, WALLY_PSBT_EXTRACT_NON_FINAL, tx), WALLY_OK)
+
+        def sighash_hash():
+            buf, buf_len = make_cbuffer('00' * 32)
+            ret = wally_psbt_get_input_signature_hash(psbt, 0, tx, None, 0, 0, buf, buf_len)
+            return ret, bytes(buf)
+
+        unset = sighash_hash()
+        self.assertEqual(unset[0], WALLY_OK)
+        self.assertEqual(wally_psbt_set_input_sighash(psbt, 0, 1), WALLY_OK) # ALL
+        self.assertEqual(sighash_hash(), unset)
+        self.assertEqual(wally_psbt_set_input_sighash(psbt, 0, 2), WALLY_OK) # NONE
+        self.assertEqual(sighash_hash()[0], WALLY_EINVAL)
+        self.assertEqual(wally_psbt_compute_sp_scripts(psbt, 0), WALLY_EINVAL)
+        # Without silent payment outputs, taproot defaults to SIGHASH_DEFAULT
+        self.assertEqual(wally_psbt_set_input_sighash(psbt, 0, 0), WALLY_OK)
+        for i in range(psbt.contents.num_outputs):
+            out = byref(psbt.contents.outputs[i])
+            self.assertEqual(wally_psbt_output_clear_sp_v0_info(out), WALLY_OK)
+        ret, default = sighash_hash()
+        self.assertEqual(ret, WALLY_OK)
+        self.assertNotEqual(default, unset[1])
+        wally_tx_free(tx)
+        wally_psbt_free(psbt)
+
     def test_silent_payment_add_shares(self):
         """Test adding BIP-375 ECDH shares from input private keys"""
         # bip-0375/bip375_test_vectors.json from bitcoin/bips commit a34f044b
