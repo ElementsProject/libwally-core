@@ -644,8 +644,6 @@ static bool sp_script_is_modifiable(const struct wally_psbt *psbt)
 static bool psbt_has_sp_outputs(const struct wally_psbt *psbt)
 {
     size_t i;
-    if (psbt->version != PSBT_2)
-        return false;
     for (i = 0; i < psbt->num_outputs; ++i)
         if (wally_map_get_integer(&psbt->outputs[i].psbt_fields, PSBT_OUT_SP_V0_INFO))
             return true;
@@ -660,7 +658,7 @@ static int psbt_input_get_sighash(const struct wally_psbt *psbt,
 {
     *sighash = inp->sighash;
     if (psbt_has_sp_outputs(psbt)) {
-        if (*sighash && *sighash != WALLY_SIGHASH_ALL)
+        if (psbt->version != PSBT_2 || (*sighash && *sighash != WALLY_SIGHASH_ALL))
             return WALLY_EINVAL;
         *sighash = WALLY_SIGHASH_ALL;
     } else if (!*sighash)
@@ -4970,7 +4968,9 @@ static int sp_output_script(const unsigned char *shared_secret, uint32_t k,
     return ret;
 }
 
-int wally_psbt_compute_sp_scripts(struct wally_psbt *psbt, uint32_t flags)
+/* Compute silent payment output scripts, or with verify_only require that they
+ * are all already present and correct, which leaves the PSBT unchanged */
+static int psbt_sp_scripts(struct wally_psbt *psbt, bool verify_only)
 {
     struct sp_output *outs = NULL, tmp;
     unsigned char *keys = NULL, *scripts = NULL, **new_scripts = NULL;
@@ -4984,14 +4984,18 @@ int wally_psbt_compute_sp_scripts(struct wally_psbt *psbt, uint32_t flags)
     uint32_t k = 0;
     int ret = WALLY_OK;
 
-    if (!psbt_is_valid(psbt) || psbt->version != PSBT_2 || flags ||
+    if (!psbt_is_valid(psbt) || psbt->version != PSBT_2 ||
         wally_psbt_is_elements(psbt, &is_pset) != WALLY_OK || is_pset)
         return WALLY_EINVAL;
 
     /* Gather the silent payment outputs */
-    for (i = 0; i < psbt->num_outputs; ++i)
-        if (wally_map_get_integer(&psbt->outputs[i].psbt_fields, PSBT_OUT_SP_V0_INFO))
+    for (i = 0; i < psbt->num_outputs; ++i) {
+        if (wally_map_get_integer(&psbt->outputs[i].psbt_fields, PSBT_OUT_SP_V0_INFO)) {
+            if (verify_only && !psbt->outputs[i].script)
+                return WALLY_EINVAL; /* Not computed yet */
             ++num_outs;
+        }
+    }
     if (!num_outs)
         return WALLY_OK; /* Nothing to do */
     if (!psbt->num_inputs || sp_script_is_modifiable(psbt))
@@ -5118,6 +5122,11 @@ done:
     wally_clear_4(input_hash, sizeof(input_hash), share, sizeof(share),
                   shared_secret, sizeof(shared_secret), hash_in, sizeof(hash_in));
     return ret;
+}
+
+int wally_psbt_compute_sp_scripts(struct wally_psbt *psbt, uint32_t flags)
+{
+    return flags ? WALLY_EINVAL : psbt_sp_scripts(psbt, false);
 }
 
 #define sp_swap_maps(a, b) do { struct wally_map _t = a; a = b; b = _t; } while (0)
@@ -5772,7 +5781,7 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
     return ret;
 }
 
-int wally_psbt_sign_input_bip32(struct wally_psbt *psbt,
+static int psbt_sign_input_impl(struct wally_psbt *psbt,
                                 size_t index, size_t subindex,
                                 const unsigned char *txhash, size_t txhash_len,
                                 const struct ext_key *hdkey,
@@ -5857,6 +5866,25 @@ done:
     return ret;
 }
 
+/* Before any signature: a silent payment output's script must be the one its
+ * code derives, or a signature could pay anyone. Every signing call checks this */
+static int psbt_check_sp_scripts(struct wally_psbt *psbt)
+{
+    return psbt_has_sp_outputs(psbt) ? psbt_sp_scripts(psbt, true) : WALLY_OK;
+}
+
+int wally_psbt_sign_input_bip32(struct wally_psbt *psbt,
+                                size_t index, size_t subindex,
+                                const unsigned char *txhash, size_t txhash_len,
+                                const struct ext_key *hdkey,
+                                uint32_t flags)
+{
+    int ret = psbt_is_valid(psbt) ? psbt_check_sp_scripts(psbt) : WALLY_OK;
+    if (ret == WALLY_OK)
+        ret = psbt_sign_input_impl(psbt, index, subindex, txhash, txhash_len, hdkey, flags);
+    return ret;
+}
+
 int wally_psbt_sign_bip32(struct wally_psbt *psbt,
                           const struct ext_key *hdkey, uint32_t flags)
 {
@@ -5872,6 +5900,11 @@ int wally_psbt_sign_bip32(struct wally_psbt *psbt,
 
     if ((ret = psbt_build_tx(psbt, &tx, &is_pset, false, false)) != WALLY_OK)
         return ret;
+
+    if ((ret = psbt_check_sp_scripts(psbt)) != WALLY_OK) {
+        wally_tx_free(tx);
+        return ret;
+    }
 
 #ifdef BUILD_ELEMENTS
     if (is_pset) {
@@ -5913,7 +5946,7 @@ int wally_psbt_sign_bip32(struct wally_psbt *psbt,
                                                       0, txhash, sizeof(txhash));
         /* Sign the input */
         if (ret == WALLY_OK)
-            ret = wally_psbt_sign_input_bip32(psbt, i, subindex,
+            ret = psbt_sign_input_impl(psbt, i, subindex,
                                               txhash, sizeof(txhash),
                                               &derived, flags);
         wally_clear(&derived, sizeof(derived));
@@ -6336,6 +6369,13 @@ int wally_psbt_extract(const struct wally_psbt *psbt, uint32_t flags, struct wal
 
     if ((ret = psbt_build_tx(psbt, &result, &is_pset, false, false)) != WALLY_OK)
         return ret;
+
+    /* BIP-375: Extraction also verifies silent payment scripts. Verifying does
+     * not change the PSBT */
+    if ((ret = psbt_check_sp_scripts((struct wally_psbt *)psbt)) != WALLY_OK) {
+        wally_tx_free(result);
+        return ret;
+    }
 
     for (i = 0; for_final && i < psbt->num_inputs; ++i) {
         const struct wally_psbt_input *input = &psbt->inputs[i];

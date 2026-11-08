@@ -1,6 +1,6 @@
 import json
 import unittest
-from ctypes import string_at
+from ctypes import c_ubyte, string_at
 from util import *
 
 FLAG_GRIND_R = 0x4
@@ -1178,6 +1178,143 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(compute(psbt)[0], expected_ret, (match, witness_script))
             wally_psbt_free(psbt)
         wally_tx_free(tx)
+
+    def test_silent_payment_signing(self):
+        """Test that signing verifies silent payment output scripts"""
+        # bip-0375/bip375_test_vectors.json from bitcoin/bips commit a34f044b
+        with open(root_dir + 'src/data/bip375_vectors.json', 'r') as f:
+            cases = json.load(f)
+        case = [c for c in cases['valid'] if 'single-signer using global' in c['description']][0]
+        keys = [bytes.fromhex(i['private_key']) for i in case['supplementary']['inputs']]
+        # An output paying a key the attacker holds (here, private key 1)
+        attacker = bytes.fromhex('5120' + '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798')
+
+        def clear_sp_data(psbt):
+            for p in [psbt.contents] + [psbt.contents.inputs[i] for i in range(2)]:
+                wally_map_clear(byref(p.sp_ecdh_shares))
+                wally_map_clear(byref(p.sp_dleq_proofs))
+            for i in self.get_sp_scripts(psbt):
+                self.assertEqual(wally_psbt_output_set_script(byref(psbt.contents.outputs[i]), None, 0), WALLY_OK)
+
+        def get_psbt(script=None):
+            psbt = self.parse_base64(case['psbt'])
+            self.fix_sp_prevouts(psbt)
+            for i in range(2):
+                wally_map_clear(byref(psbt.contents.inputs[i].signatures))
+            if script:
+                out = byref(psbt.contents.outputs[0])
+                self.assertEqual(wally_psbt_output_set_script(out, script, len(script)), WALLY_OK)
+            return psbt
+
+        def num_sigs(psbt):
+            return sum(psbt.contents.inputs[i].signatures.num_items for i in range(2))
+
+        def assert_no_signature(psbt):
+            """Every public call that can lead to a signature must refuse"""
+            for key in keys:
+                self.assertEqual(wally_psbt_sign(psbt, key, 32, 0), WALLY_EINVAL)
+            pub_key, pub_key_len = make_cbuffer('00' * 33)
+            self.assertEqual(wally_ec_public_key_from_private_key(keys[0], 32, pub_key, pub_key_len), WALLY_OK)
+            hdkey = pointer(ext_key())
+            ret = bip32_key_init_alloc(0x0488ADE4, 0, 0, bytes(32), 32, pub_key, pub_key_len, keys[0], 32,
+                                       None, 0, None, 0, hdkey) # Mainnet private
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(wally_psbt_sign_bip32(psbt, hdkey, 0), WALLY_EINVAL)
+            self.assertEqual(wally_psbt_sign_input_bip32(psbt, 0, 0, bytes(32), 32, hdkey, 0), WALLY_EINVAL)
+            bip32_key_free(hdkey)
+            self.assertEqual(num_sigs(psbt), 0)
+
+        def get_input_hash(psbt, tx):
+            scriptcode = b'\x76\xa9\x14' + bytes(20) + b'\x88\xac'
+            hash_out, hash_len = make_cbuffer('00' * 32)
+            return wally_psbt_get_input_signature_hash(psbt, 0, tx, scriptcode, len(scriptcode), 0, hash_out, hash_len)
+
+        # The correct script can be signed
+        psbt = get_psbt()
+        for key in keys:
+            self.assertEqual(wally_psbt_sign(psbt, key, 32, 0), WALLY_OK)
+        self.assertEqual(num_sigs(psbt), 2)
+        wally_psbt_free(psbt)
+
+        # Converting to v0 cannot switch the checks off: the conversion fails...
+        attacker_psbt = get_psbt(attacker)
+        self.assertEqual(wally_psbt_set_version(attacker_psbt, 0, 0), WALLY_EINVAL)
+        self.assertEqual(attacker_psbt.contents.version, 2)
+        assert_no_signature(attacker_psbt)
+        wally_psbt_free(attacker_psbt)
+
+        # ...and a v0 PSBT with a code signs nothing and extracts nothing, whether
+        # the code was set by a caller or came from bytes accepted by loose parsing
+        psbt = get_psbt()
+        info = bytearray(66)
+        out = byref(psbt.contents.outputs[0])
+        ret, written = wally_psbt_output_get_sp_v0_info(out, (c_ubyte * 66).from_buffer(info), 66)
+        self.assertEqual((ret, written), (WALLY_OK, 66))
+        self.assertEqual(wally_psbt_output_clear_sp_v0_info(out), WALLY_OK)
+        self.assertEqual(wally_psbt_output_set_script(out, attacker, len(attacker)), WALLY_OK)
+        self.assertEqual(wally_psbt_set_version(psbt, 0, 0), WALLY_OK)
+        self.assertEqual(wally_psbt_output_set_sp_v0_info(byref(psbt.contents.outputs[0]), bytes(info), 66), WALLY_OK)
+        assert_no_signature(psbt)
+        tx = pointer(wally_tx())
+        self.assertEqual(wally_psbt_extract(psbt, WALLY_PSBT_EXTRACT_NON_FINAL, tx), WALLY_EINVAL)
+        self.assertEqual(get_input_hash(psbt, psbt.contents.tx), WALLY_EINVAL)
+
+        # The same PSBT as raw bytes, with the code in its output map
+        ret, v0_len = wally_psbt_get_length(psbt, 0)
+        self.assertEqual(ret, WALLY_OK)
+        v0_buf, v0_buf_len = make_cbuffer('00' * v0_len)
+        ret, written = wally_psbt_to_bytes(psbt, 0, v0_buf, v0_buf_len)
+        self.assertEqual((ret, written), (WALLY_OK, v0_len))
+        wally_psbt_free(psbt)
+        v0_bytes = bytes(v0_buf)
+        if b'\x01\x09\x42' + bytes(info) not in v0_bytes:
+            # Serializing v0 drops the code, so add it to the last output's map
+            v0_bytes = v0_bytes[:-1] + b'\x01\x09\x42' + bytes(info) + b'\x00'
+        loose = pointer(wally_psbt())
+        self.assertEqual(wally_psbt_from_bytes(v0_bytes, len(v0_bytes), 0, loose), WALLY_EINVAL)
+        ret = wally_psbt_from_bytes(v0_bytes, len(v0_bytes), 0x2, loose) # WALLY_PSBT_PARSE_FLAG_LOOSE
+        self.assertEqual(ret, WALLY_OK)
+        assert_no_signature(loose)
+        tx = pointer(wally_tx())
+        self.assertEqual(wally_psbt_extract(loose, WALLY_PSBT_EXTRACT_NON_FINAL, tx), WALLY_EINVAL)
+        wally_psbt_free(loose)
+
+        # A wrong script is refused by every call that signs, and adds nothing
+        psbt = get_psbt(attacker)
+        self.assertEqual(wally_psbt_compute_sp_scripts(psbt, 0), WALLY_EINVAL)
+        assert_no_signature(psbt)
+        tx = pointer(wally_tx())
+        ret = wally_psbt_extract(psbt, WALLY_PSBT_EXTRACT_NON_FINAL, tx)
+        self.assertEqual(ret, WALLY_EINVAL) # So is building the tx to hash
+        wally_psbt_free(psbt)
+
+        # So is one with its share or proof removed, which it cannot be checked without
+        psbt = get_psbt()
+        wally_map_clear(byref(psbt.contents.sp_dleq_proofs))
+        self.assertEqual(wally_psbt_sign(psbt, keys[0], 32, 0), WALLY_EINVAL)
+        wally_psbt_free(psbt)
+
+        # A failed allocation while adding shares leaves the PSBT unchanged, and
+        # one while verifying signs nothing
+        for input_keys in [keys[0] + keys[1], keys[0] + bytes(32)]:
+            psbt = get_psbt()
+            clear_sp_data(psbt)
+            original = (wally_psbt_get_length(psbt, 0), self.to_base64(psbt))
+
+            def add_shares():
+                ret = wally_psbt_add_sp_ecdh_shares(psbt, input_keys, 64, b'\x07' * 32, 32, 0)
+                if ret != WALLY_OK:
+                    with no_malloc_failures():
+                        self.assertEqual((wally_psbt_get_length(psbt, 0), self.to_base64(psbt)), original)
+                return ret
+
+            self.assertEqual(malloc_fail_loop(add_shares), WALLY_OK)
+            wally_psbt_free(psbt)
+
+        psbt = get_psbt()
+        ret = malloc_fail_loop(lambda: wally_psbt_sign(psbt, keys[0], 32, 0))
+        self.assertEqual(ret, WALLY_OK)
+        wally_psbt_free(psbt)
 
     def test_silent_payment_bip352_vectors(self):
         """Test the BIP-352 sending vectors through the BIP-375 functions"""
