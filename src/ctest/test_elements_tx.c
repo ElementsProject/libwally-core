@@ -2,6 +2,7 @@
 
 #include <wally_crypto.h>
 #include <wally_transaction.h>
+#include <wally_transaction_members.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -235,7 +236,7 @@ static bool tx_pegin(const char *tx_hex, const char **tx_pegin_wit_hex, size_t n
 
     in = &tx->inputs[0];
 
-    ret = wally_tx_elements_input_is_pegin(in, &is_pegin);
+    ret = wally_tx_input_is_pegin(in, &is_pegin);
     if (ret != WALLY_OK || !is_pegin)
         return false;
 

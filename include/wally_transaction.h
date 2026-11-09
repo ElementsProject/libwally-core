@@ -1055,10 +1055,7 @@ WALLY_CORE_API int wally_tx_elements_input_init_alloc(
     struct wally_tx_input **output);
 
 /**
- * Determine if an input is a pegin.
- *
- * :param input: The input to check.
- * :param written: 1 if the input is a pegin, otherwise 0.
+ * Deprecated. Use `wally_tx_input_is_pegin`.
  */
 WALLY_CORE_API int wally_tx_elements_input_is_pegin(
     const struct wally_tx_input *input,

@@ -92,6 +92,8 @@ WALLY_CORE_API int wally_tx_get_num_outputs(const struct wally_tx *tx_in, size_t
 
 /* Transaction Inputs */
 
+WALLY_CORE_API int wally_tx_input_is_pegin(const struct wally_tx_input *tx_in, size_t *written);
+
 /**
  * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_TXHASH_LEN)
  */
@@ -129,6 +131,7 @@ WALLY_CORE_API int wally_tx_get_input_issuance_amount_rangeproof(const struct wa
 WALLY_CORE_API int wally_tx_get_input_issuance_amount_rangeproof_len(const struct wally_tx *tx_in, size_t index, size_t *written);
 WALLY_CORE_API int wally_tx_get_input_inflation_keys_rangeproof(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_tx_get_input_inflation_keys_rangeproof_len(const struct wally_tx *tx_in, size_t index, size_t *written);
+WALLY_CORE_API int wally_tx_is_input_pegin(const struct wally_tx *tx_in, size_t index, size_t *written);
 
 WALLY_CORE_API int wally_tx_set_input_blinding_nonce(const struct wally_tx *tx_in, size_t index, const unsigned char *blinding_nonce, size_t blinding_nonce_len);
 WALLY_CORE_API int wally_tx_set_input_entropy(const struct wally_tx *tx_in, size_t index, const unsigned char *entropy, size_t entropy_len);

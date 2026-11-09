@@ -261,8 +261,17 @@
       return tx_elements_input_init(jarg1, jarg2, jarg3, jarg4, null, null, null, null, null, null, null, null);
   }
 
+  public final static boolean tx_input_is_pegin(final Object tx_input) {
+      return _tx_input_is_pegin(tx_input) != 0;
+  }
+
+  // TODO: Remove this wrapper in favour of tx_input_is_pegin
   public final static boolean tx_elements_input_is_pegin(final Object tx_input) {
-      return _tx_elements_input_is_pegin(tx_input) != 0;
+      return tx_input_is_pegin(tx_input);
+  }
+
+  public final static boolean tx_is_input_pegin(final Object tx, final long index) {
+      return _tx_is_input_pegin(tx, index) != 0;
   }
 
   public final static byte[] tx_input_get_blinding_nonce(Object tx_input) {

@@ -88,11 +88,6 @@ static bool is_valid_elements_tx_input(const struct wally_tx_input *input)
     return is_valid_tx_input(input) && (input->features & WALLY_TX_IS_ELEMENTS);
 }
 
-static bool is_valid_elements_tx_input_pegin(const struct wally_tx_input *input)
-{
-    return is_valid_elements_tx_input(input) && (input->features & WALLY_TX_IS_PEGIN);
-}
-
 static bool is_coinbase_bytes(const unsigned char *bytes, size_t bytes_len, uint32_t index)
 {
     return index == 0xffffffff && mem_is_zero(bytes, bytes_len);
@@ -2655,16 +2650,27 @@ int wally_tx_is_elements(const struct wally_tx *tx, size_t *written)
     return WALLY_OK;
 }
 
-int wally_tx_elements_input_is_pegin(const struct wally_tx_input *input,
-                                     size_t *written)
+int wally_tx_input_is_pegin(const struct wally_tx_input *tx_in, size_t *written)
 {
     if (written)
         *written = 0;
-    if (!input || !written)
+    if (!tx_in || !written)
         return WALLY_EINVAL;
 
-    *written = is_valid_elements_tx_input_pegin(input);
+    if (is_valid_elements_tx_input(tx_in) &&
+        (tx_in->features & WALLY_TX_IS_PEGIN))
+        *written = 1;
+    else
+        *written = 0;
+
     return WALLY_OK;
+}
+
+/* TODO: Remove this deprecated call in favour of wally_tx_input_is_pegin */
+int wally_tx_elements_input_is_pegin(const struct wally_tx_input *tx_in,
+                                     size_t *written)
+{
+    return wally_tx_input_is_pegin(tx_in, written);
 }
 
 int wally_tx_is_coinbase(const struct wally_tx *tx, size_t *written)
@@ -3289,6 +3295,11 @@ TX_GET_I_ELEMENTS(input, inflation_keys_len)
 TX_GET_I_ELEMENTS(input, inflation_keys_rangeproof_len)
 TX_GET_I_ELEMENTS(input, issuance_amount_len)
 TX_GET_I_ELEMENTS(input, issuance_amount_rangeproof_len)
+
+int wally_tx_is_input_pegin(const struct wally_tx *tx, size_t index, size_t *written)
+{
+    return wally_tx_input_is_pegin(tx_get_input(tx, index), written);
+}
 #endif /* WALLY_ABI_NO_ELEMENTS */
 
 TX_GET_B(output, script)

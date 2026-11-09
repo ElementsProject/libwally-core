@@ -462,6 +462,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_tx_input_get_witness_len' \
 ,'_wally_tx_input_get_witness_num_items' \
 ,'_wally_tx_input_init_alloc' \
+,'_wally_tx_input_is_pegin' \
 ,'_wally_tx_input_set_index' \
 ,'_wally_tx_input_set_script' \
 ,'_wally_tx_input_set_sequence' \
@@ -844,6 +845,7 @@ if [ -z "$DISABLE_ELEMENTS" ]; then
 ,'_wally_tx_input_set_issuance_amount' \
 ,'_wally_tx_input_set_issuance_amount_rangeproof' \
 ,'_wally_tx_is_elements' \
+,'_wally_tx_is_input_pegin' \
 ,'_wally_tx_output_get_asset' \
 ,'_wally_tx_output_get_asset_len' \
 ,'_wally_tx_output_get_nonce' \
