@@ -608,13 +608,13 @@ static int canonicalize_impl(const char *descriptor,
             const bool is_number = *start >= '0' && *start <= '9';
             size_t lookup_len = p - start;
             if (!vars_in || lookup_len > VAR_MAX_NAME_LEN || is_number)
-                memcpy(out, start, lookup_len);
+                wally_memcpy(out, start, lookup_len);
             else {
                 /* Lookup the potential identifier */
                 const struct wally_map_item *item;
                 item = wally_map_get(vars_in, (unsigned char*)start, lookup_len);
                 lookup_len = item ? item->value_len : lookup_len;
-                memcpy(out, item ? (char *)item->value : start, lookup_len);
+                wally_memcpy(out, item ? (char *)item->value : start, lookup_len);
                 if (item && flags & WALLY_MINISCRIPT_POLICY_TEMPLATE) {
                     if (p[0] == '/' && p[1] == '*' && p[2] == '*') {
                         out += lookup_len;
@@ -751,7 +751,7 @@ static int node_derive_key(ms_ctx* ctx, const ms_node* node,
     } else if (node->kind == KIND_PRIVATE_KEY) {
         int ret;
         if (!(flags & BIP32_FLAG_KEY_PUBLIC)) {
-            memcpy(output->priv_key + 1, data, sizeof(output->priv_key) - 1);
+            wally_memcpy(output->priv_key + 1, data, sizeof(output->priv_key) - 1);
             return WALLY_OK;
         }
         ret = wally_ec_public_key_from_private_key(data, node->data_len,
@@ -762,7 +762,7 @@ static int node_derive_key(ms_ctx* ctx, const ms_node* node,
     } else if (node->kind == KIND_RAW && node->parent &&
                node->parent->kind == KIND_DESCRIPTOR_SLIP77) {
         /* SLIP77 blinding key is returned as a private key */
-        memcpy(output->priv_key + 1, data, sizeof(output->priv_key) - 1);
+        wally_memcpy(output->priv_key + 1, data, sizeof(output->priv_key) - 1);
         return WALLY_OK;
     } else if ((node->kind & KIND_BIP32) == KIND_BIP32) {
         int ret = bip32_key_from_base58_n(node->data, node->data_len, output);

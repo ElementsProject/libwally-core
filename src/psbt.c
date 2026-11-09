@@ -4864,7 +4864,7 @@ int wally_psbt_sign_input_bip32(struct wally_psbt *psbt,
 
     if (!is_taproot) {
         /* ECDSA: Use untweaked private key. Only grinding flag is relevant */
-        memcpy(signing_key, hdkey->priv_key + 1, EC_PRIVATE_KEY_LEN);
+        wally_memcpy(signing_key, hdkey->priv_key + 1, EC_PRIVATE_KEY_LEN);
         flags = EC_FLAG_ECDSA | (flags & EC_FLAG_GRIND_R);
     } else {
         /* Schnorr BIP340: Tweak the private key */

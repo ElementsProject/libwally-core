@@ -510,7 +510,7 @@ int map_keypath_get_bip32_key_from(const struct wally_map *map_in,
             if (path_len + hdkey->depth > BIP32_PATH_MAX_LEN)
                continue; /* Path too long, cannot be this key */
             if (!path_len)
-                memcpy(&derived, hdkey, sizeof(derived)); /* Use directly */
+                wally_memcpy(&derived, hdkey, sizeof(derived)); /* Use directly */
             else {
                 /* Derive the key to use */
                 ret = bip32_key_from_parent_path(hdkey, path, path_len,
@@ -533,7 +533,7 @@ int map_keypath_get_bip32_key_from(const struct wally_map *map_in,
     if (ret == WALLY_OK && idx) {
         /* Found, return the matching key and its 1-based index */
         *written = idx;
-        memcpy(output, hdkey, sizeof(*hdkey));
+        wally_memcpy(output, hdkey, sizeof(*hdkey));
     }
     wally_clear(&derived, sizeof(derived));
     return ret;
@@ -570,7 +570,7 @@ int wally_map_keypath_get_bip32_key_from_alloc(const struct wally_map *map_in,
         if (!(*output = wally_calloc(sizeof(struct ext_key))))
             ret = WALLY_ENOMEM;
         else
-            memcpy(*output, &found, sizeof(found));
+            wally_memcpy(*output, &found, sizeof(found));
     }
     wally_clear(&found, sizeof(found));
     return ret;
