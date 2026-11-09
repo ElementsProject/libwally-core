@@ -3753,7 +3753,9 @@ int wally_descriptor_parse(const char *miniscript,
             ctx->features |= WALLY_MS_IS_ELEMENTS; /* Treat as an elements descriptor */
         }
 
-        if (max_depth && get_max_depth(ctx->src, ctx->src_len) > max_depth)
+        if (!max_depth || max_depth > 195)
+            max_depth = 195; /* [ct] + [tr] + 128 max tree depth + 64 script */
+        if (get_max_depth(ctx->src, ctx->src_len) > max_depth)
             ret = WALLY_EINVAL;
         else
             ret = analyze_miniscript(ctx, ctx->src, ctx->src_len, kind,
