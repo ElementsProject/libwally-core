@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, windows-2022, macos-14]
+        os: [ubuntu-22.04, windows-2022, macos-15]
     env:
       CIBW_BEFORE_ALL_LINUX: ./tools/install_swig.sh
       CIBW_BEFORE_ALL_MACOS: brew install gnu-sed swig automake libtool
