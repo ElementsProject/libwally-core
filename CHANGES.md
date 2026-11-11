@@ -1,5 +1,23 @@
 # Changes
 
+## Version 1.6.1
+
+### Added
+- tx: Add tx_input_is_pegin/tx_is_input_pegin to determine pegin inputs.
+- tx: Add tx_input_is_issuance/tx_is_input_issuance to determine issuance inputs.
+- build: Expose minimal builds to cmake.
+
+### Changed
+- build: Update github macos image to v15.
+- descriptor: Cap the max parsing depth if the caller gave no limit.
+
+### Fixed
+- psbt: Fix finalizing large P2SH and bare multisig inputs.
+- psbt: Fail when parsing v2 PSBTs with a global tx in all circumstances.
+- psbt: Fail when asked to upgrade a v0 PSBT with no global tx present.
+- pset: Fix missing genesis blockhash copy when cloning or combining.
+- mem: Use wally_memcpy for more secret/potentially secret data.
+
 ## Version 1.6.0
 
 This release contains important bug and security fixes; users are advised
