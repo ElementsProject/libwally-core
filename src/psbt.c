@@ -3962,6 +3962,9 @@ static int psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src,
 #ifdef BUILD_ELEMENTS
     if (ret == WALLY_OK && is_pset) {
         psbt->pset_modifiable_flags |= src->pset_modifiable_flags;
+        if (mem_is_zero(psbt->genesis_blockhash, sizeof(psbt->genesis_blockhash)))
+            memcpy(psbt->genesis_blockhash, src->genesis_blockhash,
+                   sizeof(psbt->genesis_blockhash));
         ret = wally_map_combine(&psbt->global_scalars, &src->global_scalars);
     }
 #endif /* BUILD_ELEMENTS */
