@@ -61,6 +61,21 @@ class PSBTTests(unittest.TestCase):
         self.assertEqual(parse(global_tx + version), WALLY_EINVAL)
         self.assertEqual(parse(version + global_tx), WALLY_EINVAL)
 
+    def test_set_version_without_tx(self):
+        """A v0 PSBT with no global tx cannot be upgraded to v2"""
+        FLAG_LOOSE = 0x2 # WALLY_PSBT_PARSE_FLAG_LOOSE
+        empty = pointer(wally_psbt())
+        self.assertEqual(wally_psbt_init_alloc(0, 0, 0, 0, 0, empty), WALLY_OK)
+        buf, buf_len = make_cbuffer('70736274ff00')
+        loose = pointer(wally_psbt())
+        self.assertEqual(wally_psbt_from_bytes(buf, buf_len, FLAG_LOOSE, loose),
+                         WALLY_OK)
+        for psbt in [empty, loose]:
+            self.assertEqual(wally_psbt_set_version(psbt, 0, 0), WALLY_OK)
+            self.assertEqual(wally_psbt_set_version(psbt, 0, 2), WALLY_EINVAL)
+            self.assertEqual(wally_psbt_get_version(psbt), (WALLY_OK, 0))
+            wally_psbt_free(psbt)
+
     def test_valid(self):
         """Test deserializing and roundtripping valid PSBTs"""
         buf, buf_len = make_cbuffer('00' * 4096)

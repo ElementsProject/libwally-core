@@ -4322,6 +4322,9 @@ int wally_psbt_set_version(struct wally_psbt *psbt,
     if (!psbt_is_valid(psbt) || flags || (version != PSBT_0 && version != PSBT_2))
         return WALLY_EINVAL;
 
+    if (psbt->version == PSBT_0 && version == PSBT_2 && !psbt->tx)
+        return WALLY_EINVAL; /* Nothing to upgrade from */
+
     if (psbt->version == version)
         return WALLY_OK; /* No-op */
 
