@@ -695,6 +695,7 @@ export function tx_input_get_txhash(tx_input_in: Ref_wally_tx_input): Buffer;
 export function tx_input_get_witness_len(tx_input_in: Ref_wally_tx_input, index: number): number;
 export function tx_input_get_witness_num_items(tx_input_in: Ref_wally_tx_input): number;
 export function tx_input_init(txhash: Buffer|Uint8Array|null, utxo_index: number, sequence: number, script: Buffer|Uint8Array|null, witness: Ref_wally_tx_witness_stack): Ref_wally_tx_input;
+export function tx_input_is_issuance(tx_in: Ref_wally_tx_input): number;
 export function tx_input_is_pegin(tx_in: Ref_wally_tx_input): number;
 export function tx_input_set_blinding_nonce(tx_input_in: Ref_wally_tx_input, blinding_nonce: Buffer|Uint8Array|null): void;
 export function tx_input_set_entropy(tx_input_in: Ref_wally_tx_input, entropy: Buffer|Uint8Array|null): void;
@@ -709,6 +710,7 @@ export function tx_input_set_txhash(tx_input: Ref_wally_tx_input, txhash: Buffer
 export function tx_input_set_witness(tx_input: Ref_wally_tx_input, witness: Ref_wally_tx_witness_stack): void;
 export function tx_is_coinbase(tx: Ref_wally_tx): number;
 export function tx_is_elements(tx: Ref_wally_tx): number;
+export function tx_is_input_issuance(tx_in: Ref_wally_tx, index: number): number;
 export function tx_is_input_pegin(tx_in: Ref_wally_tx, index: number): number;
 export function tx_output_clone(tx_output_in: Ref_wally_tx_output): Ref_wally_tx_output;
 export function tx_output_clone_noalloc(tx_output_in: Ref_wally_tx_output, output: Ref_wally_tx_output): void;

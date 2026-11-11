@@ -1029,6 +1029,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_uint64(wally_tx_confidential_value_to_satoshi);
 %returns_struct(wally_tx_elements_input_init_alloc, wally_tx_input);
 %rename("tx_elements_input_init") wally_tx_elements_input_init_alloc;
+%rename("_tx_input_is_issuance") wally_tx_input_is_issuance;
+%returns_size_t(_tx_elements_input_is_issuance);
 %rename("_tx_input_is_pegin") wally_tx_input_is_pegin;
 %returns_size_t(_tx_elements_input_is_pegin);
 %returns_void__(wally_tx_elements_input_issuance_set);
@@ -1062,6 +1064,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %rename("_tx_get_input_inflation_keys_rangeproof") wally_tx_get_input_inflation_keys_rangeproof;
 %returns_size_t(_tx_get_input_inflation_keys_rangeproof);
 %returns_size_t(wally_tx_get_input_inflation_keys_rangeproof_len);
+%rename("_tx_is_input_issuance") wally_tx_is_input_issuance;
+%returns_size_t(_tx_is_input_issuance);
 %rename("_tx_is_input_pegin") wally_tx_is_input_pegin;
 %returns_size_t(_tx_is_input_pegin);
 %rename("_tx_get_input_script") wally_tx_get_input_script;

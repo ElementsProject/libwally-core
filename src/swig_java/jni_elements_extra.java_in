@@ -261,13 +261,21 @@
       return tx_elements_input_init(jarg1, jarg2, jarg3, jarg4, null, null, null, null, null, null, null, null);
   }
 
+  public final static boolean tx_input_is_issuance(final Object tx_input) {
+      return _tx_input_is_issuance(tx_input) != 0;
+  }
+
   public final static boolean tx_input_is_pegin(final Object tx_input) {
       return _tx_input_is_pegin(tx_input) != 0;
   }
 
   // TODO: Remove this wrapper in favour of tx_input_is_pegin
   public final static boolean tx_elements_input_is_pegin(final Object tx_input) {
-      return tx_input_is_pegin(tx_input);
+      return _tx_input_is_pegin(tx_input) != 0;
+  }
+
+  public final static boolean tx_is_input_issuance(final Object tx, final long index) {
+      return _tx_is_input_issuance(tx, index) != 0;
   }
 
   public final static boolean tx_is_input_pegin(final Object tx, final long index) {

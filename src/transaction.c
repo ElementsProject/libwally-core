@@ -2650,15 +2650,15 @@ int wally_tx_is_elements(const struct wally_tx *tx, size_t *written)
     return WALLY_OK;
 }
 
-int wally_tx_input_is_pegin(const struct wally_tx_input *tx_in, size_t *written)
+static int elements_input_get_feature(const struct wally_tx_input *tx_in,
+                                      size_t *written, uint32_t feature)
 {
     if (written)
         *written = 0;
     if (!tx_in || !written)
         return WALLY_EINVAL;
 
-    if (is_valid_elements_tx_input(tx_in) &&
-        (tx_in->features & WALLY_TX_IS_PEGIN))
+    if (is_valid_elements_tx_input(tx_in) && (tx_in->features & feature))
         *written = 1;
     else
         *written = 0;
@@ -2666,11 +2666,21 @@ int wally_tx_input_is_pegin(const struct wally_tx_input *tx_in, size_t *written)
     return WALLY_OK;
 }
 
+int wally_tx_input_is_issuance(const struct wally_tx_input *tx_in, size_t *written)
+{
+    return elements_input_get_feature(tx_in, written, WALLY_TX_IS_ISSUANCE);
+}
+
+int wally_tx_input_is_pegin(const struct wally_tx_input *tx_in, size_t *written)
+{
+    return elements_input_get_feature(tx_in, written, WALLY_TX_IS_PEGIN);
+}
+
 /* TODO: Remove this deprecated call in favour of wally_tx_input_is_pegin */
 int wally_tx_elements_input_is_pegin(const struct wally_tx_input *tx_in,
                                      size_t *written)
 {
-    return wally_tx_input_is_pegin(tx_in, written);
+    return elements_input_get_feature(tx_in, written, WALLY_TX_IS_PEGIN);
 }
 
 int wally_tx_is_coinbase(const struct wally_tx *tx, size_t *written)
@@ -3295,6 +3305,11 @@ TX_GET_I_ELEMENTS(input, inflation_keys_len)
 TX_GET_I_ELEMENTS(input, inflation_keys_rangeproof_len)
 TX_GET_I_ELEMENTS(input, issuance_amount_len)
 TX_GET_I_ELEMENTS(input, issuance_amount_rangeproof_len)
+
+int wally_tx_is_input_issuance(const struct wally_tx *tx, size_t index, size_t *written)
+{
+    return wally_tx_input_is_issuance(tx_get_input(tx, index), written);
+}
 
 int wally_tx_is_input_pegin(const struct wally_tx *tx, size_t index, size_t *written)
 {
