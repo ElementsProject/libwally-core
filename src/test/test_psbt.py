@@ -99,6 +99,13 @@ class PSBTTests(unittest.TestCase):
                     post_hex = wally_tx_to_hex(tx, USE_WITNESS)[1]
                     self.assertEqual(pre_hex, post_hex)
 
+                    if new_version == 0:
+                        # Upgrading to v2 fails if no global tx is present
+                        wally_tx_free(psbt.contents.tx)
+                        psbt.contents.tx = None
+                        self.assertEqual(wally_psbt_set_version(psbt, 0, 2),
+                                         WALLY_EINVAL)
+
             wally_psbt_free(psbt)
 
     def test_global_tx_malloc_fail(self):

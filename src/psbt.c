@@ -4325,6 +4325,9 @@ int wally_psbt_set_version(struct wally_psbt *psbt,
     if (psbt->version == version)
         return WALLY_OK; /* No-op */
 
+    if (psbt->version == PSBT_0 && !psbt->tx)
+        return WALLY_EINVAL; /* No global tx to upgrade from */
+
     if (wally_psbt_is_elements(psbt, &is_pset) != WALLY_OK || is_pset)
         return WALLY_EINVAL; /* PSET only supports v2 */
 
