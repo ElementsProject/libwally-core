@@ -76,6 +76,38 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(wally_psbt_get_version(psbt), (WALLY_OK, 0))
             wally_psbt_free(psbt)
 
+    def test_pset_genesis_blockhash(self):
+        """Cloning or combining a PSET keeps its genesis blockhash"""
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Requires an elements build')
+        genesis, genesis_len = make_cbuffer('77' * 32)
+        out, out_len = make_cbuffer('00' * 32)
+
+        def get_genesis(psbt):
+            ret, written = wally_psbt_get_global_genesis_blockhash(psbt, out, out_len)
+            self.assertEqual(ret, WALLY_OK)
+            return bytes(out[:written])
+
+        src, empty, clone = [pointer(wally_psbt()) for _ in range(3)]
+        for psbt in [src, empty]:
+            self.assertEqual(wally_psbt_init_alloc(2, 0, 0, 0, INIT_PSET, psbt), WALLY_OK)
+        self.assertEqual(wally_psbt_set_global_genesis_blockhash(src, genesis, genesis_len),
+                         WALLY_OK)
+        self.assertEqual(wally_psbt_clone_alloc(src, 0, clone), WALLY_OK)
+        self.assertEqual(get_genesis(clone), bytes(genesis))
+        self.assertEqual(self.to_base64(clone), self.to_base64(src))
+        # Combining fills in a missing hash and keeps an existing one
+        self.assertEqual(get_genesis(empty), b'')
+        self.assertEqual(wally_psbt_combine(empty, src), WALLY_OK)
+        self.assertEqual(get_genesis(empty), bytes(genesis))
+        other, other_len = make_cbuffer('88' * 32)
+        self.assertEqual(wally_psbt_set_global_genesis_blockhash(src, other, other_len),
+                         WALLY_OK)
+        self.assertEqual(wally_psbt_combine(empty, src), WALLY_OK)
+        self.assertEqual(get_genesis(empty), bytes(genesis))
+        for psbt in [src, empty, clone]:
+            wally_psbt_free(psbt)
+
     def test_valid(self):
         """Test deserializing and roundtripping valid PSBTs"""
         buf, buf_len = make_cbuffer('00' * 4096)
