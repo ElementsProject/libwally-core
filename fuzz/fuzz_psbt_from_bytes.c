@@ -7,6 +7,10 @@ static void test_fuzz_psbt_from_bytes(const uint8_t *data, size_t size, uint32_t
 
     ret = wally_psbt_from_bytes(data, size, flags, &psbt);
     if (psbt) {
+        /* Finalization decodes any witness/leaf scripts through the
+         * script-to-miniscript decoder and satisfier; exercise it on
+         * whatever inputs the parsed PSBT carries */
+        wally_psbt_finalize(psbt, 0);
         if (ret == WALLY_OK && flags == WALLY_PSBT_PARSE_FLAG_STRICT) {
             /* Parsing succeeded: try to serialize it back to bytes */
             size_t len = 0, written = 0;

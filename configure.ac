@@ -349,6 +349,7 @@ AM_COND_IF([LINK_SYSTEM_SECP256K1], [
     ])
     AM_COND_IF([BUILD_STANDARD_SECP], [], [
         CHECK_MODULE([ecdsa-s2c], [secp256k1_ecdsa_s2c_sign])
+        CHECK_MODULE([musig], [secp256k1_musig_pubkey_agg])
     ])
     AS_IF([test -n "${missing_modules}"], [
         AC_MSG_ERROR([system-installed $with_system_secp256k1 does not support these required modules:${missing_modules}])
@@ -511,7 +512,7 @@ export LD
 export LDFLAGS
 
 AM_COND_IF([LINK_SYSTEM_SECP256K1], [], [
-	AX_SUBDIRS_CONFIGURE([src/secp256k1], [[--disable-shared], [--enable-static], [--with-pic], [--enable-experimental], [--enable-module-ecdh], [--enable-module-recovery], [--enable-module-extrakeys], [--enable-module-schnorrsig], [--enable-module-generator], [--enable-module-rangeproof], [--enable-module-surjectionproof], [--enable-module-whitelist], [--enable-module-ecdsa-s2c], [$secp256k1_test_opt], [--enable-exhaustive-tests=no], [--enable-benchmark=no], [--disable-dependency-tracking], [$secp_asm]])
+	AX_SUBDIRS_CONFIGURE([src/secp256k1], [[--disable-shared], [--enable-static], [--with-pic], [--enable-experimental], [--enable-module-ecdh], [--enable-module-recovery], [--enable-module-extrakeys], [--enable-module-schnorrsig], [--enable-module-musig], [--enable-module-generator], [--enable-module-rangeproof], [--enable-module-surjectionproof], [--enable-module-whitelist], [--enable-module-ecdsa-s2c], [$secp256k1_test_opt], [--enable-exhaustive-tests=no], [--enable-benchmark=no], [--disable-dependency-tracking], [$secp_asm]])
 ])
 
 AC_OUTPUT

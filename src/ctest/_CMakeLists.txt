@@ -22,6 +22,16 @@ target_include_directories(test_descriptor PRIVATE ${CMAKE_BINARY_DIR})
 target_link_libraries(test_descriptor PRIVATE wallycore)
 add_test(test_descriptor test_descriptor)
 
+add_executable(test_miniscript_decode test_miniscript_decode.c ../miniscript_decode.c ../script_iter.c)
+target_include_directories(test_miniscript_decode PRIVATE ${CMAKE_BINARY_DIR} $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src> $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/secp256k1/include>)
+target_link_libraries(test_miniscript_decode PRIVATE wallycore)
+add_test(test_miniscript_decode test_miniscript_decode)
+
+add_executable(test_miniscript_satisfy test_miniscript_satisfy.c ../miniscript_satisfy.c ../miniscript_decode.c ../script_iter.c)
+target_include_directories(test_miniscript_satisfy PRIVATE ${CMAKE_BINARY_DIR} $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src> $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/secp256k1/include>)
+target_link_libraries(test_miniscript_satisfy PRIVATE wallycore)
+add_test(test_miniscript_satisfy test_miniscript_satisfy)
+
 add_executable(test_elements_tx test_elements_tx.c)
 target_include_directories(test_elements_tx PRIVATE ${CMAKE_BINARY_DIR})
 target_link_libraries(test_elements_tx PRIVATE wallycore)
@@ -42,6 +52,11 @@ add_test(test_psbt_limits test_psbt_limits)
 #target_include_directories(test_script PRIVATE ${CMAKE_BINARY_DIR} $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>)
 #target_link_libraries(test_script PRIVATE wallycore)
 #add_test(test_script test_script)
+
+add_executable(test_script_iter test_script_iter.c ../script_iter.c)
+target_include_directories(test_script_iter PRIVATE ${CMAKE_BINARY_DIR} $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>)
+target_link_libraries(test_script_iter PRIVATE wallycore)
+add_test(test_script_iter test_script_iter)
 
 add_executable(test_tx test_tx.c)
 target_include_directories(test_tx PRIVATE ${CMAKE_BINARY_DIR})

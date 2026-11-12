@@ -37,4 +37,11 @@ int bip341_tapleaf_hash(unsigned char leaf_version,
                         const unsigned char *script, size_t script_len,
                         bool is_elements, unsigned char *bytes_out, size_t len) WARN_UNUSED_RESULT;
 
+/* Compute the BIP-341 TapTweak scalar t = tagged_hash(TapTweak, pubkey_xonly || merkle_root).
+ * pub_key may be x-only (32) or compressed (33); merkle_root may be NULL (key-path only).
+ * flags may include EC_FLAG_ELEMENTS to select the Elements tag. Defined in sign.c. */
+WALLY_INTERNAL_API int get_bip341_tweak(const unsigned char *pub_key, size_t pub_key_len,
+                                        const unsigned char *merkle_root, uint32_t flags,
+                                        unsigned char *tweak, size_t tweak_len) WARN_UNUSED_RESULT;
+
 #endif /* LIBWALLY_CORE_TX_IO_H */
