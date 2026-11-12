@@ -881,6 +881,77 @@ WALLY_CORE_API int wally_ecdh(
     unsigned char *bytes_out,
     size_t len);
 
+/** The length of a BIP-374 DLEQ proof */
+#define WALLY_DLEQ_PROOF_LEN 64
+
+/**
+ * Generate a BIP-374 proof that ``a*G`` and ``a*B`` share the same secret ``a``.
+ *
+ * :param priv_key: The secret ``a``.
+ * :param priv_key_len: The length of ``priv_key`` in bytes. Must be `EC_PRIVATE_KEY_LEN`.
+ * :param pub_key: The public key ``B``.
+ * :param pub_key_len: The length of ``pub_key`` in bytes. Must be `EC_PUBLIC_KEY_LEN`.
+ * :param aux_rand: Fresh random data, as for BIP-340 signing.
+ * :param aux_rand_len: The length of ``aux_rand`` in bytes. Must be 32.
+ * :param generator: The generator ``G``, or NULL for the secp256k1 generator.
+ * :param generator_len: The length of ``generator`` in bytes. Must be
+ *|    `EC_PUBLIC_KEY_LEN`, or 0 if ``generator`` is NULL.
+ * :param msg: An optional message the proof commits to, or NULL.
+ * :param msg_len: The length of ``msg`` in bytes. Must be 32, or 0 if ``msg`` is NULL.
+ * :param flags: For future use. Must be 0.
+ * :param bytes_out: Destination for the proof.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_DLEQ_PROOF_LEN)
+ */
+WALLY_CORE_API int wally_dleq_proof_generate(
+    const unsigned char *priv_key,
+    size_t priv_key_len,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *aux_rand,
+    size_t aux_rand_len,
+    const unsigned char *generator,
+    size_t generator_len,
+    const unsigned char *msg,
+    size_t msg_len,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Verify a BIP-374 proof that ``A = a*G`` and ``C = a*B`` for the same ``a``.
+ *
+ * :param pub_key_a: The public key ``A``.
+ * :param pub_key_a_len: The length of ``pub_key_a`` in bytes. Must be `EC_PUBLIC_KEY_LEN`.
+ * :param pub_key_b: The public key ``B``.
+ * :param pub_key_b_len: The length of ``pub_key_b`` in bytes. Must be `EC_PUBLIC_KEY_LEN`.
+ * :param pub_key_c: The public key ``C``.
+ * :param pub_key_c_len: The length of ``pub_key_c`` in bytes. Must be `EC_PUBLIC_KEY_LEN`.
+ * :param proof: The proof to verify.
+ * :param proof_len: The length of ``proof`` in bytes. Must be `WALLY_DLEQ_PROOF_LEN`.
+ * :param generator: The generator ``G``, or NULL for the secp256k1 generator.
+ * :param generator_len: The length of ``generator`` in bytes. Must be
+ *|    `EC_PUBLIC_KEY_LEN`, or 0 if ``generator`` is NULL.
+ * :param msg: The message the proof commits to, or NULL if none.
+ * :param msg_len: The length of ``msg`` in bytes. Must be 32, or 0 if ``msg`` is NULL.
+ * :param flags: For future use. Must be 0.
+ *
+ * .. note:: Returns `WALLY_EINVAL` if the proof does not verify.
+ */
+WALLY_CORE_API int wally_dleq_proof_verify(
+    const unsigned char *pub_key_a,
+    size_t pub_key_a_len,
+    const unsigned char *pub_key_b,
+    size_t pub_key_b_len,
+    const unsigned char *pub_key_c,
+    size_t pub_key_c_len,
+    const unsigned char *proof,
+    size_t proof_len,
+    const unsigned char *generator,
+    size_t generator_len,
+    const unsigned char *msg,
+    size_t msg_len,
+    uint32_t flags);
+
 /** The length of a data committed using sign-to-contract (s2c) */
 #define WALLY_S2C_DATA_LEN 32
 /** The length of a sign-to-contract (s2c) opening */

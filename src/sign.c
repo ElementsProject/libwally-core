@@ -1,6 +1,7 @@
 #include "internal.h"
 #include <include/wally_crypto.h>
 #include "script_int.h"
+#include <secp256k1_ecdh.h>
 #include <secp256k1_schnorrsig.h>
 #include "ccan/ccan/build_assert/build_assert.h"
 
@@ -743,6 +744,265 @@ int wally_format_bitcoin_message(const unsigned char *bytes, size_t bytes_len,
         }
     }
     return WALLY_OK;
+}
+
+/* BIP-374 DLEQ proofs */
+#define DLEQ_TAG_AUX "BIP0374/aux"
+#define DLEQ_TAG_NONCE "BIP0374/nonce"
+#define DLEQ_TAG_CHALLENGE "BIP0374/challenge"
+#define DLEQ_HASH_MAX_LEN (6 * EC_PUBLIC_KEY_LEN + SHA256_LEN)
+
+/* The secp256k1 group order n */
+static const unsigned char DLEQ_N[EC_SCALAR_LEN] = {
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe,
+    0xba, 0xae, 0xdc, 0xe6, 0xaf, 0x48, 0xa0, 0x3b,
+    0xbf, 0xd2, 0x5e, 0x8c, 0xd0, 0x36, 0x41, 0x41
+};
+
+/* The secp256k1 generator G, compressed */
+static const unsigned char DLEQ_G[EC_PUBLIC_KEY_LEN] = {
+    0x02, 0x79, 0xbe, 0x66, 0x7e, 0xf9, 0xdc, 0xbb,
+    0xac, 0x55, 0xa0, 0x62, 0x95, 0xce, 0x87, 0x0b,
+    0x07, 0x02, 0x9b, 0xfc, 0xdb, 0x2d, 0xce, 0x28,
+    0xd9, 0x59, 0xf2, 0x81, 0x5b, 0x16, 0xf8, 0x17,
+    0x98
+};
+
+/* Reduce a 32 byte big endian integer modulo n, in constant time.
+ * Any 32 byte value is less than 2n, so one subtraction is enough. */
+static void dleq_scalar_reduce(unsigned char *s)
+{
+    unsigned char t[EC_SCALAR_LEN];
+    unsigned int v, borrow = 0, mask;
+    int i;
+
+    for (i = EC_SCALAR_LEN - 1; i >= 0; --i) {
+        v = (unsigned int)s[i] - DLEQ_N[i] - borrow;
+        t[i] = v & 0xff;
+        borrow = (v >> 8) & 1;
+    }
+    mask = borrow - 1; /* All ones if s >= n, so take s - n */
+    for (i = 0; i < EC_SCALAR_LEN; ++i)
+        s[i] = (unsigned char)((s[i] & ~mask) | (t[i] & mask));
+    wally_clear(t, sizeof(t));
+}
+
+/* Multiply a point by a public scalar (variable time) */
+static bool dleq_point_mul(const secp256k1_pubkey *point, const unsigned char *scalar,
+                           secp256k1_pubkey *result)
+{
+    memcpy(result, point, sizeof(*result));
+    return secp256k1_ec_pubkey_tweak_mul(secp_ctx(), result, scalar) != 0;
+}
+
+/* ECDH "hash" that returns the compressed shared point itself */
+static int dleq_ecdh_point(unsigned char *output, const unsigned char *x32,
+                           const unsigned char *y32, void *data)
+{
+    (void)data;
+    output[0] = 0x02 | (y32[31] & 1);
+    memcpy(output + 1, x32, 32);
+    return 1;
+}
+
+/* Multiply a point by a secret scalar in constant time */
+static bool dleq_point_mul_secret(const secp256k1_pubkey *point, const unsigned char *scalar,
+                                  secp256k1_pubkey *result)
+{
+    unsigned char buf[EC_PUBLIC_KEY_LEN];
+    bool ok = secp256k1_ecdh(secp_ctx(), buf, point, scalar, dleq_ecdh_point, NULL) &&
+              pubkey_parse(result, buf, sizeof(buf));
+    wally_clear(buf, sizeof(buf));
+    return ok;
+}
+
+bool ec_public_key_mul_secret(const unsigned char *pub_key, const unsigned char *priv_key,
+                              unsigned char *bytes_out)
+{
+    secp256k1_pubkey point;
+    bool ok = secp_ctx() && pubkey_parse(&point, pub_key, EC_PUBLIC_KEY_LEN) &&
+              secp256k1_ecdh(secp_ctx(), bytes_out, &point, priv_key, dleq_ecdh_point, NULL);
+    wally_clear(&point, sizeof(point));
+    return ok;
+}
+
+/* p = s*X - e*Y */
+static bool dleq_point_sub_mul(const unsigned char *s, const secp256k1_pubkey *x,
+                               const unsigned char *e, const secp256k1_pubkey *y,
+                               secp256k1_pubkey *p)
+{
+    secp256k1_pubkey sx, ey;
+    const secp256k1_pubkey *points[2] = { &sx, &ey };
+
+    return dleq_point_mul(x, s, &sx) && dleq_point_mul(y, e, &ey) &&
+           pubkey_negate(&ey) && pubkey_combine(p, points, 2);
+}
+
+/* Append the compressed encoding of a point */
+static bool dleq_push_point(unsigned char **cursor, const secp256k1_pubkey *p)
+{
+    size_t len = EC_PUBLIC_KEY_LEN;
+    bool ok = pubkey_serialize(*cursor, &len, p, PUBKEY_COMPRESSED) &&
+              len == EC_PUBLIC_KEY_LEN;
+    *cursor += EC_PUBLIC_KEY_LEN;
+    return ok;
+}
+
+/* e = hash_challenge(A || B || C || G || R1 || R2 || m) mod n */
+static bool dleq_challenge(const secp256k1_pubkey *points[6],
+                           const unsigned char *msg, size_t msg_len,
+                           unsigned char *e)
+{
+    unsigned char buf[DLEQ_HASH_MAX_LEN], *p = buf;
+    bool ok = true;
+    size_t i;
+
+    for (i = 0; i < 6; ++i)
+        ok &= dleq_push_point(&p, points[i]);
+    if (msg_len) {
+        memcpy(p, msg, msg_len);
+        p += msg_len;
+    }
+    ok = ok && wally_bip340_tagged_hash(buf, p - buf, DLEQ_TAG_CHALLENGE,
+                                        e, SHA256_LEN) == WALLY_OK;
+    if (ok)
+        dleq_scalar_reduce(e);
+    wally_clear(buf, sizeof(buf));
+    return ok;
+}
+
+static bool dleq_generator_parse(secp256k1_pubkey *g,
+                                 const unsigned char *generator, size_t generator_len)
+{
+    if (!generator)
+        return !generator_len && pubkey_parse(g, DLEQ_G, sizeof(DLEQ_G));
+    return generator_len == EC_PUBLIC_KEY_LEN &&
+           pubkey_parse(g, generator, generator_len);
+}
+
+int wally_dleq_proof_verify(const unsigned char *pub_key_a, size_t pub_key_a_len,
+                            const unsigned char *pub_key_b, size_t pub_key_b_len,
+                            const unsigned char *pub_key_c, size_t pub_key_c_len,
+                            const unsigned char *proof, size_t proof_len,
+                            const unsigned char *generator, size_t generator_len,
+                            const unsigned char *msg, size_t msg_len,
+                            uint32_t flags)
+{
+    secp256k1_pubkey a, b, c, g, r1, r2;
+    const secp256k1_pubkey *points[6] = { &a, &b, &c, &g, &r1, &r2 };
+    unsigned char e[EC_SCALAR_LEN];
+    bool ok;
+
+    if (!pub_key_a || pub_key_a_len != EC_PUBLIC_KEY_LEN ||
+        !pub_key_b || pub_key_b_len != EC_PUBLIC_KEY_LEN ||
+        !pub_key_c || pub_key_c_len != EC_PUBLIC_KEY_LEN ||
+        !proof || proof_len != WALLY_DLEQ_PROOF_LEN ||
+        (msg ? msg_len != SHA256_LEN : msg_len != 0) || flags)
+        return WALLY_EINVAL;
+
+    if (!secp_ctx())
+        return WALLY_ENOMEM;
+
+    /* Zero e or s can only come from a hash collision with zero, so rejecting
+     * them alongside values of n or more does not lose valid proofs */
+    ok = pubkey_parse(&a, pub_key_a, pub_key_a_len) &&
+         pubkey_parse(&b, pub_key_b, pub_key_b_len) &&
+         pubkey_parse(&c, pub_key_c, pub_key_c_len) &&
+         dleq_generator_parse(&g, generator, generator_len) &&
+         seckey_verify(proof) && seckey_verify(proof + EC_SCALAR_LEN) &&
+         dleq_point_sub_mul(proof + EC_SCALAR_LEN, &g, proof, &a, &r1) &&
+         dleq_point_sub_mul(proof + EC_SCALAR_LEN, &b, proof, &c, &r2) &&
+         dleq_challenge(points, msg, msg_len, e) &&
+         !memcmp(e, proof, EC_SCALAR_LEN);
+
+    wally_clear(e, sizeof(e));
+    return ok ? WALLY_OK : WALLY_EINVAL;
+}
+
+int wally_dleq_proof_generate(const unsigned char *priv_key, size_t priv_key_len,
+                              const unsigned char *pub_key, size_t pub_key_len,
+                              const unsigned char *aux_rand, size_t aux_rand_len,
+                              const unsigned char *generator, size_t generator_len,
+                              const unsigned char *msg, size_t msg_len,
+                              uint32_t flags,
+                              unsigned char *bytes_out, size_t len)
+{
+    secp256k1_pubkey a, b, c, g, r1, r2;
+    const secp256k1_pubkey *points[6] = { &a, &b, &c, &g, &r1, &r2 };
+    unsigned char a_bytes[EC_PUBLIC_KEY_LEN], c_bytes[EC_PUBLIC_KEY_LEN];
+    unsigned char buf[SHA256_LEN + 2 * EC_PUBLIC_KEY_LEN + SHA256_LEN], *p = buf;
+    unsigned char k[EC_SCALAR_LEN];
+    size_t i;
+    bool ok;
+
+    if (!priv_key || priv_key_len != EC_PRIVATE_KEY_LEN ||
+        !pub_key || pub_key_len != EC_PUBLIC_KEY_LEN ||
+        !aux_rand || aux_rand_len != SHA256_LEN ||
+        (msg ? msg_len != SHA256_LEN : msg_len != 0) || flags ||
+        !bytes_out || len != WALLY_DLEQ_PROOF_LEN)
+        return WALLY_EINVAL;
+
+    if (!secp_ctx())
+        return WALLY_ENOMEM;
+
+    if (!seckey_verify(priv_key) || !pubkey_parse(&b, pub_key, pub_key_len) ||
+        !dleq_generator_parse(&g, generator, generator_len))
+        return WALLY_EINVAL;
+
+    /* A = a*G, C = a*B */
+    ok = dleq_point_mul_secret(&g, priv_key, &a) &&
+         dleq_point_mul_secret(&b, priv_key, &c);
+    if (ok) {
+        p = a_bytes;
+        ok = dleq_push_point(&p, &a);
+        p = c_bytes;
+        ok = ok && dleq_push_point(&p, &c);
+    }
+
+    /* t = a xor hash_aux(r), k = hash_nonce(t || A || C || m) mod n */
+    p = buf;
+    ok = ok && wally_bip340_tagged_hash(aux_rand, aux_rand_len, DLEQ_TAG_AUX,
+                                        p, SHA256_LEN) == WALLY_OK;
+    for (i = 0; ok && i < SHA256_LEN; ++i)
+        p[i] ^= priv_key[i];
+    p += SHA256_LEN;
+    memcpy(p, a_bytes, EC_PUBLIC_KEY_LEN);
+    p += EC_PUBLIC_KEY_LEN;
+    memcpy(p, c_bytes, EC_PUBLIC_KEY_LEN);
+    p += EC_PUBLIC_KEY_LEN;
+    if (msg_len) {
+        memcpy(p, msg, msg_len);
+        p += msg_len;
+    }
+    ok = ok && wally_bip340_tagged_hash(buf, p - buf, DLEQ_TAG_NONCE,
+                                        k, sizeof(k)) == WALLY_OK;
+    if (ok)
+        dleq_scalar_reduce(k);
+
+    /* R1 = k*G, R2 = k*B; fails if k is zero */
+    ok = ok && seckey_verify(k) &&
+         dleq_point_mul_secret(&g, k, &r1) && dleq_point_mul_secret(&b, k, &r2);
+
+    /* proof = e || s, where s = k + e*a mod n */
+    ok = ok && dleq_challenge(points, msg, msg_len, bytes_out);
+    if (ok) {
+        memcpy(bytes_out + EC_SCALAR_LEN, priv_key, EC_PRIVATE_KEY_LEN);
+        ok = seckey_tweak_mul(bytes_out + EC_SCALAR_LEN, bytes_out) &&
+             seckey_tweak_add(bytes_out + EC_SCALAR_LEN, k);
+    }
+
+    ok = ok && wally_dleq_proof_verify(a_bytes, sizeof(a_bytes),
+                                       pub_key, pub_key_len,
+                                       c_bytes, sizeof(c_bytes),
+                                       bytes_out, len, generator, generator_len,
+                                       msg, msg_len, 0) == WALLY_OK;
+
+    if (!ok)
+        wally_clear(bytes_out, len);
+    wally_clear_4(buf, sizeof(buf), k, sizeof(k),
+                  &a, sizeof(a), &c, sizeof(c));
+    return ok ? WALLY_OK : WALLY_ERROR;
 }
 
 #ifndef BUILD_STANDARD_SECP

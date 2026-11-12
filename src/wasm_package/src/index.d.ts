@@ -25,6 +25,8 @@ export function addr_segwit_get_version(addr: string, addr_family: string, flags
 export function addr_segwit_n_get_version(addr: string, addr_len: number, addr_family: string, addr_family_len: number, flags: number): number;
 export function addr_segwit_n_to_bytes(addr: string, addr_len: number, addr_family: string, addr_family_len: number, flags: number): Buffer;
 export function addr_segwit_to_bytes(addr: string, addr_family: string, flags: number): Buffer;
+export function addr_silent_payment_from_bytes(bytes: Buffer|Uint8Array|null, addr_family: string, flags: number): string;
+export function addr_silent_payment_to_bytes(addr: string, addr_family: string, flags: number): Buffer;
 export function address_to_scriptpubkey(addr: string, network: number): Buffer;
 export function ae_host_commit_from_bytes(entropy: Buffer|Uint8Array|null, flags: number): Buffer;
 export function ae_sig_from_bytes(priv_key: Buffer|Uint8Array|null, bytes: Buffer|Uint8Array|null, entropy: Buffer|Uint8Array|null, flags: number): Buffer;
@@ -151,6 +153,8 @@ export function descriptor_set_network(descriptor: Ref_wally_descriptor, network
 export function descriptor_to_address(descriptor: Ref_wally_descriptor, variant: number, multi_index: number, child_num: number, flags: number): string;
 export function descriptor_to_addresses(descriptor: Ref_wally_descriptor, variant: number, multi_index: number, child_num: number, flags: number, out_len: number): string;
 export function descriptor_to_script_get_maximum_length(descriptor: Ref_wally_descriptor, depth: number, index: number, variant: number, multi_index: number, child_num: number, flags: number): number;
+export function dleq_proof_generate(priv_key: Buffer|Uint8Array|null, pub_key: Buffer|Uint8Array|null, aux_rand: Buffer|Uint8Array|null, generator: Buffer|Uint8Array|null, msg: Buffer|Uint8Array|null, flags: number): Buffer;
+export function dleq_proof_verify(pub_key_a: Buffer|Uint8Array|null, pub_key_b: Buffer|Uint8Array|null, pub_key_c: Buffer|Uint8Array|null, proof: Buffer|Uint8Array|null, generator: Buffer|Uint8Array|null, msg: Buffer|Uint8Array|null, flags: number): void;
 export function ec_private_key_bip341_tweak(priv_key: Buffer|Uint8Array|null, merkle_root: Buffer|Uint8Array|null, flags: number): Buffer;
 export function ec_private_key_verify(priv_key: Buffer|Uint8Array|null): void;
 export function ec_public_key_bip341_tweak(pub_key: Buffer|Uint8Array|null, merkle_root: Buffer|Uint8Array|null, flags: number): Buffer;
@@ -250,6 +254,7 @@ export function psbt_add_input_signature(psbt: Ref_wally_psbt, index: number, pu
 export function psbt_add_input_taproot_keypath(psbt: Ref_wally_psbt, index: number, flags: number, pub_key: Buffer|Uint8Array|null, tapleaf_hashes: Buffer|Uint8Array|null, fingerprint: Buffer|Uint8Array|null, child_path: Uint32Array|number[]): void;
 export function psbt_add_output_keypath(psbt: Ref_wally_psbt, index: number, pub_key: Buffer|Uint8Array|null, fingerprint: Buffer|Uint8Array|null, child_path: Uint32Array|number[]): void;
 export function psbt_add_output_taproot_keypath(psbt: Ref_wally_psbt, index: number, flags: number, pub_key: Buffer|Uint8Array|null, tapleaf_hashes: Buffer|Uint8Array|null, fingerprint: Buffer|Uint8Array|null, child_path: Uint32Array|number[]): void;
+export function psbt_add_sp_ecdh_shares(psbt: Ref_wally_psbt, priv_keys: Buffer|Uint8Array|null, aux_rand: Buffer|Uint8Array|null, flags: number): void;
 export function psbt_add_tx_input_at(psbt: Ref_wally_psbt, index: number, flags: number, input: Ref_wally_tx_input): void;
 export function psbt_add_tx_output_at(psbt: Ref_wally_psbt, index: number, flags: number, output: Ref_wally_tx_output): void;
 export function psbt_blind(psbt: Ref_wally_psbt, values: Ref_wally_map, vbfs: Ref_wally_map, assets: Ref_wally_map, abfs: Ref_wally_map, entropy: Buffer|Uint8Array|null, output_index: number, flags: number): Ref_wally_map;
@@ -288,6 +293,7 @@ export function psbt_clear_output_value_rangeproof(psbt: Ref_wally_psbt, index: 
 export function psbt_clone(psbt: Ref_wally_psbt, flags: number): Ref_wally_psbt;
 export function psbt_combine(psbt: Ref_wally_psbt, source: Ref_wally_psbt): void;
 export function psbt_combine_ex(psbt: Ref_wally_psbt, flags: number, source: Ref_wally_psbt): void;
+export function psbt_compute_sp_scripts(psbt: Ref_wally_psbt, flags: number): void;
 export function psbt_extract(psbt: Ref_wally_psbt, flags: number): Ref_wally_tx;
 export function psbt_finalize(psbt: Ref_wally_psbt, flags: number): void;
 export function psbt_finalize_input(psbt: Ref_wally_psbt, index: number, flags: number): void;
@@ -483,6 +489,7 @@ export function psbt_output_clear_asset_surjectionproof(output: Ref_wally_psbt_o
 export function psbt_output_clear_blinder_index(output: Ref_wally_psbt_output): void;
 export function psbt_output_clear_blinding_public_key(output: Ref_wally_psbt_output): void;
 export function psbt_output_clear_ecdh_public_key(output: Ref_wally_psbt_output): void;
+export function psbt_output_clear_sp_v0_info(output: Ref_wally_psbt_output): void;
 export function psbt_output_clear_value_blinding_rangeproof(output: Ref_wally_psbt_output): void;
 export function psbt_output_clear_value_commitment(output: Ref_wally_psbt_output): void;
 export function psbt_output_clear_value_rangeproof(output: Ref_wally_psbt_output): void;
@@ -495,6 +502,7 @@ export function psbt_output_get_asset_surjectionproof_len(output: Ref_wally_psbt
 export function psbt_output_get_blinding_public_key_len(output: Ref_wally_psbt_output): number;
 export function psbt_output_get_blinding_status(output: Ref_wally_psbt_output, flags: number): number;
 export function psbt_output_get_ecdh_public_key_len(output: Ref_wally_psbt_output): number;
+export function psbt_output_get_sp_v0_info_len(output: Ref_wally_psbt_output): number;
 export function psbt_output_get_value_blinding_rangeproof_len(output: Ref_wally_psbt_output): number;
 export function psbt_output_get_value_commitment_len(output: Ref_wally_psbt_output): number;
 export function psbt_output_get_value_rangeproof_len(output: Ref_wally_psbt_output): number;
@@ -510,6 +518,7 @@ export function psbt_output_set_ecdh_public_key(output: Ref_wally_psbt_output, p
 export function psbt_output_set_keypaths(output: Ref_wally_psbt_output, map_in: Ref_wally_map): void;
 export function psbt_output_set_redeem_script(output: Ref_wally_psbt_output, script: Buffer|Uint8Array|null): void;
 export function psbt_output_set_script(output: Ref_wally_psbt_output, script: Buffer|Uint8Array|null): void;
+export function psbt_output_set_sp_v0_info(output: Ref_wally_psbt_output, keys: Buffer|Uint8Array|null): void;
 export function psbt_output_set_taproot_internal_key(output: Ref_wally_psbt_output, pub_key: Buffer|Uint8Array|null): void;
 export function psbt_output_set_unknowns(output: Ref_wally_psbt_output, map_in: Ref_wally_map): void;
 export function psbt_output_set_value_blinding_rangeproof(output: Ref_wally_psbt_output, rangeproof: Buffer|Uint8Array|null): void;
@@ -859,6 +868,7 @@ export function psbt_output_get_asset_commitment(output: Ref_wally_psbt_output):
 export function psbt_output_get_asset_surjectionproof(output: Ref_wally_psbt_output): Buffer;
 export function psbt_output_get_blinding_public_key(output: Ref_wally_psbt_output): Buffer;
 export function psbt_output_get_ecdh_public_key(output: Ref_wally_psbt_output): Buffer;
+export function psbt_output_get_sp_v0_info(output: Ref_wally_psbt_output): Buffer;
 export function psbt_output_get_value_blinding_rangeproof(output: Ref_wally_psbt_output): Buffer;
 export function psbt_output_get_value_commitment(output: Ref_wally_psbt_output): Buffer;
 export function psbt_output_get_value_rangeproof(output: Ref_wally_psbt_output): Buffer;

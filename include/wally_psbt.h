@@ -89,6 +89,9 @@ struct wally_psbt_input {
     /* Hashes and paths for taproot bip32 derivation path */
     struct wally_map taproot_leaf_hashes;
     struct wally_map taproot_leaf_paths;
+    /* BIP-375 ECDH shares and DLEQ proofs, keyed by silent payment scan key */
+    struct wally_map sp_ecdh_shares;
+    struct wally_map sp_dleq_proofs;
 #ifndef WALLY_ABI_NO_ELEMENTS
     uint64_t issuance_amount; /* Issuance amount, or 0 if not given */
     uint64_t inflation_keys; /* Number of reissuance tokens, or 0 if none given */
@@ -140,6 +143,9 @@ struct wally_psbt {
     uint32_t fallback_locktime;
     uint32_t has_fallback_locktime;
     uint32_t tx_modifiable_flags;
+    /* BIP-375 ECDH shares and DLEQ proofs, keyed by silent payment scan key */
+    struct wally_map sp_ecdh_shares;
+    struct wally_map sp_dleq_proofs;
 #ifndef WALLY_ABI_NO_ELEMENTS
     struct wally_map global_scalars;
     uint32_t pset_modifiable_flags;
@@ -1451,6 +1457,56 @@ WALLY_CORE_API int wally_psbt_output_set_taproot_internal_key(
     const unsigned char *pub_key,
     size_t pub_key_len);
 
+/**
+ * Get the BIP-375 silent payment code from an output.
+ *
+ * :param output: The output to get from.
+ * :param bytes_out: Destination for the scan public key followed by the spend public key.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: This operates on the PSBT field ``PSBT_OUT_SP_V0_INFO``.
+ */
+WALLY_CORE_API int wally_psbt_output_get_sp_v0_info(
+    const struct wally_psbt_output *output,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the BIP-375 silent payment code from an output.
+ *
+ * :param output: The output to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_output_get_sp_v0_info_len(
+    const struct wally_psbt_output *output,
+    size_t *written);
+
+/**
+ * Set the BIP-375 silent payment code in an output.
+ *
+ * An output with a silent payment code does not need a script until the
+ * signer computes it.
+ *
+ * :param output: The output to update.
+ * :param keys: The scan public key followed by the spend public key.
+ * :param keys_len: Length of ``keys`` in bytes. Must be `WALLY_SILENT_PAYMENT_KEYS_LEN`.
+ */
+WALLY_CORE_API int wally_psbt_output_set_sp_v0_info(
+    struct wally_psbt_output *output,
+    const unsigned char *keys,
+    size_t keys_len);
+
+/**
+ * Clear the BIP-375 silent payment code from an output.
+ *
+ * :param output: The output to update.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_sp_v0_info(
+    struct wally_psbt_output *output);
+
 
 #ifndef WALLY_ABI_NO_ELEMENTS
 /**
@@ -1950,6 +2006,9 @@ WALLY_CORE_API int wally_psbt_free(
  *|    or ``WALLY_PSBT_VERSION_2``.
  *
  * .. note:: This call converts the PSBT in place to the specified version.
+ *
+ * .. note:: Converting to version 0 fails if any output has a BIP-375 silent
+ *|    payment code, as those fields are only valid in version 2.
  */
 WALLY_CORE_API int wally_psbt_set_version(
     struct wally_psbt *psbt,
@@ -1971,6 +2030,66 @@ WALLY_CORE_API int wally_psbt_get_id(
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
+
+/**
+ * Compute and check the scripts of BIP-375 silent payment outputs.
+ *
+ * Each output with a silent payment code has its script derived from the
+ * BIP-375 ECDH shares in the PSBT, after every DLEQ proof present for an
+ * eligible input, or for the whole transaction, is verified against the
+ * input public keys. Missing scripts are set, and scripts already present
+ * must match. If any script is set, the PSBT's inputs and outputs modifiable
+ * flags are cleared. The PSBT is unchanged if any step fails.
+ *
+ * :param psbt: The PSBTv2 to update.
+ * :param flags: For future use. Must be 0.
+ *
+ * .. note:: Returns `WALLY_EINVAL` if an input spends a segwit v2 or later
+ *|    output, an eligible input's public key or a share or proof is missing,
+ *|    a proof does not verify, a present script does not match, or an input
+ *|    claims to be skipped (a finalized input or the NUMS internal key) without
+ *|    the data to show that BIP-352 skips it.
+ *
+ * .. note:: An input's prevout script comes from its witness or non-witness
+ *|    utxo. A non-witness utxo is checked against the input, but a witness utxo
+ *|    alone cannot be, and a false script can change the key sum. Signing a
+ *|    non-taproot input therefore requires a non-witness utxo on every input,
+ *|    and a taproot signature commits to all of the prevout scripts.
+ */
+WALLY_CORE_API int wally_psbt_compute_sp_scripts(
+    struct wally_psbt *psbt,
+    uint32_t flags);
+
+/**
+ * Add BIP-375 ECDH shares and DLEQ proofs for silent payment outputs.
+ *
+ * Given the private keys of the inputs the caller holds, adds an ECDH share
+ * and DLEQ proof for every distinct scan key of the PSBT's silent payment
+ * outputs. If the keys cover every eligible input, one global share per scan
+ * key is added; otherwise a share per held input. Call
+ * `wally_psbt_compute_sp_scripts` afterwards to set the output scripts.
+ *
+ * :param psbt: The PSBTv2 to update.
+ * :param priv_keys: One private key per input, in input order. For each
+ *|    eligible input held, the key for its BIP-352 public key: the output
+ *|    (tweaked) key for taproot, of either parity. All zero for inputs not
+ *|    held; keys for ineligible inputs are ignored.
+ * :param priv_keys_len: Length of ``priv_keys`` in bytes. Must be the number
+ *|    of inputs times `EC_PRIVATE_KEY_LEN`.
+ * :param aux_rand: Fresh random data for the DLEQ proofs.
+ * :param aux_rand_len: Length of ``aux_rand`` in bytes. Must be 32.
+ * :param flags: For future use. Must be 0.
+ *
+ * .. note:: Returns `WALLY_EINVAL` if a key does not match its input. The PSBT
+ *|    is unchanged if any step fails.
+ */
+WALLY_CORE_API int wally_psbt_add_sp_ecdh_shares(
+    struct wally_psbt *psbt,
+    const unsigned char *priv_keys,
+    size_t priv_keys_len,
+    const unsigned char *aux_rand,
+    size_t aux_rand_len,
+    uint32_t flags);
 
 /**
  * Return the calculated transaction lock time of a PSBT.
@@ -2348,6 +2467,12 @@ WALLY_CORE_API int wally_psbt_get_input_scriptcode(
  * :param flags: Flags controlling signature hash generation. Must be 0.
  * :param bytes_out: Destination for the signature hash.
  * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
+ *
+ * .. note:: With BIP-375 silent payment outputs, fails unless ``tx`` is the
+ *|    unsigned transaction the PSBT describes, every silent payment script
+ *|    verifies as in `wally_psbt_compute_sp_scripts`, only SIGHASH_ALL is used
+ *|    and, for a non-taproot input, every input has a non-witness utxo. See
+ *|    `wally_psbt_sign_bip32`. The signing cache is not used with such outputs.
  */
 WALLY_CORE_API int wally_psbt_get_input_signature_hash(
     struct wally_psbt *psbt,
@@ -2675,6 +2800,13 @@ WALLY_CORE_API int wally_psbt_sign(
  * .. note:: Inputs are signed using the sighash stored for the input,
  *|    or SIGHASH_ALL/SIGHASH_DEFAULT if not present. The caller should ensure
  *|    that each input sighash is acceptable before signing.
+ *
+ * .. note:: Fails unless every BIP-375 silent payment output script is present
+ *|    and verifies as in `wally_psbt_compute_sp_scripts`, and only SIGHASH_ALL
+ *|    is used with such outputs. To sign a non-taproot input with such outputs,
+ *|    every input must also have a non-witness utxo: an ECDSA signature does
+ *|    not commit to the prevout scripts of the other inputs, so a false witness
+ *|    utxo could otherwise leave a payment its receiver cannot find.
  */
 WALLY_CORE_API int wally_psbt_sign_bip32(
     struct wally_psbt *psbt,
@@ -2696,6 +2828,16 @@ WALLY_CORE_API int wally_psbt_sign_bip32(
  * .. note:: Inputs are signed using the sighash stored for the input,
  *|    or SIGHASH_ALL/SIGHASH_DEFAULT if not present. The caller should ensure
  *|    that the sighash is acceptable before signing.
+ *
+ * .. note:: Fails unless every BIP-375 silent payment output script is present
+ *|    and verifies as in `wally_psbt_compute_sp_scripts`, and only SIGHASH_ALL
+ *|    is used with such outputs. To sign a non-taproot input with such outputs,
+ *|    every input must also have a non-witness utxo: an ECDSA signature does
+ *|    not commit to the prevout scripts of the other inputs, so a false witness
+ *|    utxo could otherwise leave a payment its receiver cannot find.
+ *
+ * .. note:: With BIP-375 silent payment outputs, also fails unless ``txhash`` is
+ *|    the hash of the unsigned transaction the PSBT describes.
  */
 WALLY_CORE_API int wally_psbt_sign_input_bip32(
     struct wally_psbt *psbt,
@@ -2742,6 +2884,9 @@ WALLY_CORE_API int wally_psbt_finalize_input(
  * :param psbt: PSBT to extract from.
  * :param flags: :ref:`psbt-extract` controlling extraction.
  * :param output: Destination for the resulting transaction.
+ *
+ * .. note:: Fails unless every BIP-375 silent payment output script is present
+ *|    and verifies as in `wally_psbt_compute_sp_scripts`.
  */
 WALLY_CORE_API int wally_psbt_extract(
     const struct wally_psbt *psbt,
