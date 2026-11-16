@@ -266,6 +266,10 @@ class DescriptorTests(unittest.TestCase):
                 'bc1qmhmj2mswyvyj4az32mzujccvd4dgr8s0lfzaum4n4uazeqc7xxvsr7e28n',
                 'bc1qjeu2wa5jwvs90tv9t9xz99njnv3we3ux04fn7glw3vqsk4ewuaaq9kdc9t',
               ]),
+            ('wpkh(xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/0/*)',
+              NETWORK_BTC_MAIN, 0, 0, 0x7fffffff, [
+                'bc1q5s7veznltcwpfplgjav6y9u27l5qjhl20dptkw'
+              ]),
         ]
         for descriptor, network, variant, multi_index, child_num, expected in args:
             d = c_void_p()
@@ -282,9 +286,11 @@ class DescriptorTests(unittest.TestCase):
         # Invalid args
         M, U = NETWORK_BTC_MAIN, 0x33 # Unknown network
         H = 0x80000000 # Hardened child
+        L = H - 1 # Last valid child
         bad_args = [
             (None,       M, 0, 0, 0, 0, addrs, addrs_len), # NULL miniscript
             (args[0][0], M, 0, 0, H, 0, addrs, addrs_len), # Hardened child
+            (args[2][0], M, 0, 0, L, 0, addrs, 2),         # Past the last valid child
             (args[0][0], U, 0, 0, 0, 0, addrs, addrs_len), # Unknown network
             (args[0][0], M, 1, 0, 0, 0, addrs, addrs_len), # Unknown variant
             (args[0][0], M, 0, 1, 0, 0, addrs, addrs_len), # Unknown range index
