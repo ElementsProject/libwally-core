@@ -3919,7 +3919,7 @@ int wally_descriptor_to_addresses(const struct wally_descriptor *descriptor,
 
     if (!index_args_valid(descriptor, variant, multi_index, child_num) ||
         !descriptor->addr_ver || !descriptor->script_len ||
-        (uint64_t)child_num + num_addresses >= BIP32_INITIAL_HARDENED_CHILD ||
+        (uint64_t)child_num + num_addresses > BIP32_INITIAL_HARDENED_CHILD ||
         flags || !addresses || !num_addresses)
         return WALLY_EINVAL;
 
