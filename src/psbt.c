@@ -2258,8 +2258,8 @@ static int pull_unknown_key_value(const unsigned char **cursor, size_t *max,
 
     pull_varlength_buff(cursor, max, &key, &key_len);
     pull_varlength_buff(cursor, max, &val, &val_len);
-
-    return map_add(unknowns, key, key_len, val, val_len, false, false);
+    return map_add(unknowns, key, key_len, val_len ? val : NULL, val_len,
+                   false, false);
 }
 
 static uint64_t pull_field_type(const unsigned char **cursor, size_t *max,
