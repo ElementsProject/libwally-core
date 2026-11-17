@@ -367,6 +367,18 @@ inline int addr_segwit_to_bytes(const ADDR& addr, const ADDR_FAMILY& addr_family
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class BYTES, class ADDR_FAMILY>
+inline int addr_silent_payment_from_bytes(const BYTES& bytes, const ADDR_FAMILY& addr_family, uint32_t flags, char** output) {
+    int ret = ::wally_addr_silent_payment_from_bytes(bytes.data(), bytes.size(), detail::get_p(addr_family), flags, output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class ADDR, class ADDR_FAMILY, class BYTES_OUT>
+inline int addr_silent_payment_to_bytes(const ADDR& addr, const ADDR_FAMILY& addr_family, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_addr_silent_payment_to_bytes(detail::get_p(addr), detail::get_p(addr_family), flags, bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class ADDR, class BYTES_OUT>
 inline int address_to_scriptpubkey(const ADDR& addr, uint32_t network, BYTES_OUT& bytes_out, size_t* written) {
     int ret = ::wally_address_to_scriptpubkey(detail::get_p(addr), network, bytes_out.data(), bytes_out.size(), written);
@@ -723,6 +735,18 @@ template <class DESCRIPTOR>
 inline int descriptor_to_script_get_maximum_length(const DESCRIPTOR& descriptor, uint32_t depth, uint32_t index, uint32_t variant, uint32_t multi_index, uint32_t child_num, uint32_t flags, size_t* written) {
     int ret = ::wally_descriptor_to_script_get_maximum_length(detail::get_p(descriptor), depth, index, variant, multi_index, child_num, flags, written);
     return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PRIV_KEY, class PUB_KEY, class AUX_RAND, class GENERATOR, class MSG, class BYTES_OUT>
+inline int dleq_proof_generate(const PRIV_KEY& priv_key, const PUB_KEY& pub_key, const AUX_RAND& aux_rand, const GENERATOR& generator, const MSG& msg, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_dleq_proof_generate(priv_key.data(), priv_key.size(), pub_key.data(), pub_key.size(), aux_rand.data(), aux_rand.size(), generator.data(), generator.size(), msg.data(), msg.size(), flags, bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PUB_KEY_A, class PUB_KEY_B, class PUB_KEY_C, class PROOF, class GENERATOR, class MSG>
+inline bool dleq_proof_verify(const PUB_KEY_A& pub_key_a, const PUB_KEY_B& pub_key_b, const PUB_KEY_C& pub_key_c, const PROOF& proof, const GENERATOR& generator, const MSG& msg, uint32_t flags) {
+    int ret = ::wally_dleq_proof_verify(pub_key_a.data(), pub_key_a.size(), pub_key_b.data(), pub_key_b.size(), pub_key_c.data(), pub_key_c.size(), proof.data(), proof.size(), generator.data(), generator.size(), msg.data(), msg.size(), flags);
+    return ret == WALLY_OK;
 }
 
 template <class PRIV_KEY, class MERKLE_ROOT, class BYTES_OUT>
@@ -1282,6 +1306,12 @@ inline int psbt_add_output_taproot_keypath(const PSBT& psbt, uint32_t index, uin
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class PSBT, class PRIV_KEYS, class AUX_RAND>
+inline int psbt_add_sp_ecdh_shares(const PSBT& psbt, const PRIV_KEYS& priv_keys, const AUX_RAND& aux_rand, uint32_t flags) {
+    int ret = ::wally_psbt_add_sp_ecdh_shares(detail::get_p(psbt), priv_keys.data(), priv_keys.size(), aux_rand.data(), aux_rand.size(), flags);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class PSBT>
 inline int psbt_add_tx_input_at(const PSBT& psbt, uint32_t index, uint32_t flags, const struct wally_tx_input* input) {
     int ret = ::wally_psbt_add_tx_input_at(detail::get_p(psbt), index, flags, input);
@@ -1314,6 +1344,12 @@ inline int psbt_combine(const PSBT& psbt, const struct wally_psbt* source) {
 template <class PSBT>
 inline int psbt_combine_ex(const PSBT& psbt, uint32_t flags, const struct wally_psbt* source) {
     int ret = ::wally_psbt_combine_ex(detail::get_p(psbt), flags, source);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PSBT>
+inline int psbt_compute_sp_scripts(const PSBT& psbt, uint32_t flags) {
+    int ret = ::wally_psbt_compute_sp_scripts(detail::get_p(psbt), flags);
     return detail::check_ret(__FUNCTION__, ret);
 }
 
@@ -1623,6 +1659,11 @@ inline int psbt_output_clear_amount(struct wally_psbt_output* output) {
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+inline int psbt_output_clear_sp_v0_info(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_sp_v0_info(output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class OUTPUT, class PUB_KEY>
 inline int psbt_output_find_keypath(const OUTPUT& output, const PUB_KEY& pub_key, size_t* written) {
     int ret = ::wally_psbt_output_find_keypath(detail::get_p(output), pub_key.data(), pub_key.size(), written);
@@ -1632,6 +1673,18 @@ inline int psbt_output_find_keypath(const OUTPUT& output, const PUB_KEY& pub_key
 template <class OUTPUT, class KEY>
 inline int psbt_output_find_unknown(const OUTPUT& output, const KEY& key, size_t* written) {
     int ret = ::wally_psbt_output_find_unknown(detail::get_p(output), key.data(), key.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class OUTPUT, class BYTES_OUT>
+inline int psbt_output_get_sp_v0_info(const OUTPUT& output, BYTES_OUT& bytes_out, size_t* written) {
+    int ret = ::wally_psbt_output_get_sp_v0_info(detail::get_p(output), bytes_out.data(), bytes_out.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class OUTPUT>
+inline int psbt_output_get_sp_v0_info_len(const OUTPUT& output, size_t* written) {
+    int ret = ::wally_psbt_output_get_sp_v0_info_len(detail::get_p(output), written);
     return detail::check_ret(__FUNCTION__, ret);
 }
 
@@ -1662,6 +1715,12 @@ inline int psbt_output_set_redeem_script(const OUTPUT& output, const SCRIPT& scr
 template <class OUTPUT, class SCRIPT>
 inline int psbt_output_set_script(const OUTPUT& output, const SCRIPT& script) {
     int ret = ::wally_psbt_output_set_script(detail::get_p(output), script.data(), script.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class OUTPUT, class KEYS>
+inline int psbt_output_set_sp_v0_info(const OUTPUT& output, const KEYS& keys) {
+    int ret = ::wally_psbt_output_set_sp_v0_info(detail::get_p(output), keys.data(), keys.size());
     return detail::check_ret(__FUNCTION__, ret);
 }
 

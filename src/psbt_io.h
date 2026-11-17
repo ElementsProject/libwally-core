@@ -11,8 +11,8 @@
  * shift them by 32 bits to allow using a single uint64_t to hold
  * all key bits to check using a single uint64_t bitset (lower 32 bits
  * for PSBT, upper 32 bits for PSET). This allows for up to 31 key types
- * each for PSBT and PSET. PSBT currently maxes out at 25 keys for
- * inputs; if this increases to 31 the shift can be made greater as long
+ * each for PSBT and PSET. PSBT currently maxes out at 31 keys for
+ * inputs; if this increases further the shift can be made greater as long
  * as PSET keys can be represented in the remaining bits (PSET currently
  * maxes out at 16 bits for inputs).
  */
@@ -35,10 +35,16 @@
 #define PSBT_GLOBAL_INPUT_COUNT 0x04
 #define PSBT_GLOBAL_OUTPUT_COUNT 0x05
 #define PSBT_GLOBAL_TX_MODIFIABLE 0x06
+#define PSBT_GLOBAL_SP_ECDH_SHARE 0x07
+#define PSBT_GLOBAL_SP_DLEQ 0x08
 /* VERSION and PROPRIETARY are treated specially, hence our max is the max
  * of the contiguous defined fields.
  */
-#define PSBT_GLOBAL_MAX PSBT_GLOBAL_TX_MODIFIABLE
+#define PSBT_GLOBAL_MAX PSBT_GLOBAL_SP_DLEQ
+
+/* BIP-375 silent payment global fields (not used in PSETs) */
+#define PSBT_GLOBAL_SP_FIELDS (PSBT_FT(PSBT_GLOBAL_SP_ECDH_SHARE) | \
+                               PSBT_FT(PSBT_GLOBAL_SP_DLEQ))
 
 /* PSBT_GLOBAL_VERSION is not contiguous with the other keys, and is
  * out of range of the keys we can track in the lower 32 bits of a
@@ -56,10 +62,12 @@
 
 /* Global PSBT/PSET fields that can be repeated */
 #define PSBT_GLOBAL_REPEATABLE (PSBT_FT(PSBT_GLOBAL_XPUB) | \
+                                PSBT_GLOBAL_SP_FIELDS | \
                                 PSET_FT(PSET_GLOBAL_SCALAR))
 
 /* Global PSBT/PSET fields that contain data in their keys */
 #define PSBT_GLOBAL_HAVE_KEYDATA (PSBT_FT(PSBT_GLOBAL_XPUB) | \
+                                  PSBT_GLOBAL_SP_FIELDS | \
                                   PSET_FT(PSET_GLOBAL_SCALAR))
 
 /* Global PSBT/PSET fields that must be present in v0 */
@@ -76,6 +84,7 @@
                                    PSBT_FT(PSBT_GLOBAL_INPUT_COUNT) | \
                                    PSBT_FT(PSBT_GLOBAL_OUTPUT_COUNT) | \
                                    PSBT_FT(PSBT_GLOBAL_TX_MODIFIABLE) | \
+                                   PSBT_GLOBAL_SP_FIELDS | \
                                    PSET_FT(PSET_GLOBAL_SCALAR) | \
                                    PSET_FT(PSET_GLOBAL_TX_MODIFIABLE) | \
                                    PSET_FT(PSET_GLOBAL_GENESIS_HASH))
@@ -116,7 +125,17 @@
 #define PSBT_IN_TAP_BIP32_DERIVATION 0x16
 #define PSBT_IN_TAP_INTERNAL_KEY 0x17
 #define PSBT_IN_TAP_MERKLE_ROOT 0x18
-#define PSBT_IN_MAX PSBT_IN_TAP_MERKLE_ROOT
+#define PSBT_IN_SP_ECDH_SHARE 0x1d
+#define PSBT_IN_SP_DLEQ 0x1e
+#define PSBT_IN_MAX PSBT_IN_SP_DLEQ
+
+/* Input PSBT fields in range that we do not parse; kept as unknowns.
+ * 0x1a-0x1c are the BIP-373 MuSig2 fields. */
+#define PSBT_IN_UNPARSED (PSBT_FT(0x19) | PSBT_FT(0x1a) | PSBT_FT(0x1b) | PSBT_FT(0x1c))
+
+/* BIP-375 silent payment input fields (not used in PSETs) */
+#define PSBT_IN_SP_FIELDS (PSBT_FT(PSBT_IN_SP_ECDH_SHARE) | \
+                           PSBT_FT(PSBT_IN_SP_DLEQ))
 
 /* Inputs: PSET */
 #define PSET_IN_ISSUANCE_VALUE 0x00
@@ -151,7 +170,8 @@
                               PSBT_FT(PSBT_IN_HASH256) | \
                               PSBT_FT(PSBT_IN_TAP_SCRIPT_SIG) | \
                               PSBT_FT(PSBT_IN_TAP_LEAF_SCRIPT) | \
-                              PSBT_FT(PSBT_IN_TAP_BIP32_DERIVATION))
+                              PSBT_FT(PSBT_IN_TAP_BIP32_DERIVATION) | \
+                              PSBT_IN_SP_FIELDS)
 
 /* Input PSBT/PSET fields that can be repeated */
 #define PSBT_IN_REPEATABLE PSBT_IN_HAVE_KEYDATA
@@ -167,6 +187,7 @@
 /* Input PSBT/PSET fields that must *not* be present in v0 */
 #define PSBT_IN_DISALLOWED_V0 (PSBT_FT(PSBT_IN_PREVIOUS_TXID) | \
                                PSBT_FT(PSBT_IN_OUTPUT_INDEX) | \
+                               PSBT_IN_SP_FIELDS | \
                                PSBT_FT(PSBT_IN_SEQUENCE) | \
                                PSBT_FT(PSBT_IN_REQUIRED_TIME_LOCKTIME) | \
                                PSBT_FT(PSBT_IN_REQUIRED_HEIGHT_LOCKTIME) | \
@@ -224,7 +245,17 @@
 #define PSBT_OUT_TAP_INTERNAL_KEY 0x05
 #define PSBT_OUT_TAP_TREE 0x06
 #define PSBT_OUT_TAP_BIP32_DERIVATION 0x07
-#define PSBT_OUT_MAX PSBT_OUT_TAP_BIP32_DERIVATION
+#define PSBT_OUT_MUSIG2_PARTICIPANT_PUBKEYS 0x08
+#define PSBT_OUT_SP_V0_INFO 0x09
+#define PSBT_OUT_SP_V0_LABEL 0x0a
+#define PSBT_OUT_MAX PSBT_OUT_SP_V0_LABEL
+
+/* Output PSBT fields in range that we do not parse; kept as unknowns */
+#define PSBT_OUT_UNPARSED PSBT_FT(PSBT_OUT_MUSIG2_PARTICIPANT_PUBKEYS)
+
+/* BIP-375 silent payment output fields (not used in PSETs) */
+#define PSBT_OUT_SP_FIELDS (PSBT_FT(PSBT_OUT_SP_V0_INFO) | \
+                            PSBT_FT(PSBT_OUT_SP_V0_LABEL))
 
 /* Outputs: PSET */
 #define PSET_OUT_UNUSED_ZERO 0x00 /* Unused, WTF */
@@ -257,6 +288,7 @@
 /* Output PSBT/PSET fields that must *not* be present in v0 */
 #define PSBT_OUT_DISALLOWED_V0 (PSBT_FT(PSBT_OUT_AMOUNT) | \
                                 PSBT_FT(PSBT_OUT_SCRIPT) | \
+                                PSBT_OUT_SP_FIELDS | \
                                 PSET_FT(PSET_OUT_VALUE_COMMITMENT) | \
                                 PSET_FT(PSET_OUT_ASSET) | \
                                 PSET_FT(PSET_OUT_ASSET_COMMITMENT) | \

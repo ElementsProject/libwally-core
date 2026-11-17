@@ -288,3 +288,95 @@ int wally_addr_segwit_get_version(const char *addr, const char *addr_family,
                                            addr_family, addr_family ? strlen(addr_family) : 0,
                                            flags, written);
 }
+
+/* BIP-352 silent payment addresses */
+#define SP_ADDR_MAX_LEN 1023 /* Maximum encoded length */
+#define SP_ADDR_VERSION_MAX 30 /* Highest version a sender may pay */
+#define SP_ADDR_DATA_LEN 107 /* Version + 66 bytes as 5 bit groups */
+
+static bool sp_keys_verify(const unsigned char *keys)
+{
+    return wally_ec_public_key_verify(keys, EC_PUBLIC_KEY_LEN) == WALLY_OK &&
+           wally_ec_public_key_verify(keys + EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_LEN) == WALLY_OK;
+}
+
+int wally_addr_silent_payment_from_bytes(const unsigned char *bytes, size_t bytes_len,
+                                         const char *addr_family, uint32_t flags,
+                                         char **output)
+{
+    uint8_t data[SP_ADDR_DATA_LEN];
+    size_t data_len = 0;
+    size_t addr_family_len = addr_family ? strlen(addr_family) : 0;
+    char *result;
+    int ret = WALLY_OK;
+
+    if (output)
+        *output = NULL;
+
+    if (!bytes || bytes_len != WALLY_SILENT_PAYMENT_KEYS_LEN || !addr_family_len ||
+        flags || !output || !sp_keys_verify(bytes))
+        return WALLY_EINVAL;
+
+    /* hrp, separator, data, checksum and NUL */
+    result = wally_malloc(addr_family_len + 1 + SP_ADDR_DATA_LEN + 6 + 1);
+    if (!result)
+        return WALLY_ENOMEM;
+
+    data[0] = 0; /* Version 0 */
+    convert_bits(data + 1, &data_len, 5, bytes, bytes_len, 8, 1);
+    if (!bech32_encode(result, addr_family, addr_family_len,
+                       data, data_len + 1, SP_ADDR_MAX_LEN, true)) {
+        wally_free(result);
+        ret = WALLY_EINVAL;
+    } else
+        *output = result;
+
+    wally_clear(data, sizeof(data));
+    return ret;
+}
+
+int wally_addr_silent_payment_to_bytes(const char *addr, const char *addr_family,
+                                       uint32_t flags,
+                                       unsigned char *bytes_out, size_t len)
+{
+    size_t addr_len = addr ? strlen(addr) : 0;
+    size_t addr_family_len = addr_family ? strlen(addr_family) : 0;
+    size_t data_len, payload_len = 0;
+    uint8_t *data = NULL, *payload = NULL;
+    char *hrp = NULL;
+    bool is_bech32m = false;
+    int ret = WALLY_EINVAL;
+
+    if (!addr_len || addr_len > SP_ADDR_MAX_LEN || !addr_family_len ||
+        flags || !bytes_out || len != WALLY_SILENT_PAYMENT_KEYS_LEN)
+        return WALLY_EINVAL;
+
+    data = wally_malloc(addr_len);
+    hrp = wally_malloc(addr_len);
+    payload = wally_malloc(addr_len);
+    if (!data || !hrp || !payload) {
+        ret = WALLY_ENOMEM;
+        goto done;
+    }
+
+    if (!bech32_decode(hrp, data, &data_len, addr, addr_len, SP_ADDR_MAX_LEN, &is_bech32m) ||
+        !is_bech32m || !data_len || data[0] > SP_ADDR_VERSION_MAX ||
+        strlen(hrp) != addr_family_len || memcmp(hrp, addr_family, addr_family_len) ||
+        !convert_bits(payload, &payload_len, 8, data + 1, data_len - 1, 5, 0))
+        goto done;
+
+    /* Version 0 is exactly the two keys; later versions may append data */
+    if (payload_len < WALLY_SILENT_PAYMENT_KEYS_LEN ||
+        (data[0] == 0 && payload_len != WALLY_SILENT_PAYMENT_KEYS_LEN) ||
+        !sp_keys_verify(payload))
+        goto done;
+
+    memcpy(bytes_out, payload, WALLY_SILENT_PAYMENT_KEYS_LEN);
+    ret = WALLY_OK;
+
+done:
+    clear_and_free(data, addr_len);
+    clear_and_free(hrp, addr_len);
+    clear_and_free(payload, addr_len);
+    return ret;
+}

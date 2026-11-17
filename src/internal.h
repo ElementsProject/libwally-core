@@ -66,6 +66,10 @@ WALLY_INTERNAL_API int seckey_verify(const unsigned char *seckey);
 WALLY_INTERNAL_API int seckey_negate(unsigned char *seckey);
 WALLY_INTERNAL_API int seckey_tweak_add(unsigned char *seckey, const unsigned char *tweak);
 WALLY_INTERNAL_API int seckey_tweak_mul(unsigned char *seckey, const unsigned char *tweak);
+/* Multiply a compressed public key by a secret scalar in constant time */
+WALLY_INTERNAL_API bool ec_public_key_mul_secret(const unsigned char *pub_key,
+                                                 const unsigned char *priv_key,
+                                                 unsigned char *bytes_out);
 WALLY_INTERNAL_API int keypair_create(secp256k1_keypair *keypair, const unsigned char *priv_key);
 WALLY_INTERNAL_API int keypair_xonly_pub(secp256k1_xonly_pubkey *xpubkey, const secp256k1_keypair *keypair);
 WALLY_INTERNAL_API int keypair_sec(unsigned char *output, const secp256k1_keypair *keypair);

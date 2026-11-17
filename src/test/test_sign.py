@@ -335,6 +335,75 @@ class SignTests(unittest.TestCase):
             ]:
             self.assertEqual(WALLY_EINVAL, wally_ec_sig_to_public_key(*args))
 
+    def test_dleq_proof(self):
+        """Test BIP-374 DLEQ proofs against the BIP vectors"""
+        # bip-0374 test vectors from bitcoin/bips commit afaa8566
+        def read_csv(name):
+            with open(root_dir + 'src/data/' + name, 'r') as f:
+                rows = [line.rstrip('\n').split(',') for line in f]
+            return [dict(zip(rows[0], row)) for row in rows[1:]]
+
+        def buf(hex_str):
+            if not hex_str:
+                return None, 0
+            if hex_str == 'INFINITY':
+                return bytes([0] * 33), 33 # Not a valid encoding
+            return bytes.fromhex(hex_str), len(hex_str) // 2
+
+        out, out_len = make_cbuffer('00' * 64)
+        for row in read_csv('bip374_generate_vectors.csv'):
+            args = [buf(row[k]) for k in ['scalar_a', 'point_B', 'auxrand_r', 'point_G', 'message']]
+            ret = wally_dleq_proof_generate(*[x for a in args for x in a], 0, out, out_len)
+            if row['result_proof'] == 'INVALID':
+                self.assertEqual(ret, WALLY_EINVAL, row['comment'])
+            else:
+                self.assertEqual((ret, h(out)), (WALLY_OK, utf8(row['result_proof'])), row['comment'])
+
+        for row in read_csv('bip374_verify_vectors.csv'):
+            args = [buf(row[k]) for k in ['point_A', 'point_B', 'point_C', 'proof', 'point_G', 'message']]
+            ret = wally_dleq_proof_verify(*[x for a in args for x in a], 0)
+            expected = WALLY_OK if row['result_success'] == 'TRUE' else WALLY_EINVAL
+            self.assertEqual(ret, expected, row['comment'])
+
+        # A missing generator means the secp256k1 generator
+        g = '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'
+        num_default = 0
+        for row in read_csv('bip374_generate_vectors.csv'):
+            if row['point_G'] == g and row['result_proof'] != 'INVALID':
+                args = [buf(row[k]) for k in ['scalar_a', 'point_B', 'auxrand_r']]
+                ret = wally_dleq_proof_generate(*[x for a in args for x in a], None, 0,
+                                                *buf(row['message']), 0, out, out_len)
+                self.assertEqual((ret, h(out)), (WALLY_OK, utf8(row['result_proof'])))
+                num_default += 1
+        for row in read_csv('bip374_verify_vectors.csv'):
+            if row['point_G'] == g:
+                args = [buf(row[k]) for k in ['point_A', 'point_B', 'point_C', 'proof']]
+                ret = wally_dleq_proof_verify(*[x for a in args for x in a], None, 0,
+                                              *buf(row['message']), 0)
+                expected = WALLY_OK if row['result_success'] == 'TRUE' else WALLY_EINVAL
+                self.assertEqual(ret, expected, row['comment'])
+                num_default += 1
+        self.assertGreater(num_default, 2)
+
+        # Invalid arguments
+        a, b, aux = bytes([0x11] * 32), bytes.fromhex(g), bytes(32)
+        ret = wally_dleq_proof_generate(a, 32, b, 33, aux, 32, None, 0, None, 0, 0, out, out_len)
+        self.assertEqual(ret, WALLY_OK)
+        for args in [
+            (None, 32, b, 33, aux, 32, None, 0, None, 0, 0, out, out_len), # Missing a
+            (a, 31, b, 33, aux, 32, None, 0, None, 0, 0, out, out_len),    # Short a
+            (a, 32, None, 33, aux, 32, None, 0, None, 0, 0, out, out_len), # Missing B
+            (a, 32, b, 33, None, 32, None, 0, None, 0, 0, out, out_len),   # Missing aux
+            (a, 32, b, 33, aux, 31, None, 0, None, 0, 0, out, out_len),    # Short aux
+            (a, 32, b, 33, aux, 32, None, 33, None, 0, 0, out, out_len),   # Bad G length
+            (a, 32, b, 33, aux, 32, None, 0, None, 32, 0, out, out_len),   # Bad msg length
+            (a, 32, b, 33, aux, 32, None, 0, aux, 31, 0, out, out_len),    # Short msg
+            (a, 32, b, 33, aux, 32, None, 0, None, 0, 1, out, out_len),    # Unknown flags
+            (a, 32, b, 33, aux, 32, None, 0, None, 0, 0, None, out_len),   # Missing output
+            (a, 32, b, 33, aux, 32, None, 0, None, 0, 0, out, out_len - 1), # Short output
+            ]:
+            self.assertEqual(wally_dleq_proof_generate(*args), WALLY_EINVAL)
+
     @unittest.skipUnless(wally_s2c_sig_from_bytes, "s2c module not enabled")
     def test_s2c(self):
         priv_key, pub_key, msg, s2c_data, sig_out, s2c_opening_out = self.cbufferize(

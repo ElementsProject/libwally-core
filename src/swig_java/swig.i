@@ -281,10 +281,12 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* iv, size_t iv_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* key, size_t key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* keys, size_t keys_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* label, size_t label_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* mainchain_script, size_t mainchain_script_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* merkle_hashes, size_t merkle_hashes_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* merkle_root, size_t merkle_root_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* msg, size_t msg_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* nonce, size_t nonce_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* nonce_hash, size_t nonce_hash_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* offline_keys, size_t offline_keys_len) };
@@ -297,8 +299,12 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* parent160, size_t parent160_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* pass, size_t pass_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* priv_key, size_t priv_key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* priv_keys, size_t priv_keys_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* proof, size_t proof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* pub_key, size_t pub_key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* pub_key_a, size_t pub_key_a_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* pub_key_b, size_t pub_key_b_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* pub_key_c, size_t pub_key_c_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* rangeproof, size_t rangeproof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* redeem_script, size_t redeem_script_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* s2c_data, size_t s2c_data_len) };
@@ -531,6 +537,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_addr_segwit_n_get_version);
 %returns_size_t(wally_addr_segwit_n_to_bytes);
 %returns_size_t(wally_addr_segwit_to_bytes);
+%returns_string(wally_addr_silent_payment_from_bytes);
+%returns_array_(wally_addr_silent_payment_to_bytes, 4, 5, WALLY_SILENT_PAYMENT_KEYS_LEN);
 %returns_size_t(wally_address_to_scriptpubkey);
 %returns_array_(wally_aes, 6, 7, AES_BLOCK_LEN);
 %returns_size_t(wally_aes_len);
@@ -610,6 +618,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_sarray(wally_descriptor_to_addresses);
 %returns_size_t(wally_descriptor_to_script);
 %returns_size_t(wally_descriptor_to_script_get_maximum_length);
+%returns_array_(wally_dleq_proof_generate, 12, 13, WALLY_DLEQ_PROOF_LEN);
+%returns_void__(wally_dleq_proof_verify);
 %returns_array_(wally_ec_private_key_bip341_tweak, 6, 7, EC_PRIVATE_KEY_LEN);
 %returns_void__(wally_ec_private_key_verify);
 %returns_array_(wally_ec_public_key_bip341_tweak, 6, 7, EC_PUBLIC_KEY_LEN);
@@ -714,8 +724,10 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_psbt_add_output_taproot_keypath);
 %returns_void__(wally_psbt_add_tx_output_at);
 %returns_void__(wally_psbt_add_global_scalar);
+%returns_void__(wally_psbt_add_sp_ecdh_shares);
 %returns_struct(wally_psbt_blind_alloc, wally_map);
 %rename("psbt_blind") wally_psbt_blind_alloc;
+%returns_void__(wally_psbt_compute_sp_scripts);
 %returns_void__(wally_psbt_clear_fallback_locktime);
 %returns_void__(wally_psbt_clear_input_amount);
 %returns_void__(wally_psbt_clear_input_amount_rangeproof);
@@ -1400,6 +1412,10 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %ignore wally_psbt_output_get_blinding_status;
 %ignore wally_psbt_output_set_taproot_internal_key;
 %ignore wally_tx_elements_input_is_pegin;
+%ignore wally_psbt_output_get_sp_v0_info;
+%ignore wally_psbt_output_get_sp_v0_info_len;
+%ignore wally_psbt_output_set_sp_v0_info;
+%ignore wally_psbt_output_clear_sp_v0_info;
 
 %include "../include/wally_core.h"
 %include "../include/wally_address.h"

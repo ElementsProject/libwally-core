@@ -361,10 +361,12 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char* issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len);
 %pybuffer_nullable_binary(const unsigned char* iv, size_t iv_len);
 %pybuffer_nullable_binary(const unsigned char* key, size_t key_len);
+%pybuffer_nullable_binary(const unsigned char* keys, size_t keys_len);
 %pybuffer_nullable_binary(const unsigned char* label, size_t label_len);
 %pybuffer_nullable_binary(const unsigned char* mainchain_script, size_t mainchain_script_len);
 %pybuffer_nullable_binary(const unsigned char* merkle_hashes, size_t merkle_hashes_len);
 %pybuffer_nullable_binary(const unsigned char* merkle_root, size_t merkle_root_len);
+%pybuffer_nullable_binary(const unsigned char* msg, size_t msg_len);
 %pybuffer_nullable_binary(const unsigned char* nonce, size_t nonce_len);
 %pybuffer_nullable_binary(const unsigned char* nonce_hash, size_t nonce_hash_len);
 %pybuffer_nullable_binary(const unsigned char* offline_keys, size_t offline_keys_len);
@@ -377,8 +379,12 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char* parent160, size_t parent160_len);
 %pybuffer_nullable_binary(const unsigned char* pass, size_t pass_len);
 %pybuffer_nullable_binary(const unsigned char* priv_key, size_t priv_key_len);
+%pybuffer_nullable_binary(const unsigned char* priv_keys, size_t priv_keys_len);
 %pybuffer_nullable_binary(const unsigned char* proof, size_t proof_len);
 %pybuffer_nullable_binary(const unsigned char* pub_key, size_t pub_key_len);
+%pybuffer_nullable_binary(const unsigned char* pub_key_a, size_t pub_key_a_len);
+%pybuffer_nullable_binary(const unsigned char* pub_key_b, size_t pub_key_b_len);
+%pybuffer_nullable_binary(const unsigned char* pub_key_c, size_t pub_key_c_len);
 %pybuffer_nullable_binary(const unsigned char* rangeproof, size_t rangeproof_len);
 %pybuffer_nullable_binary(const unsigned char* redeem_script, size_t redeem_script_len);
 %pybuffer_nullable_binary(const unsigned char* s2c_data, size_t s2c_data_len);
