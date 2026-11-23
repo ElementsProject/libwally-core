@@ -393,8 +393,23 @@ class PSBTTests(unittest.TestCase):
             ret = wally_map_add_integer(tree, 1, value, len(value))
             self.assertEqual(ret, WALLY_EINVAL)
 
-        value = leaf(1, 0xc0, b'\x51') + leaf(2, 0xc0, b'') + leaf(128, 0xc0, b'\x52')
-        ret = wally_map_add_integer(tree, 1, value, len(value))
+        # The leaves must form a complete tree in depth-first order
+        tree_of = lambda depths: b''.join(leaf(d, 0xc0, b'\x51') for d in depths)
+        for depths, expected in [
+            ([0],       WALLY_OK),
+            ([1, 1],    WALLY_OK),
+            ([1, 2, 2], WALLY_OK),
+            ([1],       WALLY_EINVAL),  # Missing sibling
+            ([0, 0],    WALLY_EINVAL),  # Leaf after the tree is complete
+            ([2, 1, 2], WALLY_EINVAL),  # Leaf above an unfinished branch
+            ]:
+            value = tree_of(depths)
+            ret = wally_map_replace_integer(tree, 1, value, len(value))
+            self.assertEqual(ret, expected)
+
+        value = leaf(1, 0xc0, b'\x51') + leaf(2, 0xc0, b'') + \
+            tree_of(range(3, 128)) + leaf(128, 0xc0, b'\x52') * 2
+        ret = wally_map_replace_integer(tree, 1, value, len(value))
         self.assertEqual(ret, WALLY_OK)
 
         # Valid trees round-trip, invalid trees fail to parse
@@ -407,6 +422,9 @@ class PSBTTests(unittest.TestCase):
         buf, buf_len = make_cbuffer('00' * length)
         self.assertEqual(wally_psbt_to_bytes(psbt, 0, buf, buf_len), (WALLY_OK, length))
         invalid = bytes(buf).replace(value, leaf(1, 0xc1, b'\x51') + value[4:])
+        ret = wally_psbt_from_bytes(invalid, len(invalid), 0, pointer(wally_psbt()))
+        self.assertEqual(ret, WALLY_EINVAL)
+        invalid = bytes(buf).replace(value, bytes([2]) + value[1:])
         ret = wally_psbt_from_bytes(invalid, len(invalid), 0, pointer(wally_psbt()))
         self.assertEqual(ret, WALLY_EINVAL)
         wally_psbt_free(psbt)
