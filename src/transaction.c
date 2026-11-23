@@ -971,11 +971,16 @@ int wally_tx_elements_output_commitment_free(
 #ifdef BUILD_ELEMENTS
     if (output) {
         output->features &= ~WALLY_TX_IS_ELEMENTS;
-        clear_and_free(output->asset, output->asset_len);
-        clear_and_free(output->value, output->value_len);
-        clear_and_free(output->nonce, output->nonce_len);
-        clear_and_free(output->surjectionproof, output->surjectionproof_len);
-        clear_and_free(output->rangeproof, output->rangeproof_len);
+
+#define FREE_PTR_AND_LEN(name) clear_and_free(output->name, output->name ## _len); \
+    output->name = NULL; output->name ## _len = 0
+
+        FREE_PTR_AND_LEN(asset);
+        FREE_PTR_AND_LEN(value);
+        FREE_PTR_AND_LEN(nonce);
+        FREE_PTR_AND_LEN(surjectionproof);
+        FREE_PTR_AND_LEN(rangeproof);
+#undef FREE_PTR_AND_LEN
     }
 #endif /* BUILD_ELEMENTS */
     return WALLY_OK;
