@@ -561,6 +561,10 @@ static int map_leaf_hashes_verify(const unsigned char *key, size_t key_len,
  * <8-bit depth> <8-bit leaf version> <compact-size scriptlen> <script>. */
 static int taproot_tree_value_verify(const unsigned char *val, size_t val_len)
 {
+    /* branch[d] is set while a node at depth d waits for its sibling */
+    bool branch[WALLY_DESCRIPTOR_TAPTREE_MAX_DEPTH + 1];
+    size_t branch_len = 0, depth;
+
     if (!val || !val_len)
         return WALLY_EINVAL;
     while (val_len) {
@@ -568,8 +572,20 @@ static int taproot_tree_value_verify(const unsigned char *val, size_t val_len)
         size_t vlen;
         if (val_len < 3)
             return WALLY_EINVAL; /* depth(1) + leaf version(1) + >=1 script-len byte */
-        if (val[0] > WALLY_DESCRIPTOR_TAPTREE_MAX_DEPTH)
+        depth = val[0];
+        if (depth > WALLY_DESCRIPTOR_TAPTREE_MAX_DEPTH)
             return WALLY_EINVAL; /* depth exceeds the BIP-341 maximum */
+        if (depth + 1 < branch_len)
+            return WALLY_EINVAL; /* leaf above an unfinished branch */
+        while (branch_len > depth && branch[depth]) {
+            --branch_len; /* combine with its sibling */
+            if (!depth)
+                return WALLY_EINVAL; /* leaf after the tree is complete */
+            --depth;
+        }
+        while (branch_len <= depth)
+            branch[branch_len++] = false;
+        branch[depth] = true;
         if ((val[1] & 1u) || val[1] == 0x50u)
             return WALLY_EINVAL; /* leaf version parity bit set, or annex tag */
         val += 2;
@@ -585,7 +601,7 @@ static int taproot_tree_value_verify(const unsigned char *val, size_t val_len)
         val += script_len;
         val_len -= script_len;
     }
-    return WALLY_OK;
+    return branch_len == 1 && branch[0] ? WALLY_OK : WALLY_EINVAL;
 }
 
 /* Integer-keyed map of PSBT_OUT_TAP_TREE values (key is NULL). */
