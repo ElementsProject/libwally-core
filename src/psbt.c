@@ -3889,7 +3889,8 @@ static int combine_output(struct wally_psbt_output *dst,
         if (ret == WALLY_OK && PSET_BLINDING_STATE_REQUIRED(dst_state) &&
             PSET_BLINDING_STATE_REQUIRED(src_state)) {
             /* Both outputs require blinding */
-            if (!dst->blinder_index || dst->blinder_index != src->blinder_index ||
+            if (!dst->has_blinder_index || !src->has_blinder_index ||
+                dst->blinder_index != src->blinder_index ||
                 !map_find_equal_integer(&dst->pset_fields, &src->pset_fields,
                                         PSET_OUT_BLINDING_PUBKEY))
                 ret = WALLY_EINVAL; /* Blinding index/pubkey do not match */
@@ -3898,7 +3899,7 @@ static int combine_output(struct wally_psbt_output *dst,
         if (ret == WALLY_OK && PSET_BLINDING_STATE_FULL(src_state)) {
             /* The source is fully blinded, either copy or verify the fields */
             uint32_t ft;
-            for (ft = PSET_OUT_VALUE_COMMITMENT; ret == WALLY_OK && ft <= PSET_OUT_ASSET_SURJECTION_PROOF; ++ft) {
+            for (ft = PSET_OUT_VALUE_COMMITMENT; ret == WALLY_OK && ft <= PSET_OUT_ECDH_PUBKEY; ++ft) {
                 if (!(PSET_OUT_BLINDING_FIELDS & PSET_FT(ft)))
                     continue;
                 if (PSET_BLINDING_STATE_FULL(dst_state)) {
@@ -3912,6 +3913,29 @@ static int combine_output(struct wally_psbt_output *dst,
                     ret = wally_map_replace_integer(&dst->pset_fields, ft,
                                                     from->value, from->value_len);
                 }
+            }
+            /* The explicit proofs go with the commitments: take the source's
+             * if we copied its commitments, or if we have none of our own */
+            for (ft = PSET_OUT_BLIND_VALUE_PROOF; ret == WALLY_OK && ft <= PSET_OUT_BLIND_ASSET_PROOF; ++ft) {
+                if (PSET_BLINDING_STATE_FULL(dst_state))
+                    ret = combine_map_item(&dst->pset_fields, &src->pset_fields, ft);
+                else {
+                    const struct wally_map_item *from;
+                    from = wally_map_get_integer(&src->pset_fields, ft);
+                    if (from)
+                        ret = wally_map_replace_integer(&dst->pset_fields, ft,
+                                                        from->value, from->value_len);
+                    else
+                        ret = wally_map_remove_integer(&dst->pset_fields, ft);
+                }
+            }
+            if (ret == WALLY_OK && !PSET_BLINDING_STATE_REQUIRED(dst_state)) {
+                /* We copied the blinding pubkey: its blinder index goes with it */
+                if (!dst->has_blinder_index) {
+                    dst->blinder_index = src->blinder_index;
+                    dst->has_blinder_index = src->has_blinder_index;
+                } else if (src->has_blinder_index && dst->blinder_index != src->blinder_index)
+                    ret = WALLY_EINVAL; /* Blinding index does not match */
             }
         }
     }
