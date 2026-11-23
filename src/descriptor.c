@@ -4370,6 +4370,11 @@ static int ensure_unique_key_set(const ms_ctx *ctx, const unsigned char *pubkeys
                                  bool across_multipaths)
 {
     const uint32_t num_multipaths = ctx->num_multipaths;
+    size_t key_offset = 0, key_len = EC_PUBLIC_KEY_LEN;
+    if (ctx->features & (WALLY_MS_IS_TAPROOT|WALLY_MS_IS_TAPSCRIPT)) {
+        key_offset = 1;
+        key_len = EC_XONLY_PUBLIC_KEY_LEN;
+    }
 
     for (size_t i = 0; i < num_indices; ++i) {
         for (size_t j = i + 1; j < num_indices; ++j) {
@@ -4379,8 +4384,9 @@ static int ensure_unique_key_set(const ms_ctx *ctx, const unsigned char *pubkeys
                 const uint32_t m_end = across_multipaths ? num_multipaths : m_i + 1;
 
                 for (uint32_t m_j = m_start; m_j < m_end; ++m_j) {
-                    if (!memcmp(lhs, get_derived_pubkey(ctx, pubkeys, m_j, indices[j]),
-                                EC_PUBLIC_KEY_LEN))
+                    if (!memcmp(lhs + key_offset,
+                                get_derived_pubkey(ctx, pubkeys, m_j, indices[j]) + key_offset,
+                                key_len))
                         return WALLY_EINVAL; /* Duplicate key found */
                 }
             }
