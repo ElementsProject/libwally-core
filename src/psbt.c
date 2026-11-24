@@ -2445,6 +2445,9 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
             switch (field_type) {
             case PSBT_IN_NON_WITNESS_UTXO:
                 ret = pull_tx(cursor, max, tx_flags, &result->utxo);
+                if (ret == WALLY_OK &&
+                    (!result->utxo->num_inputs || !result->utxo->num_outputs))
+                    ret = WALLY_EINVAL; /* Not a complete (serializable) tx */
                 break;
             case PSBT_IN_WITNESS_UTXO:
                 ret = pull_tx_output(cursor, max, is_pset, &result->witness_utxo);
