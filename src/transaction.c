@@ -2246,8 +2246,8 @@ int wally_tx_get_txid(const struct wally_tx *tx, unsigned char *bytes_out, size_
 }
 
 static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
-                      uint32_t flags, size_t *num_inputs, size_t *num_outputs,
-                      bool *expect_witnesses)
+                      uint32_t flags, bool exact, size_t *num_inputs,
+                      size_t *num_outputs, bool *expect_witnesses)
 {
     const unsigned char *p, *end;
     uint64_t v, num_witnesses;
@@ -2374,9 +2374,9 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
     }
 
     ensure_n(sizeof(uint32_t)); /* Locktime */
+    p += sizeof(uint32_t);
 
     if (*expect_witnesses && is_elements) {
-        p += sizeof(uint32_t);
         for (i = 0; i < *num_inputs; ++i) {
             ensure_varbuff(&v); /* issuance amount rangeproof */
             p += v;
@@ -2409,6 +2409,8 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
 #undef ensure_committed_value
 #undef ensure_committed_asset
 #undef ensure_committed_nonce
+    if (exact && p != end)
+        return WALLY_EINVAL; /* Trailing data after the tx */
     return WALLY_OK;
 }
 
@@ -2440,8 +2442,8 @@ cleanup:
     return ret;
 }
 
-static int tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
-                         uint32_t flags, struct wally_tx **output)
+int tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
+                  uint32_t flags, bool exact, struct wally_tx **output)
 {
     const unsigned char *p = bytes;
     const bool is_elements = flags & WALLY_TX_FLAG_USE_ELEMENTS;
@@ -2452,7 +2454,7 @@ static int tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
 
     OUTPUT_CHECK;
 
-    if (analyze_tx(bytes, bytes_len, flags, &num_inputs, &num_outputs,
+    if (analyze_tx(bytes, bytes_len, flags, exact, &num_inputs, &num_outputs,
                    &expect_witnesses) != WALLY_OK)
         return WALLY_EINVAL;
 
@@ -2612,7 +2614,7 @@ fail:
 int wally_tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
                         uint32_t flags, struct wally_tx **output)
 {
-    return tx_from_bytes(bytes, bytes_len, flags, output);
+    return tx_from_bytes(bytes, bytes_len, flags, false, output);
 }
 
 int wally_tx_from_hex(const char *hex, uint32_t flags,
@@ -2634,7 +2636,7 @@ int wally_tx_from_hex(const char *hex, uint32_t flags,
     }
     ret = wally_hex_to_bytes(hex, buff_p, bin_len, &written);
     if (ret == WALLY_OK)
-        ret = tx_from_bytes(buff_p, written, flags, output);
+        ret = tx_from_bytes(buff_p, written, flags, false, output);
 
     if (buff_p != buff)
         clear_and_free(buff_p, bin_len);

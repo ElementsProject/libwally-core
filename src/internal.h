@@ -169,6 +169,12 @@ WALLY_INTERNAL_API int tx_witness_stack_init_alloc(size_t allocation_len,
                                                    size_t max_allocation_len,
                                                    struct wally_tx_witness_stack **output);
 
+/* As wally_tx_from_bytes, optionally rejecting trailing data */
+struct wally_tx;
+WALLY_INTERNAL_API int tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
+                                     uint32_t flags, bool exact,
+                                     struct wally_tx **output);
+
 /* Absolute maximum number of inputs and outputs for BTC.
  * Liquid numbers are smaller; we use the upper limit */
 #define TX_MAX_INPUTS (TX_MAX_INPUTS_ALLOC * 10)
