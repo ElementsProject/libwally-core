@@ -1,7 +1,9 @@
+import json
 import unittest
 from util import *
 
 WALLY_WITNESSSCRIPT_MAX_LEN = 42
+WALLY_SILENT_PAYMENT_KEYS_LEN = 66
 
 valid_cases = {
     # https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki
@@ -155,6 +157,108 @@ class Bech32Tests(unittest.TestCase):
         self.assertEqual(ret, WALLY_EINVAL) # Bad addr length
         ret, ver = wally_addr_segwit_n_get_version(addr, len(addr), family, 0, 0)
         self.assertEqual(ret, WALLY_EINVAL) # Bad family length
+
+    def sp_encode(self, hrp, version, payload, bech32m=True):
+        """Encode a silent payment address without validating it"""
+        charset = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l'
+        def polymod(values):
+            gen = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3]
+            chk = 1
+            for v in values:
+                top = chk >> 25
+                chk = (chk & 0x1ffffff) << 5 ^ v
+                for i in range(5):
+                    chk ^= gen[i] if ((top >> i) & 1) else 0
+            return chk
+        acc, bits, data = 0, 0, [version]
+        for b in payload:
+            acc, bits = (acc << 8) | b, bits + 8
+            while bits >= 5:
+                bits -= 5
+                data.append((acc >> bits) & 31)
+        if bits:
+            data.append((acc << (5 - bits)) & 31)
+        expanded = [ord(c) >> 5 for c in hrp] + [0] + [ord(c) & 31 for c in hrp]
+        const = 0x2bc830a3 if bech32m else 1
+        chk = polymod(expanded + data + [0] * 6) ^ const
+        data += [(chk >> 5 * (5 - i)) & 31 for i in range(6)]
+        return hrp + '1' + ''.join(charset[d] for d in data)
+
+    def sp_decode(self, addr, family):
+        out, out_len = make_cbuffer('00' * WALLY_SILENT_PAYMENT_KEYS_LEN)
+        ret = wally_addr_silent_payment_to_bytes(utf8(addr), utf8(family), 0, out, out_len)
+        return ret, h(out) if ret == WALLY_OK else None
+
+    def test_silent_payment_address(self):
+        """Tests for encoding and decoding BIP-352 silent payment addresses"""
+        vectors = root_dir + 'src/secp256k1/src/modules/silentpayments/' \
+                             'bip352_send_and_receive_test_vectors.json'
+        with open(vectors, 'r') as f:
+            cases = json.load(f)
+        recipients = [r for case in cases for s in case['sending']
+                      for r in s['given']['recipients']]
+        self.assertTrue(len(recipients) > 0)
+
+        for r in recipients:
+            addr, keys = r['address'], r['scan_pub_key'] + r['spend_pub_key']
+            self.assertEqual(len(addr), 116) # Mainnet, version 0
+            for a in [addr, addr.upper()]:
+                self.assertEqual(self.sp_decode(a, 'sp'), (WALLY_OK, utf8(keys)))
+            keys_buf, keys_len = make_cbuffer(keys)
+            ret, encoded = wally_addr_silent_payment_from_bytes(keys_buf, keys_len, utf8('sp'), 0)
+            self.assertEqual((ret, encoded), (WALLY_OK, addr))
+
+        # Testnet addresses are one character longer
+        keys = recipients[0]['scan_pub_key'] + recipients[0]['spend_pub_key']
+        keys_buf, keys_len = make_cbuffer(keys)
+        ret, encoded = wally_addr_silent_payment_from_bytes(keys_buf, keys_len, utf8('tsp'), 0)
+        self.assertEqual((ret, len(encoded)), (WALLY_OK, 117))
+        self.assertEqual(self.sp_decode(encoded, 'tsp'), (WALLY_OK, utf8(keys)))
+        self.assertEqual(self.sp_decode(encoded, 'sp'), (WALLY_EINVAL, None))
+
+        # Later versions may append data, which is ignored
+        payload = bytes.fromhex(keys)
+        for version in [1, 30]:
+            addr = self.sp_encode('sp', version, payload + b'\x00' * 10)
+            self.assertEqual(self.sp_decode(addr, 'sp'), (WALLY_OK, utf8(keys)))
+
+        bad_key = '04' + keys[2:]
+        for addr in [
+            self.sp_encode('sp', 0, payload + b'\x00'), # Version 0 with extra data
+            self.sp_encode('sp', 0, payload[:-1]),      # Version 0 too short
+            self.sp_encode('sp', 1, payload[:-1]),      # Later version too short
+            self.sp_encode('sp', 31, payload),          # Version 31 is invalid
+            self.sp_encode('sp', 0, payload, False),    # Bech32 checksum
+            self.sp_encode('sp', 0, bytes.fromhex(bad_key)), # Invalid scan key
+            self.sp_encode('sp', 1, payload + b'\x00' * 640), # Too long
+            recipients[0]['address'][:-1] + 'q',       # Bad checksum
+            recipients[0]['address'][:4] + recipients[0]['address'][4:].upper(), # Mixed case
+            ]:
+            self.assertEqual(self.sp_decode(addr, 'sp'), (WALLY_EINVAL, None))
+
+        # Invalid arguments
+        addr = recipients[0]['address']
+        out, out_len = make_cbuffer('00' * WALLY_SILENT_PAYMENT_KEYS_LEN)
+        for args in [
+            (None, utf8('sp'), 0, out, out_len),         # Missing address
+            (utf8(addr), None, 0, out, out_len),         # Missing family
+            (utf8(addr), utf8(''), 0, out, out_len),     # Empty family
+            (utf8(addr), utf8('sp'), 1, out, out_len),   # Unknown flags
+            (utf8(addr), utf8('sp'), 0, None, out_len),  # Missing output
+            (utf8(addr), utf8('sp'), 0, out, out_len - 1), # Short output
+            ]:
+            self.assertEqual(wally_addr_silent_payment_to_bytes(*args), WALLY_EINVAL)
+
+        bad_buf, bad_len = make_cbuffer(bad_key)
+        for args in [
+            (None, keys_len, utf8('sp'), 0),             # Missing keys
+            (keys_buf, keys_len - 1, utf8('sp'), 0),     # Short keys
+            (bad_buf, bad_len, utf8('sp'), 0),           # Invalid scan key
+            (keys_buf, keys_len, None, 0),               # Missing family
+            (keys_buf, keys_len, utf8('SP'), 0),         # Uppercase family
+            (keys_buf, keys_len, utf8('sp'), 1),         # Unknown flags
+            ]:
+            self.assertEqual(wally_addr_silent_payment_from_bytes(*args), (WALLY_EINVAL, None))
 
 if __name__ == '__main__':
     unittest.main()

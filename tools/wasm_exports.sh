@@ -59,6 +59,8 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_addr_segwit_n_get_version' \
 ,'_wally_addr_segwit_n_to_bytes' \
 ,'_wally_addr_segwit_to_bytes' \
+,'_wally_addr_silent_payment_from_bytes' \
+,'_wally_addr_silent_payment_to_bytes' \
 ,'_wally_address_to_scriptpubkey' \
 ,'_wally_ae_host_commit_from_bytes' \
 ,'_wally_ae_sig_from_bytes' \
@@ -119,6 +121,8 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_descriptor_to_addresses' \
 ,'_wally_descriptor_to_script' \
 ,'_wally_descriptor_to_script_get_maximum_length' \
+,'_wally_dleq_proof_generate' \
+,'_wally_dleq_proof_verify' \
 ,'_wally_ec_private_key_bip341_tweak' \
 ,'_wally_ec_private_key_verify' \
 ,'_wally_ec_public_key_bip341_tweak' \
@@ -212,6 +216,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_add_input_taproot_keypath' \
 ,'_wally_psbt_add_output_keypath' \
 ,'_wally_psbt_add_output_taproot_keypath' \
+,'_wally_psbt_add_sp_ecdh_shares' \
 ,'_wally_psbt_add_tx_input_at' \
 ,'_wally_psbt_add_tx_output_at' \
 ,'_wally_psbt_clear_fallback_locktime' \
@@ -222,6 +227,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_clone_alloc' \
 ,'_wally_psbt_combine' \
 ,'_wally_psbt_combine_ex' \
+,'_wally_psbt_compute_sp_scripts' \
 ,'_wally_psbt_extract' \
 ,'_wally_psbt_finalize' \
 ,'_wally_psbt_finalize_input' \
@@ -335,13 +341,17 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_is_finalized' \
 ,'_wally_psbt_is_input_finalized' \
 ,'_wally_psbt_output_clear_amount' \
+,'_wally_psbt_output_clear_sp_v0_info' \
 ,'_wally_psbt_output_find_keypath' \
 ,'_wally_psbt_output_find_unknown' \
+,'_wally_psbt_output_get_sp_v0_info' \
+,'_wally_psbt_output_get_sp_v0_info_len' \
 ,'_wally_psbt_output_keypath_add' \
 ,'_wally_psbt_output_set_amount' \
 ,'_wally_psbt_output_set_keypaths' \
 ,'_wally_psbt_output_set_redeem_script' \
 ,'_wally_psbt_output_set_script' \
+,'_wally_psbt_output_set_sp_v0_info' \
 ,'_wally_psbt_output_set_taproot_internal_key' \
 ,'_wally_psbt_output_set_unknowns' \
 ,'_wally_psbt_output_set_witness_script' \
