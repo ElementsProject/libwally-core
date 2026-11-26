@@ -15,7 +15,8 @@
 
 #define WALLY_TX_ALL_FLAGS \
     (WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS | \
-     WALLY_TX_FLAG_ALLOW_PARTIAL | WALLY_TX_FLAG_PRE_BIP144)
+     WALLY_TX_FLAG_ALLOW_PARTIAL | WALLY_TX_FLAG_PRE_BIP144 | \
+     WALLY_TX_FLAG_COMPLETE)
 
 /* We use the maximum DER sig length (plus a byte for the sighash) so that
  * we overestimate the size by a byte or two per tx sig. This allows using
@@ -2374,9 +2375,9 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
     }
 
     ensure_n(sizeof(uint32_t)); /* Locktime */
+    p += sizeof(uint32_t);
 
     if (*expect_witnesses && is_elements) {
-        p += sizeof(uint32_t);
         for (i = 0; i < *num_inputs; ++i) {
             ensure_varbuff(&v); /* issuance amount rangeproof */
             p += v;
@@ -2401,6 +2402,8 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
             p += v;
         }
     }
+    if (p != end && (flags & WALLY_TX_FLAG_COMPLETE))
+        return WALLY_EINVAL; /* Trailing data after the tx */
 
 #undef ensure_n
 #undef ensure_varint

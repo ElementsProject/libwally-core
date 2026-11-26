@@ -46,17 +46,19 @@ class TransactionTests(unittest.TestCase):
 
     def test_serialization(self):
         """Testing serialization and deserialization"""
+        FLAG_COMPLETE = 0x10  # WALLY_TX_FLAG_COMPLETE
         tx_out = pointer(wally_tx())
         tx_copy = pointer(wally_tx())
 
         # Invalid arguments
         for args in [
-            (None, 0, tx_out), # Null hex
-            (utf8(''), 0, tx_out), # Empty hex
-            (utf8('00'*5), 0, tx_out), # Short hex
-            (TX_FAKE_HEX, 0, None), # Empty output
-            (TX_FAKE_HEX, 16, tx_out), # Unsupported flag
-            (TX_WITNESS_HEX[:11]+utf8('0')+TX_WITNESS_HEX[12:], 0, tx_out), # Invalid witness flag
+            (None,         0,  tx_out),  # Null hex
+            (utf8(''),     0,  tx_out),  # Empty hex
+            (utf8('00'*5), 0,  tx_out),  # Short hex
+            (TX_FAKE_HEX,  0,  None),    # Empty output
+            (TX_FAKE_HEX,  32, tx_out),  # Unsupported flag
+            # Invalid witness flag
+            (TX_WITNESS_HEX[:11]+utf8('0')+TX_WITNESS_HEX[12:], 0, tx_out),
             ]:
             self.assertEqual(WALLY_EINVAL, wally_tx_from_hex(*args))
 
@@ -82,9 +84,17 @@ class TransactionTests(unittest.TestCase):
                         utf8('ff')+TX_FAKE_HEX[2:],
                         TX_FAKE_HEX,
                         TX_WITNESS_HEX ]:
-            self.assertEqual(WALLY_OK, wally_tx_from_hex(tx_hex, 0, tx_out))
-            hex_ = utf8(self.tx_serialize_hex(tx_out))
-            self.assertEqual(tx_hex, hex_)
+
+            # Parsing with extra data fails when FLAG_COMPLETE is given
+            ret = wally_tx_from_hex(tx_hex + utf8('0001'), FLAG_COMPLETE, tx_out)
+            self.assertEqual(ret, WALLY_EINVAL)
+
+            # Without extra data, FLAG_COMPLETE is optional
+            for flags in [0, FLAG_COMPLETE]:
+                self.assertEqual(WALLY_OK, wally_tx_from_hex(tx_hex, flags, tx_out))
+                hex_ = utf8(self.tx_serialize_hex(tx_out))
+                self.assertEqual(tx_hex, hex_)
+
             # Check the transaction can be cloned and serializes to the same hex
             self.assertEqual(WALLY_OK, wally_tx_clone_alloc(tx_out, 0, tx_copy))
             self.assertEqual(hex_, utf8(self.tx_serialize_hex(tx_copy)))
@@ -133,7 +143,7 @@ class TransactionTests(unittest.TestCase):
             vsize = (weight + 3) // 4
             self.assertEqual((WALLY_OK, length), wally_tx_get_length(byref(tx), 0))
             self.assertEqual((WALLY_OK, length_with_witness), wally_tx_get_length(byref(tx), 1))
-            self.assertEqual((WALLY_EINVAL, 0), wally_tx_get_length(byref(tx), 16)) # Unsupported flag
+            self.assertEqual((WALLY_EINVAL, 0), wally_tx_get_length(byref(tx), 32)) # Unsupported flag
             self.assertEqual((WALLY_OK, weight), wally_tx_get_weight(byref(tx)))
             self.assertEqual((WALLY_OK, vsize), wally_tx_get_vsize(byref(tx)))
             self.assertEqual((WALLY_OK, vsize), wally_tx_vsize_from_weight(weight))
@@ -366,7 +376,7 @@ class TransactionTests(unittest.TestCase):
             # SIGHASH_FORKID (i.e SIGHASH_RANGEPROOF) is invalid for BTC
             (tx,   0, script, script_len, 1,     0x41,  0,  out,  out_len),
             # Invalid flags
-            (tx,   0, script, script_len, 1,     1,     16, out,  out_len),
+            (tx,   0, script, script_len, 1,     1,     32, out,  out_len),
             # Empty bytes
             (tx,   0, script, script_len, 1,     1,     0,  None, out_len),
             # Short len
