@@ -2185,7 +2185,8 @@ static int pull_tx(const unsigned char **cursor, size_t *max,
     if (*tx_out)
         return WALLY_EINVAL; /* Duplicate */
     pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_len);
-    ret = wally_tx_from_bytes(val, val_len, tx_flags, tx_out);
+    ret = wally_tx_from_bytes(val, val_len,
+                              tx_flags | WALLY_TX_FLAG_COMPLETE, tx_out);
     pull_subfield_end(cursor, max, val, val_len);
     return ret;
 }
