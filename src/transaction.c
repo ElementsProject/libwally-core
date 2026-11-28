@@ -3179,14 +3179,14 @@ int wally_tx_input_set_txhash(struct wally_tx_input *input,
 int wally_tx_output_set_script(struct wally_tx_output *output,
                                const unsigned char *script, size_t script_len)
 {
-    if (!is_valid_tx_output(output))
+    if (!output)
         return WALLY_EINVAL;
     return replace_bytes(script, script_len, &output->script, &output->script_len);
 }
 
 int wally_tx_output_set_satoshi(struct wally_tx_output *output, uint64_t satoshi)
 {
-    if (!is_valid_tx_output(output) || satoshi > WALLY_SATOSHI_MAX)
+    if (!output || satoshi > WALLY_SATOSHI_MAX)
         return WALLY_EINVAL;
     output->satoshi = satoshi;
     return WALLY_OK;
