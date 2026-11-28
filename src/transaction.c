@@ -33,10 +33,6 @@ static const unsigned char DUMMY_SIG[EC_SIGNATURE_DER_MAX_LEN + 1]; /* +1 for si
     else \
         wally_clear(dst, siz);
 
-#define MAX_INVALID_SATOSHI ((uint64_t) -1)
-
-#define WALLY_SATOSHI_MAX ((uint64_t)WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC)
-
 /* LCOV_EXCL_START */
 /* Check assumptions we expect to hold true */
 static void assert_tx_assumptions(void)
@@ -1730,6 +1726,12 @@ static bool tx_check_args(const struct wally_tx *tx,
             return false;
         *flags &= ~WALLY_TX_FLAG_USE_WITNESS;
     }
+
+    for (size_t i = 0; i < tx->num_outputs; ++i) {
+        if (!(tx->outputs[i].features & WALLY_TX_IS_ELEMENTS) &&
+            tx->outputs[i].satoshi > WALLY_SATOSHI_MAX)
+            return false; /* Invalid BTC amount */
+    }
     return true;
 }
 
@@ -3179,14 +3181,14 @@ int wally_tx_input_set_txhash(struct wally_tx_input *input,
 int wally_tx_output_set_script(struct wally_tx_output *output,
                                const unsigned char *script, size_t script_len)
 {
-    if (!is_valid_tx_output(output))
+    if (!output)
         return WALLY_EINVAL;
     return replace_bytes(script, script_len, &output->script, &output->script_len);
 }
 
 int wally_tx_output_set_satoshi(struct wally_tx_output *output, uint64_t satoshi)
 {
-    if (!is_valid_tx_output(output) || satoshi > WALLY_SATOSHI_MAX)
+    if (!output || satoshi > WALLY_SATOSHI_MAX)
         return WALLY_EINVAL;
     output->satoshi = satoshi;
     return WALLY_OK;
@@ -3454,4 +3456,3 @@ int wally_tx_clone_alloc(const struct wally_tx *tx, uint32_t flags, struct wally
 
     return ret;
 }
-#undef MAX_INVALID_SATOSHI

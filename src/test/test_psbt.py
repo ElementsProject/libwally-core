@@ -311,6 +311,39 @@ class PSBTTests(unittest.TestCase):
             wally_tx_free(tx)
             wally_psbt_free(psbt)
 
+    def test_btc_output_amounts(self):
+        """Test output amounts are validated"""
+        MAX_SATOSHI, EXTRACT_NON_FINAL = 21000000 * 100000000, 0x1
+
+        def make_psbt(flags):
+            psbt = pointer(wally_psbt())
+            self.assertEqual(WALLY_OK, wally_psbt_init_alloc(2, 0, 2, 0, flags, psbt))
+            for i in range(2):
+                tx_out = pointer(wally_tx_output())
+                self.assertEqual(WALLY_OK, wally_tx_output_init_alloc(1, b'\x51', 1, tx_out))
+                self.assertEqual(WALLY_OK, wally_psbt_add_tx_output_at(psbt, i, 0, tx_out))
+            return psbt
+
+        for is_psbt in [False, True]:
+            psbt = make_psbt(0 if is_psbt else INIT_PSET)
+            # Output amount is checked on set for PSBT but not PSET
+            ret = wally_psbt_set_output_amount(psbt, 0, MAX_SATOSHI + 1)
+            self.assertEqual(ret, WALLY_EINVAL if is_psbt else WALLY_OK)
+
+        for amounts in [
+            [MAX_SATOSHI // 2, MAX_SATOSHI // 2],
+            [MAX_SATOSHI,      1]
+        ]:
+            self.assertEqual(WALLY_OK, wally_psbt_set_output_amount(psbt, 0, amounts[0]))
+            self.assertEqual(WALLY_OK, wally_psbt_set_output_amount(psbt, 1, amounts[1]))
+            # PSBT can be serialized with invalid total amount ...
+            psbt = self.parse_base64(self.to_base64(psbt))
+            # But a tx cannot be extracted unless the total is valid
+            tx = pointer(wally_tx())
+            ret = wally_psbt_extract(psbt, EXTRACT_NON_FINAL, tx)
+            expected = WALLY_OK if sum(amounts) <= MAX_SATOSHI or not is_psbt else WALLY_EINVAL
+            self.assertEqual(ret, expected)
+
     def test_v20dot1_changes(self):
         """See https://github.com/ElementsProject/libwally-core/issues/213
            Verify that core v20.1 changes to address the segwit fee attack now work"""

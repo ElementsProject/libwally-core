@@ -174,4 +174,9 @@ WALLY_INTERNAL_API int tx_witness_stack_init_alloc(size_t allocation_len,
 #define TX_MAX_INPUTS (TX_MAX_INPUTS_ALLOC * 10)
 #define TX_MAX_OUTPUTS (TX_MAX_OUTPUTS_ALLOC * 10)
 
+#define WALLY_SATOSHI_MAX ((uint64_t)WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC)
+
+/* Sentinel indicating no explicit satoshi */
+#define MAX_INVALID_SATOSHI ((uint64_t) -1)
+
 #endif /* LIBWALLY_INTERNAL_H */

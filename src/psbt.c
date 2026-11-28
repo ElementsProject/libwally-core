@@ -39,7 +39,6 @@
 static const uint8_t PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 static const uint8_t PSET_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
 
-#define MAX_INVALID_SATOSHI ((uint64_t) -1)
 /* Note we mask given indices regardless of PSBT/PSET, since enormous
  * indices can never be valid on BTC either */
 #define MASK_INDEX(index) ((index) & WALLY_TX_INDEX_MASK)
@@ -2657,9 +2656,14 @@ static int pull_psbt_output(const struct wally_psbt *psbt,
             case PSBT_OUT_BIP32_DERIVATION:
                 ret = pull_map_item(cursor, max, key, key_len, &result->keypaths);
                 break;
-            case PSBT_OUT_AMOUNT:
-                ret = wally_psbt_output_set_amount(result, pull_le64_subfield(cursor, max));
+            case PSBT_OUT_AMOUNT: {
+                const uint64_t amount = pull_le64_subfield(cursor, max);
+                if (!is_pset && amount > WALLY_SATOSHI_MAX)
+                    ret = WALLY_EINVAL; /* Invalid BTC amount */
+                else
+                    ret = wally_psbt_output_set_amount(result, amount);
                 break;
+            }
             case PSBT_OUT_SCRIPT:
                 ret = pull_output_varbuf(cursor, max, result,
                                          wally_psbt_output_set_script);
@@ -6341,7 +6345,16 @@ int wally_psbt_get_output_script(const struct wally_psbt *psbt, size_t index,
 
 PSBT_SET_S(output, keypaths, wally_map)
 PSBT_SET_S(output, unknowns, wally_map)
-PSBT_SET_I(output, amount, uint64_t, PSBT_2)
+int wally_psbt_set_output_amount(struct wally_psbt *psbt, size_t index, uint64_t amount)
+{
+    if (!psbt || psbt->version != PSBT_2) return WALLY_EINVAL;
+    if (amount > WALLY_SATOSHI_MAX) {
+        size_t is_pset;
+        if (wally_psbt_is_elements(psbt, &is_pset) != WALLY_OK || !is_pset)
+            return WALLY_EINVAL; /* Invalid BTC amount */
+    }
+    return wally_psbt_output_set_amount(psbt_get_output(psbt, index), amount);
+}
 int wally_psbt_clear_output_amount(struct wally_psbt *psbt, size_t index) {
     if (!psbt || psbt->version != PSBT_2) return WALLY_EINVAL;
     return wally_psbt_output_clear_amount(psbt_get_output(psbt, index));
@@ -6397,5 +6410,4 @@ int wally_psbt_get_output_blinding_status(const struct wally_psbt *psbt, size_t 
     return wally_psbt_output_get_blinding_status(p, flags, written);
 #endif /* BUILD_ELEMENTS */
 }
-#undef MAX_INVALID_SATOSHI
 #endif /* WALLY_ABI_NO_ELEMENTS */
